@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kensa Forms</title>
   <link rel="stylesheet" href="./assets/style.css">
-  <script src="./assets/config.js"></script>
 </head>
 <body>
   <header class="container header">
@@ -39,6 +38,9 @@
     <span>&copy; <span id="year"></span> Kensa</span>
   </footer>
 
+  <!-- config.js harus di-load dulu -->
+  <script src="./assets/config.js"></script>
+  <!-- app.js logic -->
   <script src="./assets/app.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
