@@ -3,114 +3,117 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>品質管理生産技術 - 出荷状況一覧</title>
+  <title>出荷状況一覧</title>
   <style>
-    :root{
-      --bg:#f0f4ff; --card:#ffffff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb;
-      --accent:#2563eb; --shadow:0 8px 24px rgba(15,23,42,.08);
-    }
+    :root{--ink:#0f172a;--muted:#64748b;--border:#e5e7eb;--bg1:#eef4ff;--bg2:#f8fafc;--card:#fff;--accent:#2563eb}
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      background:linear-gradient(135deg,#f0f4ff,#e6ecff);color:var(--text);}
-    header{background:#fff;border-bottom:1px solid var(--border);padding:12px 24px;
-      display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);}
-    .brand{display:flex;align-items:center;gap:12px}
-    .brand img{width:42px;height:42px;border-radius:50%;object-fit:cover}
-    .brand .title{font-weight:700;font-size:1.2rem}
-    .brand .subtitle{color:var(--muted);font-size:.9rem}
-    nav a{text-decoration:none;margin-left:20px;color:var(--muted);font-weight:600}
-    nav a:hover{color:var(--accent)}
-    main{max-width:1200px;margin:30px auto;padding:0 20px}
-    h1{font-size:1.5rem;margin:0 0 20px 0}
-    .card{background:var(--card);padding:20px;border-radius:12px;
-      box-shadow:var(--shadow);overflow:auto}
-    table{width:100%;border-collapse:collapse;font-size:.95rem}
-    th,td{padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
-    th{background:#f9fafb;color:var(--muted);font-weight:700;text-align:left;position:sticky;top:0}
-    tr:hover{background:#f3f6ff}
-    .footer{text-align:center;color:var(--muted);font-size:.9rem;padding:24px;margin-top:40px}
+    html,body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;color:var(--ink);background:linear-gradient(120deg,var(--bg1),var(--bg2))}
+    header{position:sticky;top:0;background:#ffffffcc;backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+    .container{max-width:1200px;margin:0 auto;padding:12px 20px}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand svg{width:38px;height:38px}
+    .brand-title{display:flex;flex-direction:column}
+    nav a{margin-left:20px;color:var(--accent);font-weight:700;text-decoration:none}
+    nav a:hover{text-decoration:underline}
+
+    main{max-width:1200px;margin:24px auto;padding:0 20px}
+    h1{margin:0 0 16px 0}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:10px 0;box-shadow:0 10px 30px rgba(0,0,0,.06)}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    th,td{padding:14px 16px;border-bottom:1px solid var(--border);text-align:left}
+    thead th{font-size:13px;color:#475569;background:#f8fafc}
+    tbody tr:last-child td{border-bottom:none}
+    .right{text-align:right}
   </style>
 </head>
 <body>
-  <header>
+<header>
+  <div class="container row">
     <div class="brand">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Tokyo_Seimitsu_company_logo.svg/512px-Tokyo_Seimitsu_company_logo.svg.png" alt="logo">
-      <div>
-        <div class="title">品質管理生産技術</div>
-        <div class="subtitle">東京精密発條株式会社</div>
+      <svg viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="30" fill="#2563eb22"/>
+        <path d="M12 34h40M12 30h40M20 18h24v6H20zM20 40h24v6H20z" stroke="#2563eb" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <circle cx="20" cy="32" r="3" fill="#2563eb"/>
+        <circle cx="44" cy="32" r="3" fill="#2563eb"/>
+      </svg>
+      <div class="brand-title">
+        <strong>品質管理生産技術</strong>
+        <span style="font-size:12px;color:var(--muted)">東京精密発條株式会社</span>
       </div>
     </div>
     <nav>
-      <a href="./index.html">ホーム</a>
-      <a href="./forms.html"><strong>出荷検査成績書</strong></a>
+      <a href="./index.html"><strong>ホーム</strong></a>
+      <a href="./forms.html">出荷検査成績書</a>
+      <a href="./sagyoutejunsho.html">作業手順書</a>
     </nav>
-  </header>
+  </div>
+</header>
 
-  <main>
-    <h1>出荷状況一覧</h1>
-    <section class="card">
-      <table id="sheet-table">
-        <thead><tr id="thead"></tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </section>
-  </main>
+<main>
+  <h1>出荷状況一覧</h1>
+  <div class="card">
+    <table id="listTable">
+      <thead>
+        <tr>
+          <th>出荷日</th>
+          <th>顧客名</th>
+          <th>図番</th>
+          <th>機種</th>
+          <th>商品名</th>
+          <th class="right">数量</th>
+          <th>送り先</th>
+          <th>注番</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</main>
 
-  <footer class="footer">
-    &copy; <span id="year"></span> 東京精密発條株式会社
-  </footer>
+<script>
+const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
+const SHEET_NAME = "出荷状況"; // A..H: 出荷日, 顧客名, 図番, 機種, 商品名, 数量, 送り先, 注番
 
-  <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
+async function fetchGViz({sheetId, sheetName, tq}){
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}&tq=${encodeURIComponent(tq||'')}`;
+  const res = await fetch(url, {cache:'no-store'});
+  const text = await res.text();
+  const start = text.indexOf('{'), end = text.lastIndexOf('}');
+  return JSON.parse(text.slice(start,end+1)).table;
+}
+function v(row,i){
+  const c=row.c[i];
+  return (c && ('f' in c) && c.f) ? c.f : (c?.v ?? '');
+}
 
-    // Spreadsheet CSV Export
-    const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
-    const SHEET_NAME = "最新情報250822"; // nama tab
-    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
-
-    function parseCSV(text){
-      const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
-      let m, row=[]; text=text.replace(/\r\n?/g,"\n");
-      for (let i=0;i<text.length;){
-        re.lastIndex=i; m=re.exec(text); if(!m) break;
-        let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-        row.push(cell); i=re.lastIndex;
-        if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
-      }
-      return rows.filter(r=>r.length && r.join("").trim()!=="");
+async function load(){
+  const tq = "select A,B,C,D,E,F,G,H where A is not null";
+  const table = await fetchGViz({sheetId:SHEET_ID, sheetName:SHEET_NAME, tq});
+  const rows = table.rows.map(r=>({
+    date:v(r,0), cust:v(r,1), drawing:v(r,2), model:v(r,3),
+    item:v(r,4), qty:v(r,5), dest:v(r,6), order:v(r,7)
+  }));
+  const tbody = document.querySelector('#listTable tbody');
+  tbody.innerHTML = '';
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.date||''}</td>
+      <td>${r.cust||''}</td>
+      <td>${r.drawing||''}</td>
+      <td>${r.model||''}</td>
+      <td>${r.item||''}</td>
+      <td class="right">${r.qty||''}</td>
+      <td>${r.dest||''}</td>
+      <td>${r.order||''}</td>`;
+    if([r.date,r.cust,r.drawing,r.model,r.item,r.qty,r.dest,r.order].some(x=>String(x).trim()!=='')){
+      tbody.appendChild(tr);
     }
-
-    async function loadCSV(){
-      try{
-        const res = await fetch(CSV_URL + "&t=" + Date.now()); // cache bust
-        const text = await res.text();
-        const data = parseCSV(text);
-        if(!data.length) return;
-
-        const header = data[0];
-        const rows = data.slice(1);
-
-        // Render header
-        const thead=document.getElementById("thead");
-        thead.innerHTML = header.map(h=>`<th>${h}</th>`).join("");
-
-        // Render rows
-        const tbody=document.getElementById("tbody");
-        tbody.innerHTML="";
-        rows.forEach(r=>{
-          tbody.insertAdjacentHTML("beforeend",
-            `<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`);
-        });
-      }catch(e){
-        console.error("CSV load error", e);
-      }
-    }
-
-    // initial load
-    window.addEventListener("DOMContentLoaded", loadCSV);
-
-    // auto-refresh setiap 60 detik
-    setInterval(loadCSV, 60000);
-  </script>
+  });
+}
+load().catch(console.error);
+</script>
 </body>
 </html>
