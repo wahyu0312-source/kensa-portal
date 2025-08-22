@@ -1,40 +1,47 @@
-/* === CONFIG (SIMPLE) === */
+/* === CONFIG: JP only, simple === */
 window.KENSA_CONFIG = {
-  // CSV publik dari Google Sheets (punyamu)
-  csvUrl:
-    "https://docs.google.com/spreadsheets/d/e/2PACX-1vRnouue0U6I91_wLiiRChdRzaQ_bTAicgk8ApzeTP0771weOiQQnKJ0Myizc-yXuLGI9rK2sdZRUGkL/pub?output=csv",
+  // 📊 Google Sheets を「ウェブに公開」した CSV の URL
+  // そのまま使えます。別シートにした場合は置き換えてください。
+  csvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRnouue0U6I91_wLiiRChdRzaQ_bTAicgk8ApzeTP0771weOiQQnKJ0Myizc-yXuLGI9rK2sdZRUGkL/pub?output=csv",
 
-  // Kolom yang mungkin dipakai (otomatis cocokkan header; case-insensitive)
+  // シートのヘッダー名に合わせてマッピング（大小文字無視）
   columns: {
-    timestamp: ["timestamp", "time", "日時"],
-    lot_no: ["lot_no", "lot", "ロット", "会社", "メーカー", "顧客"],
-    item_name: ["item_name", "item", "品目", "部品名"],
-    status: ["status", "ステータス", "状態", "工程"],
-    date: ["date", "検査日", "日付"],
-    qty: ["qty", "数量", "個数"],
-    inspector: ["inspector", "検査員", "担当"]
+    ship_date:   ["出荷日","日付","date"],
+    customer:    ["顧客名","会社","メーカー","customer"],
+    drawing_no:  ["図番","図面","drawing","図面番号"],
+    product:     ["商品名","品目","item","部品名"],
+    qty:         ["数量","個数","qty","数量(個)"],
+    destination: ["送り先","送付先","納入先","destination"],
+    note:        ["注意","注意点","指示","note"],
+    remark:      ["備考","メモ","remark","備考欄"],
+    status:      ["ステータス","状態","工程","status"]   // 例: Clear など
   },
 
-  // Kolom yang tampil di tabel beranda (urut + label EN/JP)
+  // ホーム画面の表に出す列（順番）
   display: [
-    { key: "timestamp", en: "Timestamp", jp: "タイムスタンプ" },
-    { key: "lot_no",    en: "Lot",       jp: "ロット/顧客" },
-    { key: "item_name", en: "Item",      jp: "品目" },
-    { key: "status",    en: "Status",    jp: "状態" },
-    { key: "date",      en: "Date",      jp: "日付" },
-    { key: "qty",       en: "Qty",       jp: "数量" },
-    { key: "inspector", en: "Inspector", jp: "検査員" }
+    { key: "ship_date",  label: "出荷日" },
+    { key: "customer",   label: "顧客名" },
+    { key: "drawing_no", label: "図番" },
+    { key: "product",    label: "商品名" },
+    { key: "qty",        label: "数量" },
+    { key: "destination",label: "送り先" },
+    { key: "note",       label: "注意" },
+    { key: "remark",     label: "備考" },
+    { key: "status",     label: "ステータス" }
   ],
 
-  recentLimit: 50,          // jumlah baris terbaru ditampilkan
-  password: "kensa2025",    // ⬅️ password sederhana
+  // 直近 N 行のみ表示（下に新規が追記される前提）
+  recentLimit: 50,
 
-  // Link form kamu
+  // 🔐 フォームページ用の簡易パスワード（そのままでOK。変えるならここを編集）
+  password: "kensa2025",
+
+  // 📄 既存のフォームへのリンク（必要に応じて追加・削除）
   forms: [
-    { code:"okuma46",  en:"OKUMA 46",  jp:"オークマ 46",  url:"https://wahyu0312-source.github.io/okuma46/" },
-    { code:"mb56",     en:"MB 56",     jp:"MB 56",       url:"https://wahyu0312-source.github.io/mb56/" },
-    { code:"330380v",  en:"330380V",   jp:"330380V",     url:"https://wahyu0312-source.github.io/330380v/" },
-    { code:"mb66v",    en:"MB 66V",    jp:"MB 66V",      url:"https://wahyu0312-source.github.io/mb66v/" },
-    { code:"330580v",  en:"330580V",   jp:"330580V",     url:"https://wahyu0312-source.github.io/330580v/" }
+    { name: "オークマ 46",  url: "https://wahyu0312-source.github.io/okuma46/" },
+    { name: "MB 56",       url: "https://wahyu0312-source.github.io/mb56/" },
+    { name: "330380V",     url: "https://wahyu0312-source.github.io/330380v/" },
+    { name: "MB 66V",      url: "https://wahyu0312-source.github.io/mb66v/" },
+    { name: "330580V",     url: "https://wahyu0312-source.github.io/330580v/" }
   ]
 };
