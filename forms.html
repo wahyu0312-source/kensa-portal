@@ -4,7 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kensa Forms</title>
-  <link rel="stylesheet" href="./assets/style.css">
+  <style>
+    :root{--bg:#0b1020;--card:#111834;--text:#e6e9f2;--muted:#9aa4bf;--accent:#7c9eff;--border:#1b2347;}
+    *{box-sizing:border-box} html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    .header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{font-weight:700;font-size:1.2rem;letter-spacing:.5px}
+    .header a{margin-right:12px;color:var(--muted);text-decoration:none}
+    .header a:hover{color:var(--text)}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .lock{display:flex;gap:8px;align-items:center}
+    .lock input{padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text)}
+    .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);color:var(--text);background:transparent;cursor:pointer}
+    .btn:hover{border-color:var(--accent)}
+    .msg{color:#ff9c9c}
+    .list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px}
+    .link-card{border:1px solid var(--border);border-radius:12px;padding:12px;background:rgba(255,255,255,.03)}
+    .link-card h3{margin:0 0 8px 0;font-size:1rem}
+    .hidden{display:none}
+    .footer{color:var(--muted);font-size:.9rem;text-align:center;padding:24px 0}
+  </style>
 </head>
 <body>
   <header class="container header">
@@ -20,14 +39,12 @@
       <h1>フォーム</h1>
       <p>フォームにアクセスするにはパスワードを入力してください。</p>
 
-      <!-- ロック（解除前） -->
       <div id="lock" class="lock">
         <input type="password" id="pwd" placeholder="パスワード">
         <button id="unlock" class="btn">解除</button>
         <div id="msg" class="msg"></div>
       </div>
 
-      <!-- 解除後：フォームリンク一覧 -->
       <div id="forms-list" class="list hidden"></div>
     </section>
   </main>
@@ -36,12 +53,48 @@
     <span>&copy; <span id="year"></span> Kensa</span>
   </footer>
 
-  <!-- 設定 → ロジックの順に読み込む -->
-  <script src="./assets/config.js"></script>
-  <script src="./assets/app.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
-    window.addEventListener('DOMContentLoaded', () => KensaApp.initForms());
+
+    // ====== Password sederhana (ganti di sini kalau perlu) ======
+    const PASSWORD = "kensa2025";
+
+    // ====== Daftar form (link GitHub Pages kamu) ======
+    const FORMS = [
+      { name:"オークマ 46", url:"https://wahyu0312-source.github.io/okuma46/" },
+      { name:"MB 56",      url:"https://wahyu0312-source.github.io/mb56/" },
+      { name:"330380V",    url:"https://wahyu0312-source.github.io/330380v/" },
+      { name:"MB 66V",     url:"https://wahyu0312-source.github.io/mb66v/" },
+      { name:"330580V",    url:"https://wahyu0312-source.github.io/330580v/" }
+    ];
+
+    function renderForms(){
+      const list = document.getElementById('forms-list');
+      list.innerHTML = '';
+      FORMS.forEach(f=>{
+        list.insertAdjacentHTML('beforeend',
+          `<div class="link-card"><h3>${f.name}</h3><a class="btn" target="_blank" href="${f.url}">開く</a></div>`);
+      });
+    }
+
+    document.getElementById('unlock').addEventListener('click', () => {
+      const val = document.getElementById('pwd').value;
+      if (val !== PASSWORD) {
+        document.getElementById('msg').textContent = 'パスワードが違います';
+        return;
+      }
+      sessionStorage.setItem('kensa_unlocked','1');
+      document.getElementById('lock').classList.add('hidden');
+      document.getElementById('forms-list').classList.remove('hidden');
+      renderForms();
+    });
+
+    // jika sudah unlock di tab ini, tampilkan langsung
+    if (sessionStorage.getItem('kensa_unlocked') === '1') {
+      document.getElementById('lock').classList.add('hidden');
+      document.getElementById('forms-list').classList.remove('hidden');
+      renderForms();
+    }
   </script>
 </body>
 </html>
