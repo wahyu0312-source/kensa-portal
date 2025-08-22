@@ -5,40 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kensa Portal</title>
   <style>
-    :root{--bg:#0b1020;--card:#111834;--text:#e6e9f2;--muted:#9aa4bf;--accent:#7c9eff;--border:#1b2347;}
-    *{box-sizing:border-box} html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
-    .container{max-width:1100px;margin:0 auto;padding:20px}
-    .header{display:flex;align-items:center;justify-content:space-between;gap:16px}
-    .brand{font-weight:700;font-size:1.2rem;letter-spacing:.5px}
-    .header a{margin-right:12px;color:var(--muted);text-decoration:none}
-    .header a:hover{color:var(--text)}
-    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    .hero.card{display:flex;flex-direction:column;gap:6px}
+    :root{
+      --bg:#f7f8fb; --card:#ffffff; --text:#1f2a44; --muted:#6b7280; --border:#e5e7eb;
+      --accent:#2563eb; --accent-weak:#eff6ff; --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    .container{max-width:1080px;margin:0 auto;padding:24px}
+    .header{display:flex;align-items:center;justify-content:space-between}
+    .brand{font-weight:700;letter-spacing:.3px}
+    .nav a{color:var(--muted);text-decoration:none;margin-left:14px}
+    .nav a:hover{color:var(--text)}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+    .hero{display:flex;gap:6px;flex-direction:column}
     .cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:12px}
-    .stat{display:flex;flex-direction:column;gap:4px}.stat .k{color:var(--muted);font-size:.9rem}.stat .v{font-size:2rem;font-weight:700}
+    .stat{display:flex;flex-direction:column;gap:4px}
+    .stat .k{color:var(--muted);font-size:.9rem}
+    .stat .v{font-size:2rem;font-weight:700}
     .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
     .controls{color:var(--muted);display:flex;align-items:center;gap:8px}
-    .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;margin-top:10px}
+    .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;margin-top:10px;background:#fff}
     table{width:100%;border-collapse:collapse}
     th,td{border-bottom:1px solid var(--border);padding:10px 12px;text-align:left;white-space:nowrap}
-    th{color:var(--muted);font-weight:600;background:rgba(255,255,255,.03);position:sticky;top:0}
-    .badge{border:1px solid var(--border);padding:2px 8px;border-radius:999px}
-    .footer{color:var(--muted);font-size:.9rem;text-align:center;padding:24px 0}
+    th{color:var(--muted);font-weight:600;background:#fafafa;position:sticky;top:0}
+    .badge{border:1px solid var(--border);padding:2px 8px;border-radius:999px;background:#fff}
+    .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer}
+    .btn:hover{border-color:#cbd5e1;background:#f8fafc}
+    .footer{color:var(--muted);text-align:center;padding:30px 0}
   </style>
 </head>
 <body>
   <header class="container header">
     <div class="brand">Kensa Portal</div>
-    <nav>
-      <a href="./index.html">ホーム</a>
+    <nav class="nav">
+      <a href="./index.html"><strong>ホーム</strong></a>
       <a href="./forms.html">フォーム</a>
     </nav>
   </header>
 
   <main class="container">
-    <section class="hero card">
+    <section class="card hero">
       <h1>出荷・工程ステータス</h1>
-      <p>Google スプレッドシートの最新情報</p>
+      <p class="muted">Google スプレッドシートの最新情報</p>
     </section>
 
     <section class="cards-grid" id="status-cards"></section>
@@ -54,7 +62,7 @@
             <option value="100">100</option>
           </select>
           <span>件</span>
-          <button id="refresh" style="margin-left:8px">再読込</button>
+          <button id="refresh" class="btn">再読込</button>
         </div>
       </div>
       <div class="table-wrap">
@@ -73,11 +81,11 @@
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // ==== KONFIG JP ====
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQsSzDXVBFp9wZznTVpu6Lu8A3M0vk3gftkzMzZBAeIV77gKFTW_WtiTfDyBtuIIZinJ2TTKrHpg4Fi/pub?output=csv";
+    // ===== 設定 =====
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRnouue0U6I91_wLiiRChdRzaQ_bTAicgk8ApzeTP0771weOiQQnKJ0Myizc-yXuLGI9rK2sdZRUGkL/pub?output=csv";
     const RECENT_LIMIT_DEFAULT = 50;
 
-    // header mapping: tambahkan/ubah sesuai header di Sheet (row 1)
+    // ヘッダー名の候補（シート1行目に合わせて追加OK）
     const MAP = {
       ship_date:   ["出荷日","日付","date"],
       customer:    ["顧客名","会社","メーカー","customer"],
@@ -87,7 +95,7 @@
       destination: ["送り先","送付先","納入先","destination"],
       note:        ["注意","注意点","指示","note"],
       remark:      ["備考","メモ","remark","備考欄"],
-      status:      ["ステータス","状態","工程","status","製品"] // 「Clear」が入る列名もここに
+      status:      ["ステータス","状態","工程","status","製品"]
     };
 
     const DISPLAY = [
@@ -102,7 +110,7 @@
       { key:"status",     label:"ステータス" }
     ];
 
-    // ==== CSV parser (quoted) ====
+    // ===== CSV パーサ（クォート対応） =====
     function parseCSV(text){
       const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
       let m, row=[]; text=text.replace(/\r\n?/g,"\n");
@@ -128,10 +136,10 @@
       const counts={}; rows.forEach(r=>{ const k=r[i]||"Unknown"; counts[k]=(counts[k]||0)+1; });
       const wrap=document.getElementById("status-cards"); wrap.innerHTML="";
       Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
-        wrap.insertAdjacentHTML("beforeend", `<div class="card stat"><div class="k">${k}</div><div class="v">${v}</div></div>`);
+        wrap.insertAdjacentHTML("beforeend",
+          `<div class="card stat"><div class="k">${k}</div><div class="v">${v}</div></div>`);
       });
     }
-
     function renderHeader(){
       const tr=document.getElementById("thead-row");
       tr.innerHTML = DISPLAY.map(c=>`<th>${c.label}</th>`).join("");
@@ -151,8 +159,8 @@
     async function loadCSV(){
       const limSel=document.getElementById("limit");
       const lim = Number(limSel?.value || RECENT_LIMIT_DEFAULT);
-      const bust = (CSV_URL.includes("?")?"&":"?") + "t=" + Date.now(); // anti-cache
-      const res = await fetch(CSV_URL + bust, { cache:"no-store" });
+      const bust = (CSV_URL.includes("?")?"&":"?") + "t=" + Date.now(); // キャッシュ回避
+      const res  = await fetch(CSV_URL + bust, { cache:"no-store" });
       const text = await res.text();
       const arr  = parseCSV(text);
       if (!arr.length) return;
@@ -161,7 +169,7 @@
 
       renderStatus(rowsAll, map);
       renderHeader();
-      renderRows(rowsAll.slice(-lim), map); // ambil baris terbawah (terbaru)
+      renderRows(rowsAll.slice(-lim), map); // 末尾＝最新行
     }
 
     document.getElementById("limit").addEventListener("change", loadCSV);
@@ -170,4 +178,3 @@
   </script>
 </body>
 </html>
-
