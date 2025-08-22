@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,26 +10,24 @@
   <header class="container header">
     <div class="brand">Kensa Portal</div>
     <nav>
-      <a href="./index.html" data-i18n="nav_home">Home</a>
-      <a href="./forms.html" data-i18n="nav_forms">Forms</a>
+      <a href="./index.html">ホーム</a>
+      <a href="./forms.html">フォーム</a>
     </nav>
-    <div class="lang">
-      <button id="btn-en">EN</button>
-      <button id="btn-jp">日本語</button>
-    </div>
   </header>
 
   <main class="container">
     <section class="card">
-      <h1 data-i18n="forms_title">Forms</h1>
-      <p data-i18n="forms_desc">Enter the password to access the forms.</p>
+      <h1>フォーム</h1>
+      <p>フォームにアクセスするにはパスワードを入力してください。</p>
 
+      <!-- ロック（解除前） -->
       <div id="lock" class="lock">
-        <input type="password" id="pwd" placeholder="Password / パスワード">
-        <button id="unlock" class="btn" data-i18n="btn_unlock">Unlock</button>
+        <input type="password" id="pwd" placeholder="パスワード">
+        <button id="unlock" class="btn">解除</button>
         <div id="msg" class="msg"></div>
       </div>
 
+      <!-- 解除後：フォームリンク一覧 -->
       <div id="forms-list" class="list hidden"></div>
     </section>
   </main>
@@ -38,17 +36,12 @@
     <span>&copy; <span id="year"></span> Kensa</span>
   </footer>
 
-  <!-- config.js harus di-load dulu -->
+  <!-- 設定 → ロジックの順に読み込む -->
   <script src="./assets/config.js"></script>
-  <!-- app.js logic -->
   <script src="./assets/app.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
-    window.addEventListener('DOMContentLoaded', () => {
-      KensaApp.initForms();
-      document.getElementById('btn-en').onclick = () => KensaApp.setLang('en');
-      document.getElementById('btn-jp').onclick = () => KensaApp.setLang('jp');
-    });
+    window.addEventListener('DOMContentLoaded', () => KensaApp.initForms());
   </script>
 </body>
 </html>
