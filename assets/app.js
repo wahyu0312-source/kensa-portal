@@ -1,15 +1,15 @@
 // ===== UI 文言（日本語のみ） =====
 const JP = {
   nav_home: "ホーム",
-  nav_forms: "フォーム",
+  nav_forms: "出荷検査成績書",
   hero_title: "出荷・工程ステータス",
   hero_sub: "Google スプレッドシートの最新情報",
   latest_title: "最新データ",
   limit_label: "表示件数",
   limit_rows: "件",
-  forms_title: "フォーム",
-  forms_desc: "フォームにアクセスするにはパスワードを入力してください。",
-  btn_unlock: "解除",
+  forms_title: "出荷検査成績書",
+  forms_desc: "出荷検査成績書作成にアクセスするにはパスワードを入力してください。",
+  btn_unlock: "確定",
   wrong_pwd: "パスワードが違います"
 };
 
