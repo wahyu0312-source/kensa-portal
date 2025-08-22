@@ -1,48 +1,47 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kensa Portal</title>
   <link rel="stylesheet" href="./assets/style.css">
+  <!-- 設定（CSV URL・列マッピング等） -->
   <script src="./assets/config.js"></script>
 </head>
 <body>
   <header class="container header">
     <div class="brand">Kensa Portal</div>
     <nav>
-      <a href="./index.html" data-i18n="nav_home">Home</a>
-      <a href="./forms.html" data-i18n="nav_forms">Forms</a>
+      <a href="./index.html">ホーム</a>
+      <a href="./forms.html">フォーム</a>
     </nav>
-    <div class="lang">
-      <button id="btn-en">EN</button>
-      <button id="btn-jp">日本語</button>
-    </div>
   </header>
 
   <main class="container">
     <section class="hero card">
-      <h1 data-i18n="hero_title">Goods Flow Status</h1>
-      <p data-i18n="hero_sub">Live summary from Google Sheets.</p>
+      <h1>出荷・工程ステータス</h1>
+      <p>Google スプレッドシートの最新情報</p>
     </section>
 
+    <!-- ステータス集計カード -->
     <section class="cards-grid" id="status-cards"></section>
 
+    <!-- 最新データ（Google Sheets から取得） -->
     <section class="card">
       <div class="card-head">
-        <h2 data-i18n="latest_title">Latest Records</h2>
+        <h2>最新データ</h2>
         <div class="controls">
-          <label data-i18n="limit_label">Show</label>
+          <label>表示件数</label>
           <select id="limit">
             <option value="20">20</option>
             <option value="50" selected>50</option>
             <option value="100">100</option>
           </select>
-          <span data-i18n="limit_rows">rows</span>
+          <span>件</span>
         </div>
       </div>
       <div class="table-wrap">
-        <table id="data-table">
+        <table>
           <thead><tr id="thead-row"></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
@@ -54,14 +53,11 @@
     <span>&copy; <span id="year"></span> Kensa</span>
   </footer>
 
+  <!-- 画面ロジック -->
   <script src="./assets/app.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
-    window.addEventListener('DOMContentLoaded', () => {
-      KensaApp.initHome();
-      document.getElementById('btn-en').onclick = () => KensaApp.setLang('en');
-      document.getElementById('btn-jp').onclick = () => KensaApp.setLang('jp');
-    });
+    window.addEventListener('DOMContentLoaded', () => KensaApp.initHome());
   </script>
 </body>
 </html>
