@@ -2,7 +2,7 @@
 window.KENSA_CONFIG = {
   // 📊 Google Sheets を「ウェブに公開」した CSV の URL
   // そのまま使えます。別シートにした場合は置き換えてください。
-  csvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQsSzDXVBFp9wZznTVpu6Lu8A3M0vk3gftkzMzZBAeIV77gKFTW_WtiTfDyBtuIIZinJ2TTKrHpg4Fi/pub?output=csv",
+  csvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQsSzDXVBFp9wZznTVpu6Lu8A3M0vk3gftkzMzZBAeIV77gKFTW_WtiTfDyBtuIIZinJ2TTKrHpg4Fi/pub?gid=1131211024&single=true&output=csv",
 
   // シートのヘッダー名に合わせてマッピング（大小文字無視）
   columns: {
