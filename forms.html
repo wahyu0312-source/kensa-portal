@@ -3,109 +3,130 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>出荷検査成績書</title>
+  <title>出荷検査成績書 - 品質管理生産技術</title>
   <style>
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(120deg,#f0faff,#f8fafc);
-      color: #0f172a;
+    :root{
+      --bg:#f5f7fb; --card:#ffffff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb;
+      --accent:#2563eb; --shadow:0 10px 30px rgba(2,8,23,.06);
     }
-    header { background: #ffffffcc; backdrop-filter: blur(8px);
-      display:flex;justify-content:space-between;align-items:center;
-      padding:12px 24px;border-bottom:1px solid #e5e7eb;position:sticky;top:0; }
-    .brand{display:flex;align-items:center;gap:10px;}
-    .brand svg{width:38px;height:38px;}
-    .brand-title{display:flex;flex-direction:column;}
-    nav a{margin-left:20px;color:#2563eb;font-weight:600;text-decoration:none;}
-    nav a:hover{text-decoration:underline;}
-    main{max-width:1000px;margin:24px auto;padding:0 20px;}
-    .folder{background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:12px;overflow:hidden;}
-    .folder-head{padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:#f9fafb;}
-    .folder-body{display:none;padding:12px;}
-    .subfolder{margin-bottom:10px;}
-    .subfolder strong{display:block;margin-bottom:6px;}
-    .link{display:block;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:6px;text-decoration:none;color:#0f172a;background:#fff;}
-    .link:hover{background:#f0f9ff;border-color:#93c5fd;}
-    footer{text-align:center;color:#64748b;padding:20px;}
-    .hidden{display:none;}
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    .container{max-width:1080px;margin:0 auto;padding:24px}
+    .header{display:flex;align-items:center;justify-content:space-between}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand img{width:42px;height:42px;border-radius:50%;background:#fff;padding:6px;box-shadow:var(--shadow)}
+    .brand .title{font-weight:800;letter-spacing:.2px;font-size:1.6rem}
+    .brand .subtitle{color:var(--muted);font-weight:600;font-size:.9rem}
+    .nav a{color:var(--muted);text-decoration:none;margin-left:18px;font-weight:600}
+    .nav a:hover{color:var(--accent)}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;
+      padding:18px;box-shadow:var(--shadow);margin-top:20px}
+    .card h1{margin:0;font-size:1.4rem}
+    .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;margin-top:14px;background:#fff}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--border);padding:10px 12px;text-align:left;white-space:nowrap}
+    th{color:var(--muted);font-weight:700;background:#f8fafc;position:sticky;top:0}
+    tr:hover td{background:#f9fafb}
+    .badge{border:1px solid var(--border);padding:2px 8px;border-radius:999px;background:#fff}
+    .empty{color:var(--muted);padding:14px;text-align:center}
+    .footer{color:var(--muted);text-align:center;padding:30px 0;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+    .footer .sep{opacity:.4}
   </style>
 </head>
 <body>
-<header>
-  <div class="brand">
-    <svg viewBox="0 0 64 64">
-      <circle cx="32" cy="32" r="30" fill="#2563eb22"/>
-      <path d="M12 34h40M12 30h40M20 18h24v6H20zM20 40h24v6H20z"
-        stroke="#2563eb" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <circle cx="20" cy="32" r="3" fill="#2563eb"/>
-      <circle cx="44" cy="32" r="3" fill="#2563eb"/>
-    </svg>
-    <div class="brand-title">
-      <strong>品質管理生産技術</strong>
-      <span>東京精密発條株式会社</span>
+  <header class="container header">
+    <div class="brand">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Tokyo_Seimitsu_logo.png" alt="Logo">
+      <div>
+        <div class="title">品質管理生産技術</div>
+        <div class="subtitle">東京精密発條株式会社</div>
+      </div>
     </div>
-  </div>
-  <nav>
-    <a href="./index.html">ホーム</a>
-    <a href="./forms.html"><strong>出荷検査成績書</strong></a>
-  </nav>
-</header>
+    <nav class="nav">
+      <a href="./index.html">ホーム</a>
+      <a href="./forms.html"><strong>出荷検査成績書</strong></a>
+    </nav>
+  </header>
 
-<main>
-  <h1>出荷検査成績書フォルダ</h1>
-  <div id="lock">
-    <input id="pwd" type="password" placeholder="パスワード">
-    <button onclick="unlock()">解除</button>
-    <span id="msg" style="color:red;"></span>
-  </div>
-  <div id="folders" class="hidden"></div>
-</main>
+  <main class="container">
+    <section class="card">
+      <h1>出荷検査成績書 一覧</h1>
+      <p class="muted" style="margin:0">Google スプレッドシートから自動更新</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr id="thead-row"></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div id="empty" class="empty" style="display:none">データがありません</div>
+      </div>
+    </section>
+  </main>
 
-<footer>&copy; <span id="year"></span> 東京精密発條株式会社</footer>
+  <footer class="container footer">
+    <span>&copy; <span id="year"></span> 東京精密発條株式会社</span>
+    <span class="sep">•</span>
+    <span>Design by ワーユ</span>
+  </footer>
 
-<script>
-document.getElementById("year").textContent = new Date().getFullYear();
-const PASSWORD = "kensa2025";
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
 
-const DATA = [
-  {customer:"オークマ",folders:[
-    {name:"Y軸",links:[{label:"OKUMA 46",url:"https://wahyu0312-source.github.io/okuma46/"}]},
-    {name:"X軸",links:[{label:"330380V",url:"https://wahyu0312-source.github.io/330380v/"}]},
-    {name:"Z軸",links:[{label:"MB 66V",url:"https://wahyu0312-source.github.io/mb66v/"}]}
-  ]},
-  {customer:"山崎マザック",folders:[
-    {name:"Y軸",links:[]},
-    {name:"X軸",links:[]},
-    {name:"Z軸",links:[]}
-  ]}
-];
+    // ====== Spreadsheet Config ======
+    const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
+    const SHEET_NAME = "最新情報250822"; // ganti sesuai TAB di Google Sheets
+    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
 
-function unlock(){
-  const v=document.getElementById("pwd").value;
-  if(v!==PASSWORD){document.getElementById("msg").textContent="パスワードが違います";return;}
-  document.getElementById("lock").classList.add("hidden");
-  document.getElementById("folders").classList.remove("hidden");
-  render();
-}
-function render(){
-  const el=document.getElementById("folders"); el.innerHTML="";
-  DATA.forEach(c=>{
-    const f=document.createElement("div"); f.className="folder";
-    f.innerHTML=`<div class="folder-head">${c.customer}</div><div class="folder-body"></div>`;
-    const body=f.querySelector(".folder-body");
-    c.folders.forEach(sf=>{
-      const sfDiv=document.createElement("div"); sfDiv.className="subfolder";
-      sfDiv.innerHTML=`<strong>${sf.name}</strong>`;
-      sf.links.forEach(l=>{
-        sfDiv.innerHTML+=`<a class="link" href="${l.url}" target="_blank">${l.label}</a>`;
+    // ====== CSV Parse ======
+    function parseCSV(text){
+      const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
+      let m, row=[]; text=text.replace(/\r\n?/g,"\n");
+      for (let i=0;i<text.length;){
+        re.lastIndex=i; m=re.exec(text); if(!m) break;
+        let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
+        row.push(cell); i=re.lastIndex;
+        if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
+      }
+      return rows.filter(r=>r.length && r.join("").trim()!=="");
+    }
+
+    function renderTable(header, rows){
+      const tr=document.getElementById("thead-row");
+      tr.innerHTML = header.map(c=>`<th>${c}</th>`).join("");
+      const tb=document.getElementById("tbody");
+      tb.innerHTML="";
+      rows.forEach(r=>{
+        const tds=r.map(val=>`<td>${val}</td>`).join("");
+        tb.insertAdjacentHTML("beforeend", `<tr>${tds}</tr>`);
       });
-      body.appendChild(sfDiv);
-    });
-    f.querySelector(".folder-head").onclick=()=>{body.style.display=body.style.display==="block"?"none":"block";};
-    el.appendChild(f);
-  });
-}
-</script>
+    }
+
+    async function loadCSV(){
+      try{
+        const bust = (CSV_URL.includes("?")?"&":"?") + "t=" + Date.now();
+        const res  = await fetch(CSV_URL + bust, { cache:"no-store" });
+        if(!res.ok){ showEmpty("取得エラー"); return; }
+        const text = await res.text();
+        const arr  = parseCSV(text);
+        if (!arr.length){ showEmpty("データがありません"); return; }
+
+        const header = arr[0], rows = arr.slice(1);
+        if (!rows.length){ showEmpty("データがありません"); return; }
+        renderTable(header, rows);
+      }catch(e){
+        console.error(e);
+        showEmpty("取得エラー");
+      }
+    }
+
+    function showEmpty(msg){
+      document.getElementById("tbody").innerHTML = "";
+      const el = document.getElementById("empty");
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+
+    window.addEventListener("DOMContentLoaded", loadCSV);
+  </script>
 </body>
 </html>
