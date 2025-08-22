@@ -6,37 +6,46 @@
   <title>品質管理生産技術</title>
   <style>
     :root{
-      --bg:#f7f8fb; --card:#ffffff; --text:#1f2a44; --muted:#6b7280; --border:#e5e7eb;
-      --accent:#2563eb; --accent-weak:#eff6ff; --shadow:0 10px 30px rgba(15,23,42,.08);
+      --bg:#f5f7fb; --card:#ffffff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb;
+      --accent:#2563eb; --shadow:0 10px 30px rgba(2,8,23,.06);
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
     .container{max-width:1080px;margin:0 auto;padding:24px}
     .header{display:flex;align-items:center;justify-content:space-between}
-    .brand{font-weight:700;letter-spacing:.3px}
+    .brand{display:flex;flex-direction:column}
+    .brand .title{font-weight:800;letter-spacing:.2px;font-size:1.6rem}
+    .brand .subtitle{color:var(--muted);font-weight:600}
     .nav a{color:var(--muted);text-decoration:none;margin-left:14px}
     .nav a:hover{color:var(--text)}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
-    .hero{display:flex;gap:6px;flex-direction:column}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;
+      padding:18px;box-shadow:var(--shadow)}
+    .hero{display:flex;gap:8px;flex-direction:column;margin-top:14px}
     .cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:12px}
     .stat{display:flex;flex-direction:column;gap:4px}
     .stat .k{color:var(--muted);font-size:.9rem}
-    .stat .v{font-size:2rem;font-weight:700}
+    .stat .v{font-size:2rem;font-weight:800}
     .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
     .controls{color:var(--muted);display:flex;align-items:center;gap:8px}
+    .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer}
+    .btn:hover{border-color:#cbd5e1;background:#f8fafc}
     .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;margin-top:10px;background:#fff}
     table{width:100%;border-collapse:collapse}
     th,td{border-bottom:1px solid var(--border);padding:10px 12px;text-align:left;white-space:nowrap}
-    th{color:var(--muted);font-weight:600;background:#fafafa;position:sticky;top:0}
+    th{color:var(--muted);font-weight:700;background:#f8fafc;position:sticky;top:0}
     .badge{border:1px solid var(--border);padding:2px 8px;border-radius:999px;background:#fff}
-    .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer}
-    .btn:hover{border-color:#cbd5e1;background:#f8fafc}
-    .footer{color:var(--muted);text-align:center;padding:30px 0}
+    .empty{color:var(--muted);padding:14px}
+    .footer{color:var(--muted);text-align:center;padding:30px 0;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+    .footer .sep{opacity:.4}
   </style>
 </head>
 <body>
   <header class="container header">
-    <div class="brand">品質管理生産技術</div>
+    <div class="brand">
+      <div class="title">品質管理生産技術</div>
+      <div class="subtitle">東京精密発條株式会社</div>
+    </div>
     <nav class="nav">
       <a href="./index.html"><strong>ホーム</strong></a>
       <a href="./forms.html">出荷検査成績書</a>
@@ -45,15 +54,15 @@
 
   <main class="container">
     <section class="card hero">
-      <h1>出荷・工程ステータス</h1>
-      <p class="muted">Google スプレッドシートの最新情報</p>
+      <h1 style="margin:0">出荷・工程ステータス</h1>
+      <p class="muted" style="margin:0">Google スプレッドシートの最新情報</p>
     </section>
 
     <section class="cards-grid" id="status-cards"></section>
 
     <section class="card">
       <div class="card-head">
-        <h2>最新データ</h2>
+        <h2 style="margin:0">最新データ</h2>
         <div class="controls">
           <label>表示件数</label>
           <select id="limit">
@@ -70,22 +79,26 @@
           <thead><tr id="thead-row"></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
+        <div id="empty" class="empty" style="display:none">データがありません</div>
       </div>
     </section>
   </main>
 
   <footer class="container footer">
-    <span>&copy; <span id="year"></span> Kensa</span>
+    <span>&copy; <span id="year"></span> 品質管理生産技術</span>
+    <span class="sep">•</span>
+    <span>Design by ワーユ</span>
   </footer>
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // ===== 設定 =====
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRnouue0U6I91_wLiiRChdRzaQ_bTAicgk8ApzeTP0771weOiQQnKJ0Myizc-yXuLGI9rK2sdZRUGkL/pub?output=csv";
+    // ===== CSV の URL（必ず「対象のシート」を Publish to web → CSV で取得した URL を設定） =====
+    // 例: .../pub?gid=1131211024&single=true&output=csv
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQsSzDXVBFp9wZznTVpu6Lu8A3M0vk3gftkzMzZBAeIV77gKFTW_WtiTfDyBtuIIZinJ2TTKrHpg4Fi/pub?gid=1131211024&single=true&output=csv";
     const RECENT_LIMIT_DEFAULT = 50;
 
-    // ヘッダー名の候補（シート1行目に合わせて追加OK）
+    // ヘッダーマッピング（行1の文字に合わせて候補を増やせます）
     const MAP = {
       ship_date:   ["出荷日","日付","date"],
       customer:    ["顧客名","会社","メーカー","customer"],
@@ -156,20 +169,39 @@
       });
     }
 
+    // 画面にメッセージ表示
+    function showEmpty(msg){
+      document.getElementById("tbody").innerHTML = "";
+      const el = document.getElementById("empty");
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+    function hideEmpty(){ document.getElementById("empty").style.display="none"; }
+
     async function loadCSV(){
+      hideEmpty();
       const limSel=document.getElementById("limit");
       const lim = Number(limSel?.value || RECENT_LIMIT_DEFAULT);
-      const bust = (CSV_URL.includes("?")?"&":"?") + "t=" + Date.now(); // キャッシュ回避
-      const res  = await fetch(CSV_URL + bust, { cache:"no-store" });
-      const text = await res.text();
-      const arr  = parseCSV(text);
-      if (!arr.length) return;
-      const header = arr[0], rowsAll = arr.slice(1);
-      const map = buildMap(header);
+      try{
+        const bust = (CSV_URL.includes("?")?"&":"?") + "t=" + Date.now(); // キャッシュ回避
+        const res  = await fetch(CSV_URL + bust, { cache:"no-store" });
+        if(!res.ok){ showEmpty("取得エラー"); return; }
+        const text = await res.text();
+        const arr  = parseCSV(text);
+        if (!arr.length){ showEmpty("データがありません"); return; }
 
-      renderStatus(rowsAll, map);
-      renderHeader();
-      renderRows(rowsAll.slice(-lim), map); // 末尾＝最新行
+        const header = arr[0], rowsAll = arr.slice(1);
+        const map = buildMap(header);
+
+        renderStatus(rowsAll, map);
+        renderHeader();
+        const rows = rowsAll.slice(-lim); // 末尾＝最新行
+        if (!rows.length){ showEmpty("データがありません"); return; }
+        renderRows(rows, map);
+      }catch(e){
+        console.error(e);
+        showEmpty("取得エラー");
+      }
     }
 
     document.getElementById("limit").addEventListener("change", loadCSV);
