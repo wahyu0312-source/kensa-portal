@@ -2,7 +2,7 @@
 window.KENSA_CONFIG = {
   // 📊 Google Sheets を「ウェブに公開」した CSV の URL
   // そのまま使えます。別シートにした場合は置き換えてください。
-  csvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRnouue0U6I91_wLiiRChdRzaQ_bTAicgk8ApzeTP0771weOiQQnKJ0Myizc-yXuLGI9rK2sdZRUGkL/pub?output=csv",
+  csvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQsSzDXVBFp9wZznTVpu6Lu8A3M0vk3gftkzMzZBAeIV77gKFTW_WtiTfDyBtuIIZinJ2TTKrHpg4Fi/pub?output=csv",
 
   // シートのヘッダー名に合わせてマッピング（大小文字無視）
   columns: {
@@ -38,10 +38,10 @@ window.KENSA_CONFIG = {
 
   // 📄 既存のフォームへのリンク（必要に応じて追加・削除）
   forms: [
-    { name: "オークマ 46",  url: "https://wahyu0312-source.github.io/okuma46/" },
-    { name: "MB 56",       url: "https://wahyu0312-source.github.io/mb56/" },
+    { name: "2825-20",  url: "https://wahyu0312-source.github.io/okuma46/" },
+    { name: "2835-20",       url: "https://wahyu0312-source.github.io/mb56/" },
     { name: "330380V",     url: "https://wahyu0312-source.github.io/330380v/" },
-    { name: "MB 66V",      url: "https://wahyu0312-source.github.io/mb66v/" },
+    { name: "2823-20",      url: "https://wahyu0312-source.github.io/mb66v/" },
     { name: "330580V",     url: "https://wahyu0312-source.github.io/330580v/" }
   ]
 };
