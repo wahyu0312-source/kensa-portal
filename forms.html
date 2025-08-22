@@ -5,59 +5,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>出荷検査成績書</title>
   <style>
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(120deg,#f0faff,#f8fafc);
-      color: #0f172a;
-    }
-    header { background: #ffffffcc; backdrop-filter: blur(8px);
-      display:flex;justify-content:space-between;align-items:center;
-      padding:12px 24px;border-bottom:1px solid #e5e7eb;position:sticky;top:0; }
-    .brand{display:flex;align-items:center;gap:10px;}
-    .brand svg{width:38px;height:38px;}
-    .brand-title{display:flex;flex-direction:column;}
-    nav a{margin-left:20px;color:#2563eb;font-weight:600;text-decoration:none;}
-    nav a:hover{text-decoration:underline;}
-    main{max-width:1000px;margin:24px auto;padding:0 20px;}
-    .folder{background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:12px;overflow:hidden;}
-    .folder-head{padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:#f9fafb;}
-    .folder-body{display:none;padding:12px;}
-    .subfolder{margin-bottom:10px;}
-    .subfolder strong{display:block;margin-bottom:6px;}
-    .link{display:block;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:6px;text-decoration:none;color:#0f172a;background:#fff;}
-    .link:hover{background:#f0f9ff;border-color:#93c5fd;}
-    footer{text-align:center;color:#64748b;padding:20px;}
-    .hidden{display:none;}
+    :root{--ink:#0f172a;--muted:#64748b;--border:#e5e7eb;--bg1:#eef4ff;--bg2:#f8fafc;--card:#fff;--accent:#2563eb}
+    *{box-sizing:border-box}
+    html,body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;color:var(--ink);background:linear-gradient(120deg,var(--bg1),var(--bg2))}
+    header{position:sticky;top:0;background:#ffffffcc;backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+    .container{max-width:1200px;margin:0 auto;padding:12px 20px}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand svg{width:38px;height:38px}
+    .brand-title{display:flex;flex-direction:column}
+    nav a{margin-left:20px;color:var(--accent);font-weight:700;text-decoration:none}
+    nav a:hover{text-decoration:underline}
+
+    main{max-width:1200px;margin:24px auto;padding:0 20px}
+    h1{margin:0 0 16px 0}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.06)}
+    .folder{background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
+    .folder-head{padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:#f9fafb}
+    .folder-body{display:none;padding:12px}
+    .subfolder{margin-bottom:10px}
+    .subfolder strong{display:block;margin-bottom:6px}
+    .link{display:block;padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;text-decoration:none;color:var(--ink);background:#fff}
+    .link:hover{background:#f0f9ff;border-color:#93c5fd}
+    .hidden{display:none}
+    .lock{display:flex;gap:8px;align-items:center}
+    .lock input{padding:8px 10px;border:1px solid var(--border);border-radius:8px}
+    .lock button{padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer}
+    footer{text-align:center;color:var(--muted);padding:20px}
   </style>
 </head>
 <body>
 <header>
-  <div class="brand">
-    <svg viewBox="0 0 64 64">
-      <circle cx="32" cy="32" r="30" fill="#2563eb22"/>
-      <path d="M12 34h40M12 30h40M20 18h24v6H20zM20 40h24v6H20z"
-        stroke="#2563eb" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <circle cx="20" cy="32" r="3" fill="#2563eb"/>
-      <circle cx="44" cy="32" r="3" fill="#2563eb"/>
-    </svg>
-    <div class="brand-title">
-      <strong>品質管理生産技術</strong>
-      <span>東京精密発條株式会社</span>
+  <div class="container row">
+    <div class="brand">
+      <svg viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="30" fill="#2563eb22"/>
+        <path d="M12 34h40M12 30h40M20 18h24v6H20zM20 40h24v6H20z" stroke="#2563eb" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <circle cx="20" cy="32" r="3" fill="#2563eb"/>
+        <circle cx="44" cy="32" r="3" fill="#2563eb"/>
+      </svg>
+      <div class="brand-title">
+        <strong>品質管理生産技術</strong>
+        <span style="font-size:12px;color:var(--muted)">東京精密発條株式会社</span>
+      </div>
     </div>
+    <nav>
+      <a href="./index.html">ホーム</a>
+      <a href="./forms.html"><strong>出荷検査成績書</strong></a>
+      <a href="./sagyoutejunsho.html">作業手順書</a>
+    </nav>
   </div>
-  <nav>
-    <a href="./index.html">ホーム</a>
-    <a href="./forms.html"><strong>出荷検査成績書</strong></a>
-  </nav>
 </header>
 
 <main>
   <h1>出荷検査成績書フォルダ</h1>
-  <div id="lock">
-    <input id="pwd" type="password" placeholder="パスワード">
-    <button onclick="unlock()">解除</button>
-    <span id="msg" style="color:red;"></span>
+  <div id="lock" class="card">
+    <div class="lock">
+      <input id="pwd" type="password" placeholder="パスワード">
+      <button onclick="unlock()">解除</button>
+      <span id="msg" style="color:red;"></span>
+    </div>
   </div>
   <div id="folders" class="hidden"></div>
 </main>
@@ -65,9 +73,10 @@
 <footer>&copy; <span id="year"></span> 東京精密発條株式会社</footer>
 
 <script>
-document.getElementById("year").textContent = new Date().getFullYear();
-const PASSWORD = "kensa2025";
+document.getElementById('year').textContent = new Date().getFullYear();
+const PASSWORD = "kensa2025"; // ganti sesuai kebutuhan
 
+// customer → subfolder → links
 const DATA = [
   {customer:"オークマ",folders:[
     {name:"Y軸",links:[{label:"OKUMA 46",url:"https://wahyu0312-source.github.io/okuma46/"}]},
@@ -82,28 +91,33 @@ const DATA = [
 ];
 
 function unlock(){
-  const v=document.getElementById("pwd").value;
-  if(v!==PASSWORD){document.getElementById("msg").textContent="パスワードが違います";return;}
-  document.getElementById("lock").classList.add("hidden");
-  document.getElementById("folders").classList.remove("hidden");
+  const v=document.getElementById('pwd').value;
+  if(v!==PASSWORD){document.getElementById('msg').textContent='パスワードが違います';return;}
+  document.getElementById('lock').classList.add('hidden');
+  document.getElementById('folders').classList.remove('hidden');
   render();
 }
 function render(){
-  const el=document.getElementById("folders"); el.innerHTML="";
+  const mount=document.getElementById('folders');
+  mount.innerHTML='';
   DATA.forEach(c=>{
-    const f=document.createElement("div"); f.className="folder";
-    f.innerHTML=`<div class="folder-head">${c.customer}</div><div class="folder-body"></div>`;
-    const body=f.querySelector(".folder-body");
+    const wrap=document.createElement('div');
+    wrap.className='folder';
+    wrap.innerHTML=`<div class="folder-head">${c.customer}</div><div class="folder-body"></div>`;
+    const body=wrap.querySelector('.folder-body');
     c.folders.forEach(sf=>{
-      const sfDiv=document.createElement("div"); sfDiv.className="subfolder";
+      const sfDiv=document.createElement('div');
+      sfDiv.className='subfolder';
       sfDiv.innerHTML=`<strong>${sf.name}</strong>`;
       sf.links.forEach(l=>{
-        sfDiv.innerHTML+=`<a class="link" href="${l.url}" target="_blank">${l.label}</a>`;
+        sfDiv.innerHTML+=`<a class="link" target="_blank" href="${l.url}">${l.label}</a>`;
       });
       body.appendChild(sfDiv);
     });
-    f.querySelector(".folder-head").onclick=()=>{body.style.display=body.style.display==="block"?"none":"block";};
-    el.appendChild(f);
+    wrap.querySelector('.folder-head').onclick=()=>{
+      body.style.display = body.style.display==='block' ? 'none' : 'block';
+    };
+    mount.appendChild(wrap);
   });
 }
 </script>
