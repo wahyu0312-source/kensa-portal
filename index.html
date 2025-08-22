@@ -7,41 +7,67 @@
   <style>
     :root{
       --bg:#f5f7fb; --card:#ffffff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb;
-      --accent:#2563eb; --shadow:0 10px 30px rgba(2,8,23,.06);
+      --accent:#2563eb; --accent-hover:#1d4ed8; --shadow:0 6px 20px rgba(0,0,0,.05);
+      --success:#22c55e; --danger:#ef4444; --warn:#f59e0b; --info:#3b82f6;
     }
     *{box-sizing:border-box}
     html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-    .container{max-width:1080px;margin:0 auto;padding:24px}
-    .header{display:flex;align-items:center;justify-content:space-between}
+    .container{max-width:1200px;margin:0 auto;padding:24px}
+
+    /* header */
+    .header{position:sticky;top:0;background:#fff;padding:14px 24px;
+      display:flex;align-items:center;justify-content:space-between;
+      border-bottom:1px solid var(--border);box-shadow:0 2px 6px rgba(0,0,0,.04);z-index:10}
     .brand{display:flex;flex-direction:column}
-    .brand .title{font-weight:800;letter-spacing:.2px;font-size:1.6rem}
-    .brand .subtitle{color:var(--muted);font-weight:600}
-    .nav a{color:var(--muted);text-decoration:none;margin-left:14px}
-    .nav a:hover{color:var(--text)}
+    .brand .title{font-weight:800;letter-spacing:.2px;font-size:1.8rem}
+    .brand .subtitle{color:var(--muted);font-weight:700}
+    .nav a{color:var(--muted);text-decoration:none;margin-left:20px;font-weight:600}
+    .nav a:hover{color:var(--accent)}
+
+    /* cards */
     .card{background:var(--card);border:1px solid var(--border);border-radius:16px;
-      padding:18px;box-shadow:var(--shadow)}
-    .hero{display:flex;gap:8px;flex-direction:column;margin-top:14px}
-    .cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:12px}
-    .stat{display:flex;flex-direction:column;gap:4px}
-    .stat .k{color:var(--muted);font-size:.9rem}
-    .stat .v{font-size:2rem;font-weight:800}
+      padding:20px;box-shadow:var(--shadow);transition:.2s}
+    .card:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(0,0,0,.08)}
+    .hero{display:flex;gap:8px;flex-direction:column;margin-top:18px}
+
+    /* status small cards */
+    .cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-top:14px}
+    .stat{display:flex;flex-direction:column;gap:6px;text-align:center;padding:18px}
+    .stat .k{color:var(--muted);font-size:.95rem}
+    .stat .v{font-size:2.1rem;font-weight:800;color:var(--accent)}
+
+    /* controls */
     .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
-    .controls{color:var(--muted);display:flex;align-items:center;gap:8px}
-    .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer}
-    .btn:hover{border-color:#cbd5e1;background:#f8fafc}
-    .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;margin-top:10px;background:#fff}
-    table{width:100%;border-collapse:collapse}
-    th,td{border-bottom:1px solid var(--border);padding:10px 12px;text-align:left;white-space:nowrap}
-    th{color:var(--muted);font-weight:700;background:#f8fafc;position:sticky;top:0}
-    .badge{border:1px solid var(--border);padding:2px 8px;border-radius:999px;background:#fff}
-    .empty{color:var(--muted);padding:14px}
-    .footer{color:var(--muted);text-align:center;padding:30px 0;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-    .footer .sep{opacity:.4}
+    .controls{color:var(--muted);display:flex;align-items:center;gap:10px}
+    select{padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:#fff}
+    .btn{padding:10px 14px;border-radius:10px;border:none;
+      background:var(--accent);color:#fff;font-weight:700;cursor:pointer;transition:.2s}
+    .btn:hover{background:var(--accent-hover)}
+
+    /* table */
+    .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;margin-top:12px;background:#fff}
+    table{width:100%;border-collapse:collapse;font-size:.95rem}
+    th,td{border-bottom:1px solid var(--border);padding:11px 12px;text-align:left;white-space:nowrap}
+    th{color:var(--muted);font-weight:700;background:#f9fafb;position:sticky;top:0;z-index:5}
+    tbody tr:nth-child(even){background:#f9fafb}
+
+    /* badges */
+    .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:.8rem;font-weight:700}
+    .status-OK{background:var(--success);color:#fff}
+    .status-NG{background:var(--danger);color:#fff}
+    .status-WIP{background:var(--warn);color:#fff}
+    .status-その他{background:var(--info);color:#fff}
+
+    .empty{color:var(--muted);padding:16px;text-align:center}
+
+    /* footer */
+    .footer{color:var(--muted);text-align:center;padding:30px 0;font-size:.95rem}
+    .footer span{margin:0 6px}
   </style>
 </head>
 <body>
-  <header class="container header">
+  <header class="header">
     <div class="brand">
       <div class="title">品質管理生産技術</div>
       <div class="subtitle">東京精密発條株式会社</div>
@@ -84,46 +110,44 @@
     </section>
   </main>
 
-  <footer class="container footer">
+  <footer class="footer">
     <span>&copy; <span id="year"></span> 品質管理生産技術</span>
-    <span class="sep">•</span>
+    <span>|</span>
     <span>Design by ワーユ</span>
   </footer>
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // ===== CSV の URL（必ず「対象のシート」を Publish to web → CSV で取得した URL を設定） =====
-    // 例: .../pub?gid=1131211024&single=true&output=csv
+    // ===== CSV publish-to-web URL (sheet yang benar) =====
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQsSzDXVBFp9wZznTVpu6Lu8A3M0vk3gftkzMzZBAeIV77gKFTW_WtiTfDyBtuIIZinJ2TTKrHpg4Fi/pub?gid=1131211024&single=true&output=csv";
     const RECENT_LIMIT_DEFAULT = 50;
 
-    // ヘッダーマッピング（行1の文字に合わせて候補を増やせます）
+    // header mapping
     const MAP = {
-      ship_date:   ["出荷日","日付","date"],
-      customer:    ["顧客名","会社","メーカー","customer"],
-      drawing_no:  ["図番","図面","drawing","図面番号"],
-      product:     ["商品名","品目","item","部品名"],
-      qty:         ["数量","個数","qty","数量(個)"],
-      destination: ["送り先","送付先","納入先","destination"],
-      note:        ["注意","注意点","指示","note"],
-      remark:      ["備考","メモ","remark","備考欄"],
-      status:      ["ステータス","状態","工程","status","製品"]
+      ship_date:["出荷日","日付","date"],
+      customer:["顧客名","会社","メーカー","customer"],
+      drawing_no:["図番","図面","drawing","図面番号"],
+      product:["商品名","品目","item","部品名"],
+      qty:["数量","個数","qty","数量(個)"],
+      destination:["送り先","送付先","納入先","destination"],
+      note:["注意","注意点","指示","note"],
+      remark:["備考","メモ","remark","備考欄"],
+      status:["ステータス","状態","工程","status","製品"]
     };
-
     const DISPLAY = [
-      { key:"ship_date",  label:"出荷日" },
-      { key:"customer",   label:"顧客名" },
-      { key:"drawing_no", label:"図番" },
-      { key:"product",    label:"商品名" },
-      { key:"qty",        label:"数量" },
-      { key:"destination",label:"送り先" },
-      { key:"note",       label:"注意" },
-      { key:"remark",     label:"備考" },
-      { key:"status",     label:"ステータス" }
+      {key:"ship_date",label:"出荷日"},
+      {key:"customer",label:"顧客名"},
+      {key:"drawing_no",label:"図番"},
+      {key:"product",label:"商品名"},
+      {key:"qty",label:"数量"},
+      {key:"destination",label:"送り先"},
+      {key:"note",label:"注意"},
+      {key:"remark",label:"備考"},
+      {key:"status",label:"ステータス"}
     ];
 
-    // ===== CSV パーサ（クォート対応） =====
+    // CSV parser (quoted)
     function parseCSV(text){
       const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
       let m, row=[]; text=text.replace(/\r\n?/g,"\n");
@@ -135,18 +159,16 @@
       }
       return rows.filter(r=>r.length && r.join("").trim()!=="");
     }
-    function findIdx(header, cands){
+    function findIdx(header,cands){
       const h=header.map(x=>x.trim().toLowerCase());
       for(const n of cands){ const i=h.indexOf(String(n).toLowerCase()); if(i>=0) return i; }
       return -1;
     }
-    function buildMap(header){
-      const out={}; for(const [k,c] of Object.entries(MAP)) out[k]=findIdx(header,c); return out;
-    }
+    function buildMap(header){ const out={}; for(const [k,c] of Object.entries(MAP)) out[k]=findIdx(header,c); return out; }
 
-    function renderStatus(rows, map){
+    function renderStatus(rows,map){
       const i=map.status; if(i<0) return;
-      const counts={}; rows.forEach(r=>{ const k=r[i]||"Unknown"; counts[k]=(counts[k]||0)+1; });
+      const counts={}; rows.forEach(r=>{ const k=r[i]||"その他"; counts[k]=(counts[k]||0)+1; });
       const wrap=document.getElementById("status-cards"); wrap.innerHTML="";
       Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
         wrap.insertAdjacentHTML("beforeend",
@@ -155,58 +177,54 @@
     }
     function renderHeader(){
       const tr=document.getElementById("thead-row");
-      tr.innerHTML = DISPLAY.map(c=>`<th>${c.label}</th>`).join("");
+      tr.innerHTML=DISPLAY.map(c=>`<th>${c.label}</th>`).join("");
     }
-    function renderRows(rows, map){
+    function renderRows(rows,map){
       const tb=document.getElementById("tbody"); tb.innerHTML="";
       const order=DISPLAY.map(c=>c.key);
       rows.forEach(r=>{
         const tds=order.map(key=>{
           const idx=map[key]; const val=(idx>=0&&idx<r.length)?r[idx]:"";
-          return key==="status" ? `<td><span class="badge">${val}</span></td>` : `<td>${val}</td>`;
+          if(key==="status"){
+            let cls="status-その他";
+            if(/OK|良|Clear/i.test(val)) cls="status-OK";
+            else if(/NG|不/i.test(val)) cls="status-NG";
+            else if(/進行|WIP/i.test(val)) cls="status-WIP";
+            return `<td><span class="badge ${cls}">${val}</span></td>`;
+          }
+          return `<td>${val}</td>`;
         }).join("");
-        tb.insertAdjacentHTML("beforeend", `<tr>${tds}</tr>`);
+        tb.insertAdjacentHTML("beforeend",`<tr>${tds}</tr>`);
       });
     }
 
-    // 画面にメッセージ表示
-    function showEmpty(msg){
-      document.getElementById("tbody").innerHTML = "";
-      const el = document.getElementById("empty");
-      el.textContent = msg;
-      el.style.display = "block";
-    }
-    function hideEmpty(){ document.getElementById("empty").style.display="none"; }
+    function showEmpty(msg){document.getElementById("tbody").innerHTML="";const el=document.getElementById("empty");el.textContent=msg;el.style.display="block";}
+    function hideEmpty(){document.getElementById("empty").style.display="none";}
 
     async function loadCSV(){
       hideEmpty();
       const limSel=document.getElementById("limit");
-      const lim = Number(limSel?.value || RECENT_LIMIT_DEFAULT);
+      const lim=Number(limSel?.value||RECENT_LIMIT_DEFAULT);
       try{
-        const bust = (CSV_URL.includes("?")?"&":"?") + "t=" + Date.now(); // キャッシュ回避
-        const res  = await fetch(CSV_URL + bust, { cache:"no-store" });
-        if(!res.ok){ showEmpty("取得エラー"); return; }
-        const text = await res.text();
-        const arr  = parseCSV(text);
-        if (!arr.length){ showEmpty("データがありません"); return; }
-
-        const header = arr[0], rowsAll = arr.slice(1);
-        const map = buildMap(header);
-
-        renderStatus(rowsAll, map);
+        const bust=(CSV_URL.includes("?")?"&":"?")+"t="+Date.now();
+        const res=await fetch(CSV_URL+bust,{cache:"no-store"});
+        if(!res.ok){showEmpty("取得エラー");return;}
+        const text=await res.text();
+        const arr=parseCSV(text);
+        if(!arr.length){showEmpty("データがありません");return;}
+        const header=arr[0], rowsAll=arr.slice(1);
+        const map=buildMap(header);
+        renderStatus(rowsAll,map);
         renderHeader();
-        const rows = rowsAll.slice(-lim); // 末尾＝最新行
-        if (!rows.length){ showEmpty("データがありません"); return; }
-        renderRows(rows, map);
-      }catch(e){
-        console.error(e);
-        showEmpty("取得エラー");
-      }
+        const rows=rowsAll.slice(-lim);
+        if(!rows.length){showEmpty("データがありません");return;}
+        renderRows(rows,map);
+      }catch(e){console.error(e);showEmpty("取得エラー");}
     }
 
-    document.getElementById("limit").addEventListener("change", loadCSV);
-    document.getElementById("refresh").addEventListener("click", loadCSV);
-    window.addEventListener("DOMContentLoaded", loadCSV);
+    document.getElementById("limit").addEventListener("change",loadCSV);
+    document.getElementById("refresh").addEventListener("click",loadCSV);
+    window.addEventListener("DOMContentLoaded",loadCSV);
   </script>
 </body>
 </html>
