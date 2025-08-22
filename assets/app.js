@@ -1,137 +1,120 @@
-/* i18n texts */
-const I18N = {
-  en: { nav_home:"Home", nav_forms:"Forms", hero_title:"Goods Flow Status", hero_sub:"Live summary from Google Sheets.",
-        latest_title:"Latest Records", limit_label:"Show", limit_rows:"rows", forms_title:"Forms",
-        forms_desc:"Enter the password to access the forms.", btn_unlock:"Unlock" },
-  jp: { nav_home:"ホーム", nav_forms:"フォーム", hero_title:"工程ステータス", hero_sub:"Googleシートからの最新情報",
-        latest_title:"最新データ", limit_label:"表示件数", limit_rows:"件", forms_title:"フォーム",
-        forms_desc:"フォームにアクセスするにはパスワードを入力してください。", btn_unlock:"解除" }
+// ===== UI 文言（日本語のみ） =====
+const JP = {
+  nav_home: "ホーム",
+  nav_forms: "フォーム",
+  hero_title: "出荷・工程ステータス",
+  hero_sub: "Google スプレッドシートの最新情報",
+  latest_title: "最新データ",
+  limit_label: "表示件数",
+  limit_rows: "件",
+  forms_title: "フォーム",
+  forms_desc: "フォームにアクセスするにはパスワードを入力してください。",
+  btn_unlock: "解除",
+  wrong_pwd: "パスワードが違います"
 };
 
 const KensaApp = (() => {
   const cfg = window.KENSA_CONFIG;
-  let currentLang = localStorage.getItem('kensa_lang') || 'en';
-  const t = (k) => I18N[currentLang][k] || I18N.en[k] || k;
 
-  function setLang(lang) {
-    currentLang = lang;
-    localStorage.setItem('kensa_lang', lang);
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      el.textContent = t(el.getAttribute('data-i18n'));
-    });
-    const thead = document.getElementById('thead-row');
-    if (thead) renderHeader(thead);
-    const list = document.getElementById('forms-list');
-    if (list && !list.classList.contains('hidden')) renderFormsList();
-  }
-
-  /* CSV Parser (support kutip) */
+  // ==== CSV パーサ（クォート対応の簡易版） ====
   function parseCSV(text){
-    const rows=[], re=/\\s*(\"(?:[^\"]|\"\")*\"|[^,]*)\\s*(,|\\n|$)/g;
-    let m, row=[];
-    text = text.replace(/\\r\\n?/g,'\\n');
+    const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
+    let m, row=[]; text=text.replace(/\r\n?/g,"\n");
     for (let i=0;i<text.length;){
-      re.lastIndex = i;
-      m = re.exec(text);
-      if (!m) break;
-      let cell = m[1];
-      if (cell.startsWith('"')) cell = cell.slice(1,-1).replace(/""/g,'"');
-      row.push(cell);
-      i = re.lastIndex;
-      if (m[2] === '\\n' || m[2] === ''){ rows.push(row); row=[]; }
+      re.lastIndex=i; m=re.exec(text); if(!m) break;
+      let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
+      row.push(cell); i=re.lastIndex;
+      if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
     }
-    return rows.filter(r => r.length && r.join('').trim() !== '');
+    return rows.filter(r => r.length && r.join("").trim()!=="");
   }
-
   function findIdx(header, candidates){
-    const h = header.map(x=>x.trim().toLowerCase());
-    for (const n of candidates){ const i = h.indexOf(String(n).toLowerCase()); if (i>=0) return i; }
+    const h=header.map(x=>x.trim().toLowerCase());
+    for(const n of candidates){ const i=h.indexOf(String(n).toLowerCase()); if(i>=0) return i; }
     return -1;
   }
-  function headerMap(header){
-    const out={}; for (const [k,c] of Object.entries(cfg.columns)) out[k]=findIdx(header,c); return out;
-  }
-  function summarize(rows,map){
-    const i = map.status; const c={};
-    rows.forEach(r=>{ const k = i>=0 && i<r.length ? (r[i]||'Unknown') : 'Unknown'; c[k]=(c[k]||0)+1; });
-    return c;
-  }
-  function renderStatusCards(counts){
-    const wrap = document.getElementById('status-cards'); if(!wrap) return;
-    wrap.innerHTML=''; Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
-      const d=document.createElement('div'); d.className='card stat';
-      d.innerHTML=`<div class="k">${k}</div><div class="v">${v}</div>`; wrap.appendChild(d);
-    });
-  }
-  function renderHeader(thead){
-    thead.innerHTML = cfg.display.map(col => `<th>${col[currentLang]||col.en}</th>`).join('');
-  }
-  function renderTable(rows,map){
-    const thead=document.getElementById('thead-row'); const tbody=document.getElementById('tbody');
-    if(!thead||!tbody) return; renderHeader(thead); tbody.innerHTML='';
-    const order = cfg.display.map(c=>c.key);
-    rows.forEach(r=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML = order.map(key=>{
-        const idx = map[key]; const val = (idx>=0&&idx<r.length)?r[idx]:'';
-        return key==='status' ? `<td><span class="badge">${val}</span></td>` : `<td>${val}</td>`;
-      }).join('');
-      tbody.appendChild(tr);
-    });
+  function mapHeader(header){
+    const out={}; for(const [k,c] of Object.entries(cfg.columns)) out[k]=findIdx(header,c); return out;
   }
 
+  // ==== ホーム（ダッシュボード） ====
+  function renderHeader(){
+    const tr=document.getElementById("thead-row");
+    tr.innerHTML = cfg.display.map(c=>`<th>${c.label}</th>`).join("");
+  }
+  function renderRows(rows, map){
+    const tb=document.getElementById("tbody"); if(!tb) return;
+    tb.innerHTML="";
+    const order=cfg.display.map(c=>c.key);
+    rows.forEach(r=>{
+      const tds=order.map(key=>{
+        const idx=map[key]; const val=(idx>=0&&idx<r.length)?r[idx]:"";
+        return key==="status" ? `<td><span class="badge">${val}</span></td>` : `<td>${val}</td>`;
+      }).join("");
+      tb.insertAdjacentHTML("beforeend", `<tr>${tds}</tr>`);
+    });
+  }
+  function renderSummary(rows, map){
+    const idx=map.status; if(idx<0) return;
+    const cnt={}; rows.forEach(r=>{ const k=r[idx]||"Unknown"; cnt[k]=(cnt[k]||0)+1; });
+    const wrap=document.getElementById("status-cards"); if(!wrap) return;
+    wrap.innerHTML="";
+    Object.entries(cnt).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
+      wrap.insertAdjacentHTML("beforeend",
+        `<div class="card stat"><div class="k">${k}</div><div class="v">${v}</div></div>`);
+    });
+  }
   async function initHome(){
-    setLang(currentLang);
-    const limitSel=document.getElementById('limit');
-    if (limitSel){ limitSel.value=String(cfg.recentLimit||50); limitSel.onchange=()=>initHome(); }
+    // 表示件数
+    const sel=document.getElementById("limit");
+    if (sel){ sel.value=String(cfg.recentLimit||50); sel.onchange=()=>initHome(); }
 
     try{
-      // paksa fresh (hindari cache Google/GitHub)
-      const bust = (cfg.csvUrl.includes('?')?'&':'?') + 't=' + Date.now();
-      const res = await fetch(cfg.csvUrl + bust, { cache:'no-store' });
-      const text = await res.text();
-      const arr = parseCSV(text);
-      if (!arr.length) return;
-      const header = arr[0], rowsAll = arr.slice(1);
-      const map = headerMap(header);
-
-      renderStatusCards(summarize(rowsAll, map));
-
-      // Ambil baris terbaru (anggap data baru di bagian bawah)
-      const lim = Number((limitSel && limitSel.value) || cfg.recentLimit || 50);
-      const rows = rowsAll.slice(-lim);
-      renderTable(rows, map);
-    }catch(e){ console.error('CSV load error', e); }
+      // cache 回避（常に最新を取得）
+      const bust=(cfg.csvUrl.includes("?")?"&":"?")+"t="+Date.now();
+      const res=await fetch(cfg.csvUrl+bust,{cache:"no-store"});
+      const text=await res.text();
+      const arr=parseCSV(text); if(!arr.length) return;
+      const header=arr[0], rowsAll=arr.slice(1);
+      const map=mapHeader(header);
+      renderSummary(rowsAll, map);
+      renderHeader();
+      const lim=Number((sel&&sel.value)||cfg.recentLimit||50);
+      renderRows(rowsAll.slice(-lim), map);
+    }catch(e){ console.error("CSV load error", e); }
   }
 
-  /* Password gate — versi simple (tanpa hash) */
-  function renderFormsList(){
-    const list=document.getElementById('forms-list'); if(!list) return; list.innerHTML='';
+  // ==== フォーム（パスワード簡易方式） ====
+  function renderForms(){
+    const list=document.getElementById("forms-list"); list.innerHTML="";
     cfg.forms.forEach(f=>{
-      const card=document.createElement('div'); card.className='link-card';
-      const title = (currentLang==='jp')? (f.jp||f.en||f.name) : (f.en||f.name);
-      card.innerHTML = `<h3>${title}</h3><a class="btn" href="${f.url}" target="_blank">Open</a>`;
-      list.appendChild(card);
+      list.insertAdjacentHTML("beforeend",
+        `<div class="link-card"><h3>${f.name}</h3><a class="btn" href="${f.url}" target="_blank">開く</a></div>`);
     });
   }
   function initForms(){
-    setLang(currentLang);
-    document.getElementById('unlock').onclick = () => {
-      const v = document.getElementById('pwd').value;
-      const ok = (v === cfg.password);     // ⬅️ cek langsung
-      const msg = document.getElementById('msg');
-      if (!ok){ msg.textContent = 'Wrong password / パスワードが違います'; return; }
-      sessionStorage.setItem('kensa_unlocked','1');
-      document.getElementById('lock').classList.add('hidden');
-      document.getElementById('forms-list').classList.remove('hidden');
-      renderFormsList();
+    document.querySelector('[data-i18n="forms_title"]').textContent = JP.forms_title;
+    document.querySelector('[data-i18n="forms_desc"]').textContent  = JP.forms_desc;
+    document.querySelector('[data-i18n="btn_unlock"]').textContent  = JP.btn_unlock;
+
+    document.getElementById("unlock").onclick = ()=>{
+      const v=document.getElementById("pwd").value;
+      if (v!==cfg.password){
+        document.getElementById("msg").textContent = JP.wrong_pwd;
+        return;
+      }
+      sessionStorage.setItem("kensa_unlocked","1");
+      document.getElementById("lock").classList.add("hidden");
+      document.getElementById("forms-list").classList.remove("hidden");
+      renderForms();
     };
-    if (sessionStorage.getItem('kensa_unlocked')==='1'){
-      document.getElementById('lock').classList.add('hidden');
-      document.getElementById('forms-list').classList.remove('hidden');
-      renderFormsList();
+
+    if (sessionStorage.getItem("kensa_unlocked")==="1"){
+      document.getElementById("lock").classList.add("hidden");
+      document.getElementById("forms-list").classList.remove("hidden");
+      renderForms();
     }
   }
 
-  return { initHome, initForms, setLang };
+  return { initHome, initForms };
 })();
