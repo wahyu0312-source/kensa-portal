@@ -5,47 +5,83 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kensa Forms</title>
   <style>
-    :root{--bg:#0b1020;--card:#111834;--text:#e6e9f2;--muted:#9aa4bf;--accent:#7c9eff;--border:#1b2347;}
-    *{box-sizing:border-box} html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
-    .container{max-width:1100px;margin:0 auto;padding:20px}
-    .header{display:flex;align-items:center;justify-content:space-between;gap:16px}
-    .brand{font-weight:700;font-size:1.2rem;letter-spacing:.5px}
-    .header a{margin-right:12px;color:var(--muted);text-decoration:none}
-    .header a:hover{color:var(--text)}
-    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    .lock{display:flex;gap:8px;align-items:center}
-    .lock input{padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text)}
-    .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);color:var(--text);background:transparent;cursor:pointer}
-    .btn:hover{border-color:var(--accent)}
-    .msg{color:#ff9c9c}
-    .list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px}
-    .link-card{border:1px solid var(--border);border-radius:12px;padding:12px;background:rgba(255,255,255,.03)}
-    .link-card h3{margin:0 0 8px 0;font-size:1rem}
+    :root{
+      --bg:#f7f8fb; --card:#ffffff; --text:#1f2a44; --muted:#6b7280; --border:#e5e7eb;
+      --accent:#2563eb; --accent-weak:#eff6ff; --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    .container{max-width:1080px;margin:0 auto;padding:24px}
+    /* header */
+    .header{display:flex;align-items:center;justify-content:space-between}
+    .brand{font-weight:700;letter-spacing:.3px}
+    .nav a{color:var(--muted);text-decoration:none;margin-left:14px}
+    .nav a:hover{color:var(--text)}
+    /* cards */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+    .title{margin:0 0 10px 0}
+    /* controls */
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .input{padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text);min-width:240px}
+    .btn{padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+    .btn.ghost{background:transparent}
+    .msg{color:#dc2626}
+    .muted{color:var(--muted)}
     .hidden{display:none}
-    .footer{color:var(--muted);font-size:.9rem;text-align:center;padding:24px 0}
+    /* folder list */
+    .folder{border:1px solid var(--border);border-radius:14px;margin-top:12px;overflow:hidden;background:#fff}
+    .folder-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;background:linear-gradient(180deg,#fff,#fafafa)}
+    .folder-head:hover{background:linear-gradient(180deg,#fff,#f5f5f5)}
+    .folder-title{display:flex;align-items:center;gap:10px;font-weight:600}
+    .folder-badge{font-size:.85rem;background:var(--accent-weak);color:var(--accent);padding:2px 8px;border-radius:999px;border:1px solid #dbeafe}
+    .folder-body{padding:12px 14px;border-top:1px solid var(--border)}
+    .subgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+    .subfolder{border:1px solid var(--border);border-radius:12px}
+    .subfolder-head{padding:10px 12px;font-weight:600;background:#fafafa;border-bottom:1px solid var(--border)}
+    .links{display:flex;flex-direction:column;padding:10px}
+    .link{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);margin-bottom:8px;background:#fff}
+    .link:hover{border-color:#cbd5e1;background:#f8fafc}
+    .tag{font-size:.8rem;color:var(--muted)}
+    /* icons */
+    .ico{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center}
+    .caret{transition:.2s transform ease}
+    .rot{transform:rotate(90deg)}
+    /* footer */
+    .footer{color:var(--muted);text-align:center;padding:30px 0}
   </style>
 </head>
 <body>
   <header class="container header">
     <div class="brand">Kensa Portal</div>
-    <nav>
+    <nav class="nav">
       <a href="./index.html">ホーム</a>
-      <a href="./forms.html">フォーム</a>
+      <a href="./forms.html"><strong>フォーム</strong></a>
     </nav>
   </header>
 
   <main class="container">
     <section class="card">
-      <h1>フォーム</h1>
-      <p>フォームにアクセスするにはパスワードを入力してください。</p>
+      <h1 class="title">フォーム</h1>
+      <p class="muted">フォルダを開いて対象のフォームを選択してください。</p>
 
-      <div id="lock" class="lock">
-        <input type="password" id="pwd" placeholder="パスワード">
-        <button id="unlock" class="btn">解除</button>
+      <!-- ロック（必要なければこのブロックを丸ごと削除OK） -->
+      <div id="lock" class="row" style="margin-top:6px">
+        <input id="pwd" class="input" type="password" placeholder="パスワード">
+        <button id="unlock" class="btn primary">解除</button>
         <div id="msg" class="msg"></div>
       </div>
 
-      <div id="forms-list" class="list hidden"></div>
+      <!-- 操作バー -->
+      <div class="row" style="margin-top:14px">
+        <input id="search" class="input" type="search" placeholder="検索（顧客名・軸・機種名）">
+        <button id="expandAll" class="btn">すべて展開</button>
+        <button id="collapseAll" class="btn ghost">すべて閉じる</button>
+        <span class="muted">※ パスワード解除後に表示されます。</span>
+      </div>
+
+      <!-- フォルダ一覧 -->
+      <div id="folders" class="folders hidden"></div>
     </section>
   </main>
 
@@ -56,44 +92,143 @@
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // ====== Password sederhana (ganti di sini kalau perlu) ======
-    const PASSWORD = "kensa2025";
+    /* =======================
+       1) KONFIGURASI DATA
+       ======================= */
+    const PASSWORD = "kensa2025"; // ubah kalau perlu
 
-    // ====== Daftar form (link GitHub Pages kamu) ======
-    const FORMS = [
-      { name:"オークマ 46", url:"https://wahyu0312-source.github.io/okuma46/" },
-      { name:"MB 56",      url:"https://wahyu0312-source.github.io/mb56/" },
-      { name:"330380V",    url:"https://wahyu0312-source.github.io/330380v/" },
-      { name:"MB 66V",     url:"https://wahyu0312-source.github.io/mb66v/" },
-      { name:"330580V",    url:"https://wahyu0312-source.github.io/330580v/" }
+    // Struktur: customer -> subfolders (axis) -> links (label + url)
+    const DATA = [
+      {
+        customer: "オークマ",
+        folders: [
+          {
+            name: "Y軸",
+            links: [
+              { label: "OKUMA 46", url: "https://wahyu0312-source.github.io/okuma46/", tag:"成形" },
+              { label: "MB 56",    url: "https://wahyu0312-source.github.io/mb56/",    tag:"加工" }
+            ]
+          },
+          {
+            name: "X軸",
+            links: [
+              { label: "330380V", url: "https://wahyu0312-source.github.io/330380v/", tag:"ASSY" }
+            ]
+          },
+          {
+            name: "Z軸",
+            links: [
+              { label: "MB 66V",  url: "https://wahyu0312-source.github.io/mb66v/" },
+              { label: "330580V", url: "https://wahyu0312-source.github.io/330580v/" }
+            ]
+          }
+        ]
+      },
+      // 例: 追加の顧客
+      {
+        customer: "山崎マザック",
+        folders: [
+          { name:"Y軸", links: [] },
+          { name:"X軸", links: [] },
+          { name:"Z軸", links: [] }
+        ]
+      }
     ];
 
-    function renderForms(){
-      const list = document.getElementById('forms-list');
-      list.innerHTML = '';
-      FORMS.forEach(f=>{
-        list.insertAdjacentHTML('beforeend',
-          `<div class="link-card"><h3>${f.name}</h3><a class="btn" target="_blank" href="${f.url}">開く</a></div>`);
+    /* =======================
+       2) RENDER & INTERAKSI
+       ======================= */
+    const elFolders = document.getElementById("folders");
+    const elSearch  = document.getElementById("search");
+
+    function folderTemplate(idx, item){
+      const count = item.folders.reduce((n,f)=> n + (f.links?.length||0), 0);
+      return `
+        <div class="folder" data-index="${idx}">
+          <div class="folder-head" data-toggle>
+            <div class="folder-title">
+              <span class="ico caret">▶</span>
+              <span>${item.customer}</span>
+              <span class="folder-badge">${count} 件</span>
+            </div>
+            <div class="muted">クリックで展開</div>
+          </div>
+          <div class="folder-body hidden">
+            <div class="subgrid">
+              ${item.folders.map(sf => `
+                <div class="subfolder">
+                  <div class="subfolder-head">${sf.name}</div>
+                  <div class="links">
+                    ${
+                      (sf.links && sf.links.length)
+                        ? sf.links.map(l => `
+                          <a class="link" href="${l.url}" target="_blank">
+                            <span>${l.label}</span>
+                            <span class="tag">${l.tag||"開く"}</span>
+                          </a>`).join("")
+                        : `<div class="muted" style="padding:8px 10px">リンクなし</div>`
+                    }
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderList(list){
+      elFolders.innerHTML = list.map((it,i)=>folderTemplate(i,it)).join("");
+      // toggle buka/tutup folder
+      elFolders.querySelectorAll("[data-toggle]").forEach(head => {
+        head.addEventListener("click", () => {
+          const body  = head.parentElement.querySelector(".folder-body");
+          const caret = head.querySelector(".caret");
+          body.classList.toggle("hidden");
+          caret.classList.toggle("rot");
+        });
       });
     }
 
-    document.getElementById('unlock').addEventListener('click', () => {
-      const val = document.getElementById('pwd').value;
-      if (val !== PASSWORD) {
-        document.getElementById('msg').textContent = 'パスワードが違います';
-        return;
-      }
-      sessionStorage.setItem('kensa_unlocked','1');
-      document.getElementById('lock').classList.add('hidden');
-      document.getElementById('forms-list').classList.remove('hidden');
-      renderForms();
-    });
+    function filterList(q){
+      const s = q.trim().toLowerCase();
+      if (!s) return DATA;
+      return DATA.map(c => ({
+        ...c,
+        folders: c.folders.map(sf => ({
+          ...sf,
+          links: (sf.links||[]).filter(l =>
+            [c.customer, sf.name, l.label, l.tag].join(" ").toLowerCase().includes(s))
+        }))
+      })).filter(c => c.folders.some(sf => (sf.links||[]).length > 0));
+    }
 
-    // jika sudah unlock di tab ini, tampilkan langsung
-    if (sessionStorage.getItem('kensa_unlocked') === '1') {
-      document.getElementById('lock').classList.add('hidden');
-      document.getElementById('forms-list').classList.remove('hidden');
-      renderForms();
+    // actions
+    document.getElementById("expandAll").addEventListener("click", () => {
+      elFolders.querySelectorAll(".folder-body").forEach(b => b.classList.remove("hidden"));
+      elFolders.querySelectorAll(".caret").forEach(c => c.classList.add("rot"));
+    });
+    document.getElementById("collapseAll").addEventListener("click", () => {
+      elFolders.querySelectorAll(".folder-body").forEach(b => b.classList.add("hidden"));
+      elFolders.querySelectorAll(".caret").forEach(c => c.classList.remove("rot"));
+    });
+    elSearch.addEventListener("input", (e) => renderList(filterList(e.target.value)));
+
+    // password
+    const lock  = document.getElementById("lock");
+    const msg   = document.getElementById("msg");
+    document.getElementById("unlock").addEventListener("click", () => {
+      const v = document.getElementById("pwd").value;
+      if (v !== PASSWORD){ msg.textContent = "パスワードが違います"; return; }
+      sessionStorage.setItem("kensa_unlocked","1");
+      lock.classList.add("hidden");
+      elFolders.classList.remove("hidden");
+      renderList(DATA);
+    });
+    // jika sudah unlock di tab ini
+    if (sessionStorage.getItem("kensa_unlocked")==="1"){
+      lock.classList.add("hidden");
+      elFolders.classList.remove("hidden");
+      renderList(DATA);
     }
   </script>
 </body>
