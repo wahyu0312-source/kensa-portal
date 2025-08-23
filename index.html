@@ -11,6 +11,7 @@
       --accent:#2563eb; --danger:#b91c1c;
       --shadow:0 30px 60px rgba(15,23,42,.08);
       --radius:22px;
+      --done:#eaf3ff; /* biru muda kolom selesai */
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -58,6 +59,9 @@
       padding:12px 14px; border-bottom:1px solid var(--border); white-space:nowrap
     }
     tbody tr:hover{background:#f1f5ff}
+
+    /* highlight kolom selesai */
+    th.col-done, td.col-done{ background: var(--done) !important; }
 
     .section-title{display:flex;align-items:center;gap:10px;margin:24px 0 12px 0}
     .dot{width:12px;height:12px;border-radius:50%;background:#ef4444;display:inline-block}
@@ -125,7 +129,7 @@
   </div>
   <section class="card">
     <ul id="urgentList" class="list"></ul>
-    </section>
+  </section>
 </main>
 
 <footer class="wrap muted" style="text-align:center;padding:24px 20px">
@@ -138,12 +142,12 @@
   // =========================
   // KONFIGURASI SPREADSHEET
   // =========================
-  const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE"; // Spreadsheet
+  const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
   const TAB_NAME = "最新情報"; // ganti jika tab berbeda
   const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
 
   // ======================
-  // CSV parser 
+  // CSV parser
   // ======================
   function parseCSV(text){
     const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
@@ -169,9 +173,20 @@
       cust:   find(["顧客名","客先","Customer"]),
       item:   find(["商品名","品名","Item"]),
       qty:    find(["数量","Qty"]),
-      status: find(["Status","ステータス","至急","状態"]) // kolom P
+      status: find(["Status","ステータス","至急","状態"]) // kolom P (penanda urgent)
     };
   }
+
+  // ====== aturan selesai (untuk warna biru muda kolom) ======
+  const DONE_NAMES = ["長谷部","石橋","都合"]; // bisa tambah nama lain
+  function isDoneCell(val){
+    const v = S(val);
+    if(!v) return false;
+    if(v.includes("済")) return true;
+    return DONE_NAMES.some(n => v.includes(n));
+  }
+
+  // urgent
   function isUrgent(statusValue){
     const v = S(statusValue).toLowerCase();
     return v==="至急" || v==="urgent" || v==="緊急" || v==="true" || v==="1";
@@ -194,22 +209,37 @@
       let header = data[0];
       let rows   = data.slice(1);
 
-      // Render tabel utama 
-      document.getElementById('shipHead').innerHTML =
-        header.map(h=>`<th>${h}</th>`).join('');
+      // ===== hitung kolom yang "selesai" seluruhnya =====
+      const colDone = new Array(header.length).fill(true);
+      for(let c=0;c<header.length;c++){
+        for(let r=0;r<rows.length;r++){
+          const val = rows[r][c];
+          if(!isDoneCell(val)){ colDone[c] = false; break; }
+        }
+      }
+
+      // Render header
+      const headEl = document.getElementById('shipHead');
+      headEl.innerHTML = header.map((h,i)=>`<th class="${colDone[i]?'col-done':''}">${h}</th>`).join('');
+
+      // Render rows
       const tbody = document.getElementById('shipBody');
       tbody.innerHTML = '';
       rows.forEach(r=>{
         const cells=[...r]; while(cells.length<header.length) cells.push('');
-        tbody.insertAdjacentHTML('beforeend',
-          `<tr>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`);
+        const tds = cells.map((c,i)=>{
+          const cls = colDone[i] ? 'col-done' : '';
+          return `<td class="${cls}">${c}</td>`;
+        }).join('');
+        tbody.insertAdjacentHTML('beforeend', `<tr>${tds}</tr>`);
       });
+
       document.getElementById('shipHint').textContent =
         `データ元: ${TAB_NAME}（${rows.length} 行）`;
       document.getElementById('lastUpdated').textContent =
         'Last update: ' + new Date().toLocaleString();
 
-      // ===== URGENT dari kolom P = Status =====
+      // ===== URGENT list dari kolom P (Status) =====
       const idx = indexByName(header);
       const urgList = rows
         .map(r=>({
