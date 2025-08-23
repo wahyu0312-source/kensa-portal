@@ -3,128 +3,244 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>出荷状況一覧</title>
+  <title>品質管理生産技術 - 出荷状況一覧</title>
   <style>
-    :root{--ink:#0f172a;--muted:#64748b;--border:#e5e7eb;--bg1:#eef4ff;--bg2:#f8fafc;--card:#fff;--accent:#2563eb}
+    :root{
+      --bg1:#f0f4ff; --bg2:#e6ecff; --card:#ffffff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb;
+      --accent:#2563eb; --danger:#b91c1c; --shadow:0 8px 24px rgba(15,23,42,.08);
+    }
     *{box-sizing:border-box}
-    html,body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;color:var(--ink);background:linear-gradient(120deg,var(--bg1),var(--bg2))}
-    header{position:sticky;top:0;background:#ffffffcc;backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
-    .container{max-width:1200px;margin:0 auto;padding:12px 20px}
-    .row{display:flex;align-items:center;justify-content:space-between;gap:16px}
-    .brand{display:flex;align-items:center;gap:10px}
-    .brand svg{width:38px;height:38px}
-    .brand-title{display:flex;flex-direction:column}
-    nav a{margin-left:20px;color:var(--accent);font-weight:700;text-decoration:none}
-    nav a:hover{text-decoration:underline}
-    main{max-width:1200px;margin:24px auto;padding:0 20px}
-    h1{margin:0 0 16px 0}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:10px 0;box-shadow:0 10px 30px rgba(0,0,0,.06)}
-    table{width:100%;border-collapse:separate;border-spacing:0}
-    th,td{padding:14px 16px;border-bottom:1px solid var(--border);text-align:left}
-    thead th{font-size:13px;color:#475569;background:#f8fafc}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",Helvetica,Arial;
+      background:linear-gradient(135deg,var(--bg1),var(--bg2));color:var(--text);}
+    header{background:#fff;border-bottom:1px solid var(--border);padding:12px 24px;
+      display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand img{width:42px;height:42px;border-radius:50%;object-fit:cover}
+    .brand .title{font-weight:700;font-size:1.1rem}
+    .brand .subtitle{color:var(--muted);font-size:.9rem}
+    nav a{text-decoration:none;margin-left:20px;color:var(--muted);font-weight:700}
+    nav a:hover{color:var(--accent)}
+    main{max-width:1200px;margin:30px auto;padding:0 20px}
+    h1{font-size:1.5rem;margin:0 0 16px 0}
+    .card{background:var(--card);padding:20px;border-radius:16px;box-shadow:var(--shadow);overflow:auto;border:1px solid var(--border)}
+    table{width:100%;border-collapse:collapse;font-size:.95rem}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;text-align:left}
+    thead th{background:#f9fafb;color:#475569;position:sticky;top:0}
     tbody tr:last-child td{border-bottom:none}
+    tbody tr:hover{background:#f3f6ff}
     .right{text-align:right}
-    .red{color:red;font-weight:700}
+    .red{color:var(--danger);font-weight:700}
+    .muted{color:var(--muted)}
+    /* Urgent list */
+    .list{list-style:none;margin:0;padding:0}
+    .list li{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px dashed var(--border)}
+    .chip{font-size:12px;border-radius:999px;padding:4px 10px;border:1px solid var(--border);background:#fff}
+    .chip.urgent{border-color:var(--danger);color:var(--danger)}
+    .section-title{display:flex;align-items:center;gap:10px;margin:24px 0 12px 0}
   </style>
 </head>
 <body>
-<header>
-  <div class="container row">
+  <header>
     <div class="brand">
-      <svg viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r="30" fill="#2563eb22"/>
-        <path d="M12 34h40M12 30h40M20 18h24v6H20zM20 40h24v6H20z" stroke="#2563eb" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <circle cx="20" cy="32" r="3" fill="#2563eb"/>
-        <circle cx="44" cy="32" r="3" fill="#2563eb"/>
-      </svg>
-      <div class="brand-title">
-        <strong>品質管理生産技術</strong>
-        <span style="font-size:12px;color:var(--muted)">東京精密発條株式会社</span>
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Tokyo_Seimitsu_company_logo.svg/512px-Tokyo_Seimitsu_company_logo.svg.png" alt="logo">
+      <div>
+        <div class="title">品質管理生産技術</div>
+        <div class="subtitle">東京精密発條株式会社</div>
       </div>
     </div>
     <nav>
-      <a href="./index.html"><strong>ホーム</strong></a>
-      <a href="./forms.html">出荷検査成績書</a>
+      <a href="./index.html">ホーム</a>
+      <a href="./forms.html"><strong>出荷検査成績書</strong></a>
       <a href="./sagyoutejunsho.html">作業手順書</a>
     </nav>
-  </div>
-</header>
+  </header>
 
-<main>
-  <h1>出荷状況一覧</h1>
-  <div class="card">
-    <table id="listTable">
-      <thead>
-        <tr>
-          <th>出荷日</th>
-          <th>顧客名</th>
-          <th>図番</th>
-          <th>機種</th>
-          <th>商品名</th>
-          <th class="right">数量</th>
-          <th>送り先</th>
-          <th>注番</th>
-          <th>済み</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</main>
+  <main>
+    <h1>出荷状況一覧</h1>
 
-<script>
-const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE"; // spreadsheet kamu
-const SHEET_NAME = "出荷状況"; // nama tab
+    <!-- 出荷状況テーブル -->
+    <section class="card" id="tableCard">
+      <table id="sheet-table">
+        <thead><tr id="thead"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="muted" id="tableHint" style="margin-top:8px"></div>
+    </section>
 
-async function fetchGViz(sheetId, sheetName, tq){
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}&tq=${encodeURIComponent(tq)}`;
-  const res = await fetch(url, {cache:'no-store'});
-  const text = await res.text();
-  const start = text.indexOf('{'), end = text.lastIndexOf('}');
-  return JSON.parse(text.slice(start,end+1)).table;
-}
-function val(r,i){const c=r.c[i];return (c && ('f' in c) && c.f)?c.f:(c?.v??'');}
+    <!-- Urgent（至急） -->
+    <div class="section-title">
+      <h2 style="margin:0">🔴 Urgent（至急）</h2>
+      <span id="urgentCount" class="chip">0 件</span>
+    </div>
+    <section class="card">
+      <ul id="urgentList" class="list"></ul>
+      <div id="noUrgent" class="muted" style="display:none">現在、至急品目はありません。</div>
+    </section>
+  </main>
 
-async function load(){
-  // ambil A..I, dan skip baris kosong
-  const tq = "select A,B,C,D,E,F,G,H,I where A is not null";
-  const table = await fetchGViz(SHEET_ID, SHEET_NAME, tq);
+  <footer class="footer muted" style="text-align:center;padding:24px">
+    &copy; <span id="year"></span> 東京精密発條株式会社
+  </footer>
 
-  // map => objek string, trim
-  let rows = table.rows.map(r=>({
-    date:  String(val(r,0)??'').trim(),
-    cust:  String(val(r,1)??'').trim(),
-    draw:  String(val(r,2)??'').trim(),
-    model: String(val(r,3)??'').trim(),
-    item:  String(val(r,4)??'').trim(),
-    qty:   String(val(r,5)??'').trim(),
-    dest:  String(val(r,6)??'').trim(),
-    order: String(val(r,7)??'').trim(),
-    done:  String(val(r,8)??'').trim()
-  }));
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
 
-  // buang baris header yang kebaca sebagai data
-  const HEADER_WORDS = new Set(["出荷日","顧客名","図番","機種","商品名","数量","送り先","注番","備考","製品状況","済み"]);
-  rows = rows.filter(r => !HEADER_WORDS.has(r.date) && !HEADER_WORDS.has(r.cust) && !HEADER_WORDS.has(r.item));
+    // =========================================
+    // Spreadsheet CSV Export (Google GViz out:csv)
+    // =========================================
+    const SHEET_ID   = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
+    // GANTI kalau kamu mau tab lain. Nama Jepang OK (kita encode otomatis).
+    const SHEET_NAME = "最新情報";
+    const CSV_URL    = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
-  const tbody=document.querySelector('#listTable tbody');
-  tbody.innerHTML='';
-  rows.forEach(r=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td>${r.date}</td>
-      <td>${r.cust}</td>
-      <td>${r.draw}</td>
-      <td>${r.model}</td>
-      <td>${r.item}</td>
-      <td class="right">${r.qty}</td>
-      <td>${r.dest}</td>
-      <td>${r.order}</td>
-      <td class="${r.done && r.done!=='済み' ? 'red' : ''}">${r.done}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-load().catch(console.error);
-</script>
+    // =====================
+    // CSV parser sederhana
+    // =====================
+    function parseCSV(text){
+      const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
+      let m, row=[]; text=text.replace(/\r\n?/g,"\n");
+      for (let i=0;i<text.length;){
+        re.lastIndex=i; m=re.exec(text); if(!m) break;
+        let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
+        row.push(cell); i=re.lastIndex;
+        if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
+      }
+      // buang baris kosong total
+      return rows.filter(r=>r.length && r.some(c=>String(c).trim()!==""));
+    }
+
+    // helper: normalisasi string
+    const S = s => String(s ?? '').trim();
+
+    // Deteksi header dan kolom penting
+    function columnsIndex(header){
+      const map = {};
+      header.forEach((h,i)=>{
+        const key = S(h);
+        map[key] = i;
+      });
+      // cari alias
+      const find = names => {
+        for(const n of names){ if(n in map) return map[n]; }
+      };
+      return {
+        idxDate:  find(["出荷日","日付","Date"]),
+        idxCust:  find(["顧客名","客先","Customer"]),
+        idxItem:  find(["商品名","品名","Item"]),
+        idxQty:   find(["数量","Qty"]),
+        idxDone:  find(["済み","進捗","Status"]),
+        idxUrg:   find(["至急","Urgent"]) // opsional
+      };
+    }
+
+    // =====================
+    // Render
+    // =====================
+    async function loadCSV(){
+      try{
+        const res  = await fetch(CSV_URL + "&_ts=" + Date.now()); // cache bust
+        if(!res.ok){ throw new Error("HTTP " + res.status); }
+        const text = await res.text();
+        const data = parseCSV(text);
+        if(!data.length) return;
+
+        // Header & rows
+        let header = data[0];
+        let rows   = data.slice(1);
+
+        // Jika baris 1 bukan header (misal langsung data), fallback header default
+        const headerWords = new Set(["出荷日","顧客名","図番","機種","商品名","数量","送り先","注番","済み","備考","製品状況"]);
+        if(!headerWords.has(S(header[0]))){
+          // default 9 kolom (A..I)
+          header = ["出荷日","顧客名","図番","機種","商品名","数量","送り先","注番","済み"];
+          rows   = data;
+        }
+
+        // ----- TABEL -----
+        const thead=document.getElementById("thead");
+        thead.innerHTML = header.map(h=>`<th>${h}</th>`).join("");
+
+        const tbody=document.getElementById("tbody");
+        tbody.innerHTML="";
+        rows.forEach(r=>{
+          // pad cells supaya >= header.length
+          const cells = [...r];
+          while(cells.length < header.length) cells.push("");
+          const html = cells.map((c,idx)=>{
+            const label = S(header[idx]);
+            // kolom '済み' → merah jika bukan '済み'
+            const isDoneCol = /済/.test(label);
+            const ng = isDoneCol && S(c) && S(c) !== "済み";
+            const alignRight = /数量|Qty|数/.test(label);
+            return `<td class="${ng?'red':''}" style="${alignRight?'text-align:right':''}">${c}</td>`;
+          }).join("");
+          tbody.insertAdjacentHTML("beforeend", `<tr>${html}</tr>`);
+        });
+
+        // Info hint
+        document.getElementById('tableHint').textContent =
+          `データ元: ${SHEET_NAME}（${rows.length} 行）`;
+
+        // ----- URGENT -----
+        const idx = columnsIndex(header);
+        // Build record list untuk urgent
+        const urgent = [];
+        rows.forEach(r=>{
+          const date = r[idx.idxDate ?? -1];
+          const cust = r[idx.idxCust ?? -1];
+          const item = r[idx.idxItem ?? -1];
+          const qty  = r[idx.idxQty  ?? -1];
+          const done = r[idx.idxDone ?? -1];
+          const urg  = r[idx.idxUrg  ?? -1];
+
+          // rule: kalau ada kolom 至急 → pakai itu
+          let isUrgent = false;
+          if(idx.idxUrg != null){
+            const v = S(urg).toLowerCase();
+            isUrgent = v === "true" || v === "1" || v.includes("至急");
+          }else if(idx.idxDone != null){
+            // fallback: kolom 済み ≠ "済み"
+            isUrgent = S(done) && S(done) !== "済み";
+          }
+          if(isUrgent){
+            urgent.push({
+              date:S(date), cust:S(cust), item:S(item), qty:S(qty), done:S(done)
+            });
+          }
+        });
+
+        // Render urgent list
+        const ul = document.getElementById('urgentList');
+        const no = document.getElementById('noUrgent');
+        const badge = document.getElementById('urgentCount');
+        ul.innerHTML = '';
+        badge.textContent = `${urgent.length} 件`;
+        if(urgent.length === 0){
+          no.style.display = 'block';
+        }else{
+          no.style.display = 'none';
+          urgent.forEach(u=>{
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <div>
+                <strong>${u.item || '(品名未設定)'}</strong> <span class="chip urgent">至急</span>
+                <div class="muted">顧客: ${u.cust || '-'} ／ 出荷日: ${u.date || '-'}</div>
+              </div>
+              <span class="chip">${u.qty ? ('数量: ' + u.qty) : ''} ${u.done && u.done!=='済み' ? '／ 状態: '+u.done : ''}</span>
+            `;
+            ul.appendChild(li);
+          });
+        }
+
+      }catch(e){
+        console.error("CSV load error", e);
+        document.getElementById('tableHint').textContent = '読み込みに失敗しました。シート名/公開設定をご確認ください。';
+      }
+    }
+
+    // initial load + auto refresh
+    window.addEventListener("DOMContentLoaded", loadCSV);
+    setInterval(loadCSV, 60000);
+  </script>
 </body>
 </html>
