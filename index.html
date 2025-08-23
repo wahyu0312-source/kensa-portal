@@ -7,7 +7,7 @@
   <style>
     :root{--ink:#0f172a;--muted:#64748b;--border:#e5e7eb;--bg1:#eef4ff;--bg2:#f8fafc;--card:#fff;--accent:#2563eb}
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;color:var(--ink);background:linear-gradient(120deg,var(--bg1),var(--bg2))}
+    html,body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;color:var(--ink);background:linear-gradient(120deg,var(--bg1),var(--bg2))}
     header{position:sticky;top:0;background:#ffffffcc;backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
     .container{max-width:1200px;margin:0 auto;padding:12px 20px}
     .row{display:flex;align-items:center;justify-content:space-between;gap:16px}
@@ -73,8 +73,8 @@
 </main>
 
 <script>
-const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
-const SHEET_NAME = "出荷状況";
+const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE"; // spreadsheet kamu
+const SHEET_NAME = "出荷状況"; // nama tab
 
 async function fetchGViz(sheetId, sheetName, tq){
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}&tq=${encodeURIComponent(tq)}`;
@@ -86,12 +86,27 @@ async function fetchGViz(sheetId, sheetName, tq){
 function val(r,i){const c=r.c[i];return (c && ('f' in c) && c.f)?c.f:(c?.v??'');}
 
 async function load(){
-  const tq = "select A,B,C,D,E,F,G,H,I where A is not null"; 
+  // ambil A..I, dan skip baris kosong
+  const tq = "select A,B,C,D,E,F,G,H,I where A is not null";
   const table = await fetchGViz(SHEET_ID, SHEET_NAME, tq);
-  const rows = table.rows.map(r=>({
-    date:val(r,0), cust:val(r,1), drawing:val(r,2), model:val(r,3),
-    item:val(r,4), qty:val(r,5), dest:val(r,6), order:val(r,7), status:val(r,8)
+
+  // map => objek string, trim
+  let rows = table.rows.map(r=>({
+    date:  String(val(r,0)??'').trim(),
+    cust:  String(val(r,1)??'').trim(),
+    draw:  String(val(r,2)??'').trim(),
+    model: String(val(r,3)??'').trim(),
+    item:  String(val(r,4)??'').trim(),
+    qty:   String(val(r,5)??'').trim(),
+    dest:  String(val(r,6)??'').trim(),
+    order: String(val(r,7)??'').trim(),
+    done:  String(val(r,8)??'').trim()
   }));
+
+  // buang baris header yang kebaca sebagai data
+  const HEADER_WORDS = new Set(["出荷日","顧客名","図番","機種","商品名","数量","送り先","注番","備考","製品状況","済み"]);
+  rows = rows.filter(r => !HEADER_WORDS.has(r.date) && !HEADER_WORDS.has(r.cust) && !HEADER_WORDS.has(r.item));
+
   const tbody=document.querySelector('#listTable tbody');
   tbody.innerHTML='';
   rows.forEach(r=>{
@@ -99,13 +114,13 @@ async function load(){
     tr.innerHTML=`
       <td>${r.date}</td>
       <td>${r.cust}</td>
-      <td>${r.drawing}</td>
+      <td>${r.draw}</td>
       <td>${r.model}</td>
       <td>${r.item}</td>
       <td class="right">${r.qty}</td>
       <td>${r.dest}</td>
       <td>${r.order}</td>
-      <td class="${r.status!=='済み'?'red':''}">${r.status}</td>`;
+      <td class="${r.done && r.done!=='済み' ? 'red' : ''}">${r.done}</td>`;
     tbody.appendChild(tr);
   });
 }
