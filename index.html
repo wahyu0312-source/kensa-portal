@@ -74,6 +74,23 @@
     }
     .muted{color:var(--muted)}
     .hint{margin-top:6px}
+
+    /* 🔔 Banner urgent kedap-kedip */
+    #urgent-banner {
+      display:none;
+      background:#b91c1c;
+      color:white;
+      padding:10px 16px;
+      border-radius:10px;
+      margin-bottom:14px;
+      font-weight:bold;
+      text-align:center;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0%, 50%, 100% { background-color:#b91c1c; }
+      25%, 75% { background-color:#ef4444; }
+    }
   </style>
 </head>
 <body>
@@ -108,6 +125,9 @@
 </header>
 
 <main>
+  <!-- Banner urgent -->
+  <div id="urgent-banner">⚠ 至急案件があります！早急に確認してください。</div>
+
   <!-- 出荷状況 -->
   <div style="display:flex;justify-content:space-between;align-items:end">
     <h1>出荷状況一覧</h1>
@@ -139,16 +159,10 @@
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
 
-  // =========================
-  // KONFIGURASI SPREADSHEET
-  // =========================
   const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
-  const TAB_NAME = "最新情報"; // ganti jika tab berbeda
+  const TAB_NAME = "最新情報";
   const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
 
-  // ======================
-  // CSV parser
-  // ======================
   function parseCSV(text){
     const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
     let m, row=[]; text=text.replace(/\r\n?/g,"\n");
@@ -162,7 +176,6 @@
   }
   const S = s => String(s ?? '').trim();
 
-  // kolom
   function indexByName(header){
     const map={}; header.forEach((h,i)=> map[S(h)] = i);
     const find = names => { for(const n of names){ if(n in map) return map[n]; } return null; };
@@ -173,28 +186,22 @@
       cust:   find(["顧客名","客先","Customer"]),
       item:   find(["商品名","品名","Item"]),
       qty:    find(["数量","Qty"]),
-      status: find(["Status","ステータス","至急","状態"]) // kolom P (penanda urgent)
+      status: find(["Status","ステータス","至急","状態"])
     };
   }
 
-  // ====== aturan selesai (untuk warna biru muda kolom) ======
-  const DONE_NAMES = ["長谷部","石橋","都合"]; // bisa tambah nama lain
+  const DONE_NAMES = ["長谷部","石橋","都合"];
   function isDoneCell(val){
     const v = S(val);
     if(!v) return false;
     if(v.includes("済")) return true;
     return DONE_NAMES.some(n => v.includes(n));
   }
-
-  // urgent
   function isUrgent(statusValue){
     const v = S(statusValue).toLowerCase();
     return v==="至急" || v==="urgent" || v==="緊急" || v==="true" || v==="1";
   }
 
-  // ====================
-  // LOAD & RENDER
-  // ====================
   let aborter = null;
   async function load(){
     try{
@@ -209,7 +216,6 @@
       let header = data[0];
       let rows   = data.slice(1);
 
-      // ===== hitung kolom yang "selesai" seluruhnya =====
       const colDone = new Array(header.length).fill(true);
       for(let c=0;c<header.length;c++){
         for(let r=0;r<rows.length;r++){
@@ -218,11 +224,19 @@
         }
       }
 
-      // Render header
+      const idx = indexByName(header);
+      // 🚨 Sort urgent ke atas
+      rows.sort((a, b) => {
+        const aUrg = isUrgent(a[idx.status ?? -1]);
+        const bUrg = isUrgent(b[idx.status ?? -1]);
+        if (aUrg && !bUrg) return -1;
+        if (!aUrg && bUrg) return 1;
+        return 0;
+      });
+
       const headEl = document.getElementById('shipHead');
       headEl.innerHTML = header.map((h,i)=>`<th class="${colDone[i]?'col-done':''}">${h}</th>`).join('');
 
-      // Render rows
       const tbody = document.getElementById('shipBody');
       tbody.innerHTML = '';
       rows.forEach(r=>{
@@ -239,8 +253,7 @@
       document.getElementById('lastUpdated').textContent =
         'Last update: ' + new Date().toLocaleString();
 
-      // ===== URGENT list dari kolom P (Status) =====
-      const idx = indexByName(header);
+      // URGENT list
       const urgList = rows
         .map(r=>({
           item:S(r[idx.item  ?? -1]),
@@ -260,6 +273,7 @@
 
       if(urgList.length===0){
         ul.innerHTML = `<li class="li"><span class="muted">現在、至急品目はありません。</span></li>`;
+        document.getElementById('urgent-banner').style.display = 'none';
       }else{
         urgList.forEach(u=>{
           ul.insertAdjacentHTML('beforeend', `
@@ -276,6 +290,7 @@
             </li>
           `);
         });
+        document.getElementById('urgent-banner').style.display = 'block';
       }
     }catch(e){
       if(e.name === 'AbortError') return;
@@ -284,20 +299,14 @@
     }
   }
 
-  // =========================
-  // AUTO-REFRESH CONTROLLER
-  // =========================
   let timer = null;
-  let intervalMs = 60000; // default 60s
+  let intervalMs = 60000;
 
   function startAutoRefresh(ms){
     intervalMs = ms;
     clearInterval(timer);
-    timer = setInterval(()=>{
-      if(document.visibilityState === 'visible'){ load(); }
-    }, intervalMs);
-    document.getElementById('intervalInfo').textContent =
-      `Interval: ${Math.round(intervalMs/1000)}s`;
+    timer = setInterval(()=>{ if(document.visibilityState === 'visible'){ load(); } }, intervalMs);
+    document.getElementById('intervalInfo').textContent = `Interval: ${Math.round(intervalMs/1000)}s`;
     const liveBtn = document.getElementById('btnLive');
     if(intervalMs <= 5000){ liveBtn.classList.add('active'); liveBtn.textContent = 'Live: On'; }
     else { liveBtn.classList.remove('active'); liveBtn.textContent = 'Live: Off'; }
@@ -305,17 +314,12 @@
 
   document.getElementById('btnRefresh').addEventListener('click', load);
   document.getElementById('btnLive').addEventListener('click', ()=>{
-    startAutoRefresh(intervalMs <= 5000 ? 60000 : 5000); // toggle 60s <-> 5s
+    startAutoRefresh(intervalMs <= 5000 ? 60000 : 5000);
     load();
   });
-  document.addEventListener('visibilitychange', ()=>{
-    if(document.visibilityState === 'visible'){ load(); }
-  });
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible'){ load(); } });
 
-  window.addEventListener('DOMContentLoaded', ()=>{
-    load();
-    startAutoRefresh(60000);
-  });
+  window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
 </script>
 </body>
 </html>
