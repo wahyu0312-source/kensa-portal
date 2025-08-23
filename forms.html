@@ -65,7 +65,7 @@
   <div id="lock" class="card">
     <div class="lock">
       <input id="pwd" type="password" placeholder="パスワード">
-      <button id="btnUnlock" onclick="unlock()">解除</button>
+      <button id="btnUnlock" onclick="unlock()">確定</button>
       <span id="msg" style="color:red;"></span>
     </div>
   </div>
@@ -81,7 +81,7 @@
   <div id="folders" class="hidden"></div>
 </main>
 
-<footer>&copy; <span id="year"></span> 東京精密発條株式会社</footer>
+<footer>&copy; <span id="year"></span> wahyu</footer>
 
 <script>
 document.getElementById('year').textContent = new Date().getFullYear();
@@ -90,7 +90,7 @@ const PASSWORD = "kensa2025"; // ganti sesuai kebutuhan
 // DATA: customer → subfolder → links
 const DATA = [
   {customer:"オークマ",folders:[
-    {name:"Y軸",links:[{label:"OKUMA 46",url:"https://wahyu0312-source.github.io/okuma46/"}]},
+    {name:"Y軸",links:[{label:"2025-20",url:"https://wahyu0312-source.github.io/okuma46/"}],links:[{label:"2035-20",url:"https://wahyu0312-source.github.io/mb56/"}]},
     {name:"X軸",links:[{label:"330380V",url:"https://wahyu0312-source.github.io/330380v/"}]},
     {name:"Z軸",links:[{label:"MB 66V",url:"https://wahyu0312-source.github.io/mb66v/"}]}
   ]},
@@ -175,3 +175,4 @@ function render(src){
 </script>
 </body>
 </html>
+
