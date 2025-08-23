@@ -8,7 +8,7 @@
     :root{
       --bg1:#eef2ff; --bg2:#f8fafc;
       --card:#ffffff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
-      --accent:#2563eb; --danger:#b91c1c; --success:#16a34a;
+      --accent:#2563eb; --danger:#b91c1c;
       --shadow:0 30px 60px rgba(15,23,42,.08);
       --radius:22px;
     }
@@ -22,7 +22,6 @@
         radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
         linear-gradient(120deg,var(--bg1),var(--bg2));
     }
-    /* header */
     header{
       position:sticky;top:0;z-index:10;
       background:#ffffffcc; backdrop-filter:blur(10px);
@@ -36,9 +35,13 @@
     nav a{margin-left:20px;color:var(--accent);font-weight:700;text-decoration:none}
     nav a:hover{text-decoration:underline}
 
-    /* main & cards */
+    .controls{display:flex;gap:8px;align-items:center}
+    .btn{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
+    .btn.active{border-color:#93c5fd;background:#f0f9ff}
+    .small{font-size:12px;color:var(--muted)}
+
     main{max-width:1200px;margin:28px auto;padding:0 20px}
-    h1{margin:0 0 16px 0}
+    h1{margin:0 0 8px 0}
     .card{
       background:linear-gradient(180deg,#ffffffcc,#fffffff2);
       border:1px solid var(--border); border-radius:var(--radius);
@@ -46,7 +49,6 @@
       padding:18px; overflow:auto;
     }
 
-    /* tables */
     table{width:100%;border-collapse:separate;border-spacing:0;min-width:600px}
     thead th{
       background:#f8fafc; color:#475569; position:sticky;top:0; z-index:1;
@@ -57,7 +59,6 @@
     }
     tbody tr:hover{background:#f1f5ff}
 
-    /* chips + list */
     .section-title{display:flex;align-items:center;gap:10px;margin:24px 0 12px 0}
     .dot{width:12px;height:12px;border-radius:50%;background:#ef4444;display:inline-block}
     .chip{font-size:12px;border-radius:999px;padding:4px 10px;border:1px solid var(--border);background:#fff}
@@ -68,6 +69,7 @@
       padding:12px 10px;border-bottom:1px dashed var(--border)
     }
     .muted{color:var(--muted)}
+    .hint{margin-top:6px}
   </style>
 </head>
 <body>
@@ -86,23 +88,27 @@
         <span class="muted" style="font-size:12px">東京精密発條株式会社</span>
       </div>
     </div>
-    <nav>
-      <a href="./index.html"><strong>ホーム</strong></a>
-      <a href="./forms.html">出荷検査成績書</a>
-      <a href="./sagyoutejunsho.html">作業手順書</a>
-    </nav>
+
+    <div class="controls">
+      <button id="btnRefresh" class="btn">Refresh now</button>
+      <button id="btnLive" class="btn">Live: Off</button>
+      <span id="intervalInfo" class="small">Interval: 60s</span>
+    </div>
   </div>
 </header>
 
 <main>
   <!-- 出荷状況 -->
-  <h1>出荷状況一覧</h1>
+  <div style="display:flex;justify-content:space-between;align-items:end">
+    <h1>出荷状況一覧</h1>
+    <span id="lastUpdated" class="small"></span>
+  </div>
   <section class="card">
     <table id="shipTable">
       <thead><tr id="shipHead"></tr></thead>
       <tbody id="shipBody"></tbody>
     </table>
-    <div class="muted" id="shipHint" style="margin-top:6px"></div>
+    <div class="muted hint" id="shipHint"></div>
   </section>
 
   <!-- Urgent -->
@@ -113,7 +119,7 @@
   </div>
   <section class="card">
     <ul id="urgentList" class="list"></ul>
-    <div id="urgentHint" class="muted" style="margin-top:6px"></div>
+    <div id="urgentHint" class="muted hint"></div>
   </section>
 </main>
 
@@ -127,8 +133,8 @@
   // =========================
   // KONFIGURASI SPREADSHEET
   // =========================
-  const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE"; // Spreadsheet A
-  const TAB_NAME = "出荷状況"; // ganti jika tab kamu beda (otomatis di-encode)
+  const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE"; // Spreadsheet
+  const TAB_NAME = "最新情報"; // nama tab
   const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
 
   // ======================
@@ -145,31 +151,33 @@
     }
     return rows.filter(r=>r.length && r.some(c=>String(c).trim()!==""));
   }
-
   const S = s => String(s ?? '').trim();
 
   function indexByName(header){
     const map={}; header.forEach((h,i)=> map[S(h)] = i);
-    // cari kolom standar
     const find = names => { for(const n of names){ if(n in map) return map[n]; } return null; };
     return {
       date:  find(["出荷日","日付","Date"]),
       cust:  find(["顧客名","客先","Customer"]),
       item:  find(["商品名","品名","Item"]),
       qty:   find(["数量","Qty"]),
-      done:  find(["済み","進捗","Status","状態"]),
-      status: find(["Status","ステータス","至急","状態"]) // KOLUM P = "Status"
+      status:find(["Status","ステータス","至急","状態"]) // kolom P
     };
   }
-
   function isUrgent(statusValue){
     const v = S(statusValue).toLowerCase();
     return v==="至急" || v==="urgent" || v==="緊急" || v==="true" || v==="1";
   }
 
+  // ====================
+  // LOAD & RENDER
+  // ====================
+  let aborter = null;
   async function load(){
     try{
-      const res  = await fetch(CSV_URL + "&_ts=" + Date.now());
+      if(aborter) aborter.abort();
+      aborter = new AbortController();
+      const res  = await fetch(CSV_URL + "&_ts=" + Date.now(), {signal: aborter.signal, cache:'no-store'});
       if(!res.ok) throw new Error("HTTP " + res.status);
       const text = await res.text();
       const data = parseCSV(text);
@@ -178,7 +186,7 @@
       let header = data[0];
       let rows   = data.slice(1);
 
-      // ===== Render TABEL 出荷状況 =====
+      // Render tabel utama
       document.getElementById('shipHead').innerHTML =
         header.map(h=>`<th>${h}</th>`).join('');
       const tbody = document.getElementById('shipBody');
@@ -190,8 +198,10 @@
       });
       document.getElementById('shipHint').textContent =
         `データ元: ${TAB_NAME}（${rows.length} 行）`;
+      document.getElementById('lastUpdated').textContent =
+        'Last update: ' + new Date().toLocaleString();
 
-      // ===== Render URGENT dari kolom P = Status =====
+      // Render URGENT dari kolom P = Status
       const idx = indexByName(header);
       const urgList = rows
         .map(r=>({
@@ -227,14 +237,48 @@
         });
       }
     }catch(e){
+      if(e.name === 'AbortError') return; // diabaikan
       console.error(e);
       document.getElementById('shipHint').textContent = '読み込みに失敗しました。シート名/公開設定をご確認ください。';
     }
   }
 
-  window.addEventListener('DOMContentLoaded', load);
-  // Auto-refresh 60 detik
-  setInterval(load, 60000);
+  // =========================
+  // AUTO-REFRESH CONTROLLER
+  // =========================
+  let timer = null;
+  let intervalMs = 60000; // default 60s
+
+  function startAutoRefresh(ms){
+    intervalMs = ms;
+    clearInterval(timer);
+    timer = setInterval(()=>{
+      if(document.visibilityState === 'visible'){ load(); }
+    }, intervalMs);
+    document.getElementById('intervalInfo').textContent = `Interval: ${Math.round(intervalMs/1000)}s`;
+    // UI toggle
+    const liveBtn = document.getElementById('btnLive');
+    if(intervalMs <= 5000){ liveBtn.classList.add('active'); liveBtn.textContent = 'Live: On'; }
+    else { liveBtn.classList.remove('active'); liveBtn.textContent = 'Live: Off'; }
+  }
+
+  // Buttons
+  document.getElementById('btnRefresh').addEventListener('click', load);
+  document.getElementById('btnLive').addEventListener('click', ()=>{
+    startAutoRefresh(intervalMs <= 5000 ? 60000 : 5000); // toggle 60s <-> 5s
+    load();
+  });
+
+  // Pause saat tab hidden (hemat bandwidth)
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible'){ load(); }
+  });
+
+  // Initial
+  window.addEventListener('DOMContentLoaded', ()=>{
+    load();
+    startAutoRefresh(60000); // default 60s
+  });
 </script>
 </body>
 </html>
