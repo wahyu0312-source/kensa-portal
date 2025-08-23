@@ -125,12 +125,11 @@
   </div>
   <section class="card">
     <ul id="urgentList" class="list"></ul>
-    <div id="urgentHint" class="muted hint"></div>
-  </section>
+    </section>
 </main>
 
 <footer class="wrap muted" style="text-align:center;padding:24px 20px">
-  &copy; <span id="year"></span> 東京精密発條株式会社
+  &copy; <span id="year"></span> wahyu
 </footer>
 
 <script>
@@ -140,11 +139,11 @@
   // KONFIGURASI SPREADSHEET
   // =========================
   const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE"; // Spreadsheet
-  const TAB_NAME = "最新情報"; // nama tab
+  const TAB_NAME = "最新情報"; // ganti jika tab berbeda
   const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
 
   // ======================
-  // CSV parser sederhana
+  // CSV parser 
   // ======================
   function parseCSV(text){
     const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
@@ -159,16 +158,18 @@
   }
   const S = s => String(s ?? '').trim();
 
+  // kolom
   function indexByName(header){
     const map={}; header.forEach((h,i)=> map[S(h)] = i);
     const find = names => { for(const n of names){ if(n in map) return map[n]; } return null; };
     return {
-      date:  find(["出荷日","日付","Date"]),
-      order:  find(["図番","注番","Order"]),
-      cust:  find(["顧客名","客先","Customer"]),
-      item:  find(["商品名","品名","Item"]),
-      qty:   find(["数量","Qty"]),
-      status:find(["Status","ステータス","至急","状態"]) // kolom P
+      date:   find(["出荷日","日付","Date"]),
+      draw:   find(["図番","Drawing","図面"]),
+      order:  find(["注番","注文番号","Order"]),
+      cust:   find(["顧客名","客先","Customer"]),
+      item:   find(["商品名","品名","Item"]),
+      qty:    find(["数量","Qty"]),
+      status: find(["Status","ステータス","至急","状態"]) // kolom P
     };
   }
   function isUrgent(statusValue){
@@ -193,7 +194,7 @@
       let header = data[0];
       let rows   = data.slice(1);
 
-      // Render tabel utama
+      // Render tabel utama 
       document.getElementById('shipHead').innerHTML =
         header.map(h=>`<th>${h}</th>`).join('');
       const tbody = document.getElementById('shipBody');
@@ -208,25 +209,24 @@
       document.getElementById('lastUpdated').textContent =
         'Last update: ' + new Date().toLocaleString();
 
-      // Render URGENT dari kolom P = Status
+      // ===== URGENT dari kolom P = Status =====
       const idx = indexByName(header);
       const urgList = rows
         .map(r=>({
-          item:S(r[idx.item ?? -1]),
+          item:S(r[idx.item  ?? -1]),
+          draw:S(r[idx.draw  ?? -1]),
           order:S(r[idx.order ?? -1]),
-          cust:S(r[idx.cust ?? -1]),
-          date:S(r[idx.date ?? -1]),
-          qty: S(r[idx.qty  ?? -1]),
+          cust:S(r[idx.cust  ?? -1]),
+          date:S(r[idx.date  ?? -1]),
+          qty: S(r[idx.qty   ?? -1]),
           status:S(r[idx.status ?? -1])
         }))
         .filter(o=>isUrgent(o.status));
 
       const ul = document.getElementById('urgentList');
       const badge = document.getElementById('urgentCount');
-      const hint = document.getElementById('urgentHint');
       ul.innerHTML = '';
       badge.textContent = `${urgList.length} 件`;
-      hint.textContent  = `フィルタ: Status（列P）＝ 至急 / urgent / 緊急 / TRUE / 1`;
 
       if(urgList.length===0){
         ul.innerHTML = `<li class="li"><span class="muted">現在、至急品目はありません。</span></li>`;
@@ -237,7 +237,10 @@
               <div>
                 <strong>${u.item || '(品名未設定)'}</strong>
                 <span class="chip bad">至急</span>
-                <div class="muted">顧客: ${u.cust || '-'} ／ 出荷日: ${u.date || '-'}</div>
+                <div class="muted">
+                  顧客: ${u.cust || '-'} ／ 出荷日: ${u.date || '-'}
+                  ${u.draw ? ' ／ 図番: ' + u.draw : ''}${u.order ? ' ／ 注番: ' + u.order : ''}
+                </div>
               </div>
               <span class="chip">${u.qty ? '数量: '+u.qty : ''}</span>
             </li>
@@ -245,7 +248,7 @@
         });
       }
     }catch(e){
-      if(e.name === 'AbortError') return; // diabaikan
+      if(e.name === 'AbortError') return;
       console.error(e);
       document.getElementById('shipHint').textContent = '読み込みに失敗しました。シート名/公開設定をご確認ください。';
     }
@@ -263,31 +266,26 @@
     timer = setInterval(()=>{
       if(document.visibilityState === 'visible'){ load(); }
     }, intervalMs);
-    document.getElementById('intervalInfo').textContent = `Interval: ${Math.round(intervalMs/1000)}s`;
-    // UI toggle
+    document.getElementById('intervalInfo').textContent =
+      `Interval: ${Math.round(intervalMs/1000)}s`;
     const liveBtn = document.getElementById('btnLive');
     if(intervalMs <= 5000){ liveBtn.classList.add('active'); liveBtn.textContent = 'Live: On'; }
     else { liveBtn.classList.remove('active'); liveBtn.textContent = 'Live: Off'; }
   }
 
-  // Buttons
   document.getElementById('btnRefresh').addEventListener('click', load);
   document.getElementById('btnLive').addEventListener('click', ()=>{
     startAutoRefresh(intervalMs <= 5000 ? 60000 : 5000); // toggle 60s <-> 5s
     load();
   });
-
-  // Pause saat tab hidden (hemat bandwidth)
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState === 'visible'){ load(); }
   });
 
-  // Initial
   window.addEventListener('DOMContentLoaded', ()=>{
     load();
-    startAutoRefresh(60000); // default 60s
+    startAutoRefresh(60000);
   });
 </script>
 </body>
 </html>
-
