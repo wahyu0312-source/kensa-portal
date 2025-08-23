@@ -43,12 +43,18 @@
   td.cell-done{background:var(--done)!important}
   tr.row-done td{background:var(--done)!important;color:#0f172a;font-weight:600}
 
-  /* Badge 済 di kiri */
+  /* Chip 済 / 至急 di kiri */
   .badge-done{
     display:inline-flex;align-items:center;justify-content:center;
     width:28px;height:28px;border-radius:999px;background:#0ea5e9;color:#fff;
     font-weight:800;font-size:13px;margin-right:8px
   }
+  .flag-urgent{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:2px 10px;border-radius:999px;background:#dc2626;color:#fff;
+    font-weight:800;font-size:12px;margin-right:8px
+  }
+  .flag-urgent::before{content:"⚠";}
 
   /* Banner urgent: selalu tampil */
   #urgent-banner{
@@ -185,12 +191,18 @@
           let cls = '';
           if(isCellDone(val)) cls='cell-done';
           const isStatusCol = i===idx.status_done;
-          if(rowUrg && isStatusCol) cls='cell-urgent';
+          if(rowUrg && isStatusCol) cls='cell-urgent'; // blok merah di kolom status
           return `<td class="${cls}">${val}</td>`;
         });
 
-        if(rowDone && tds.length){
-          const firstVal = S(r[0]);
+        // chip ⚠ 至急 di kolom pertama (prioritas di atas 済)
+        if(rowUrg && tds.length){
+          const firstVal = S(r[0]) || "";
+          tds[0] = `<td><span class="flag-urgent">至急</span>${firstVal}</td>`;
+        }
+        // badge 済 di kolom pertama jika selesai & bukan urgent
+        else if(rowDone && tds.length){
+          const firstVal = S(r[0]) || "";
           tds[0] = `<td><span class="badge-done">済</span>${firstVal}</td>`;
         }
 
@@ -200,6 +212,7 @@
         );
       });
 
+      // 🔴 Banner selalu ada
       const banner=document.getElementById('urgent-banner');
       if(urgentCount>0){
         banner.textContent = `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`;
@@ -207,6 +220,7 @@
         banner.textContent = "現在、至急案件はありません。";
       }
 
+      // Jika SEMUA baris selesai → hapus badge 済 (tabel bersih)
       if(doneCount===rows.length){
         document.querySelectorAll('.badge-done').forEach(el=>el.remove());
       }
