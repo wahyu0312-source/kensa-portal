@@ -5,29 +5,56 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>品質管理生産技術 - 出荷状況</title>
 <style>
-  :root{--bg1:#eef2ff;--bg2:#f8fafc;--card:#fff;--ink:#0f172a;--muted:#64748b;--border:#e5e7eb;--accent:#2563eb;--danger:#b91c1c;--shadow:0 30px 60px rgba(15,23,42,.08);--radius:22px;--done:#e0f2fe}
-  *{box-sizing:border-box} html,body{height:100%}
-  body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;background:radial-gradient(1200px 600px at -10% -10%,#c7d2fe 0%,transparent 60%),radial-gradient(900px 500px at 110% 0%,#bae6fd 0%,transparent 55%),linear-gradient(120deg,var(--bg1),var(--bg2))}
+  :root{
+    --bg1:#eef2ff; --bg2:#f8fafc; --card:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
+    --accent:#2563eb; --danger:#b91c1c; --shadow:0 30px 60px rgba(15,23,42,.08); --radius:22px;
+    --done:#e0f2fe; --urgent-row:#fee2e2; --urgent-cell:#ef4444;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
+    background:
+      radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
+      linear-gradient(120deg,var(--bg1),var(--bg2));
+  }
   header{position:sticky;top:0;z-index:10;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
-  .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}.row{display:flex;justify-content:space-between;align-items:center;gap:16px}
-  nav a{margin-left:20px;color:var(--accent);font-weight:700;text-decoration:none} nav a:hover{text-decoration:underline}
-  .controls{display:flex;gap:8px;align-items:center}.btn{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}.btn[disabled]{opacity:.6;cursor:not-allowed}.btn.active{border-color:#93c5fd;background:#f0f9ff}
+  .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:16px}
+  nav a{margin-left:20px;color:var(--accent);font-weight:700;text-decoration:none}
+  nav a:hover{text-decoration:underline}
+  .controls{display:flex;gap:8px;align-items:center}
+  .btn{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
+  .btn.active{border-color:#93c5fd;background:#f0f9ff}
   .small{font-size:12px;color:var(--muted)}
   main{max-width:1200px;margin:28px auto;padding:0 20px}
-  .card{background:linear-gradient(180deg,#ffffffcc,#fffffff2);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;overflow:auto}
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;overflow:auto}
   table{width:100%;border-collapse:separate;border-spacing:0;min-width:600px}
   thead th{background:#f8fafc;color:#475569;position:sticky;top:0;z-index:1;text-align:left;font-weight:700;padding:12px 14px;border-bottom:1px solid var(--border)}
   tbody td{padding:12px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
   tbody tr:hover{background:#f1f5ff}
-  /* cell proses Done biru muda saja (tidak menentukan row done) */
+
+  /* Urgent */
+  tr.row-urgent td{background:var(--urgent-row)!important;color:#b91c1c;font-weight:600}
+  td.cell-urgent{background:var(--urgent-cell)!important;color:#fff!important;font-weight:800!important;border-radius:8px}
+
+  /* Done (cells & row) */
   td.cell-done{background:var(--done)!important}
-  /* row urgent & row selesai */
-  tr.row-urgent td{background:#fee2e2!important;color:#b91c1c;font-weight:600}
   tr.row-done td{background:var(--done)!important;color:#0f172a;font-weight:600}
-  /* badge 済 di kiri */
-  .badge-done{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:#0ea5e9;color:#fff;font-weight:800;font-size:13px;margin-right:8px}
-  /* banner urgent kedap-kedip */
-  #urgent-banner{display:none;background:#b91c1c;color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:14px;font-weight:bold;text-align:center;animation:blink 1s infinite}
+
+  /* Badge 済 di kiri */
+  .badge-done{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:28px;height:28px;border-radius:999px;background:#0ea5e9;color:#fff;
+    font-weight:800;font-size:13px;margin-right:8px
+  }
+
+  /* Banner urgent: selalu tampil */
+  #urgent-banner{
+    background:#b91c1c;color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:14px;
+    font-weight:bold;text-align:center;animation:blink 1s infinite
+  }
   @keyframes blink{0%,50%,100%{background:#b91c1c}25%,75%{background:#ef4444}}
 </style>
 </head>
@@ -38,6 +65,7 @@
     <nav>
       <a href="./index.html"><strong>ホーム</strong></a>
       <a href="./forms.html">出荷検査成績書</a>
+      <a href="./sagyoutejunsho.html">作業手順書</a>
     </nav>
     <div class="controls">
       <button id="btnRefresh" class="btn" type="button">Refresh now</button>
@@ -48,11 +76,14 @@
 </header>
 
 <main>
-  <div id="urgent-banner">⚠ 至急案件があります！早急に確認してください。</div>
+  <!-- 🔴 Banner urgent (selalu ada) -->
+  <div id="urgent-banner">現在、至急案件はありません。</div>
 
   <div style="display:flex;justify-content:space-between;align-items:end">
-    <h1>出荷状況一覧</h1><span id="lastUpdated" class="small"></span>
+    <h1>出荷状況一覧</h1>
+    <span id="lastUpdated" class="small"></span>
   </div>
+
   <section class="card">
     <table id="shipTable">
       <thead><tr id="shipHead"></tr></thead>
@@ -68,51 +99,54 @@
   const CSV_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
   const S=s=>String(s??'').trim();
 
-  function parseCSV(t){const rows=[],re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;let m,row=[];t=t.replace(/\r\n?/g,"\n");
-    for(let i=0;i<t.length;){re.lastIndex=i;m=re.exec(t);if(!m)break;let cell=m[1];if(cell.startsWith('"'))cell=cell.slice(1,-1).replace(/""/g,'"');row.push(cell);i=re.lastIndex;if(m[2]==="\n"||m[2]===""){rows.push(row);row=[]}}
-    return rows.filter(r=>r.length&&r.some(c=>S(c)!==""));
+  function parseCSV(t){
+    const rows=[],re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
+    let m,row=[]; t=t.replace(/\r\n?/g,"\n");
+    for(let i=0;i<t.length;){
+      re.lastIndex=i; m=re.exec(t); if(!m) break;
+      let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
+      row.push(cell); i=re.lastIndex;
+      if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
+    }
+    return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
   }
 
   function indexByName(header){
     const map={}; header.forEach((h,i)=>map[S(h)]=i);
-    const find = names => { for(const n of names){ if(n in map) return map[n]; } return null; };
+    const find=names=>{for(const n of names){if(n in map) return map[n];} return null;};
     return {
-      date:   find(["出荷日","日付","Date"]),
-      draw:   find(["図番","Drawing","図面"]),
-      order:  find(["注番","注文番号","Order"]),
-      cust:   find(["顧客名","客先","Customer"]),
-      item:   find(["商品名","品名","Item"]),
-      qty:    find(["数量","Qty"]),
-      // ✔ kolom penentu selesai
-      status_done: find(["製品状況","製品状態"]),
-      // kolom proses (hanya warnai cell)
-      kensa:  find(["検査チェックシート","検査チェック","検査"]),
-      tepla:  find(["テプラ","ラベル"]),
-      seiseki:find(["検査成績表","成績表"]),
-      etc1:   find(["検査チェックシート（作成済み）","検査チェックシート 作成"]),
-      status_flag: find(["Status","ステータス","状態","至急"]) // bisa dipakai untuk urgent
+      date:find(["出荷日","日付","Date"]),
+      cust:find(["顧客名","客先","Customer"]),
+      draw:find(["図番","Drawing","図面"]),
+      item:find(["商品名","品名","Item"]),
+      machine:find(["機種","機種名","Machine"]),
+      qty:find(["数量","Qty"]),
+      to:find(["送り先","納品先","送付先"]),
+      note:find(["注番","注文番号","備考","注文","Order","注釈"]),
+      // kolom status “selesai”
+      status_done:find(["納品状況","製品状況","製品状態","Status","ステータス","状態"]),
+      // kolom flag urgent
+      status_flag:find(["至急","Urgent","Status","ステータス","状態"]),
     };
   }
 
-  // Hanya dipakai untuk mewarnai cell proses
-  function isDoneTextCell(v){
-    const t=S(v).toLowerCase();
-    return !!t && (/済|検査済|clear|ok|done|完了/.test(t));
-  }
-  // Penentu row selesai: kolom 製品状況/製品状態 saja (lebih ketat)
   function isRowDone(v){
     const t=S(v).toLowerCase();
-    return !!t && (/検査済|出荷済|完了|clear|ok|done/.test(t));
+    return !!t && (/済|検査済|出荷済|完了|clear|ok|done/.test(t));
   }
   function isUrgent(v){
     const t=S(v).toLowerCase();
     return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true";
   }
+  function isCellDone(v){
+    const t=S(v).toLowerCase();
+    return !!t && (/済|検査済|出荷済|完了|clear|ok|done/.test(t));
+  }
 
   let aborter=null;
   async function load(){
     try{
-      if(aborter)aborter.abort();
+      if(aborter) aborter.abort();
       aborter=new AbortController();
       const res=await fetch(CSV_URL+"&_ts="+Date.now(),{signal:aborter.signal,cache:'no-store'});
       if(!res.ok) throw new Error("HTTP "+res.status);
@@ -123,65 +157,69 @@
       const header=data[0], rows=data.slice(1);
       const idx=indexByName(header);
 
-      // Header
       document.getElementById('shipHead').innerHTML=header.map(h=>`<th>${h}</th>`).join('');
 
-      // Urgent sort (pakai kolom Status/至急 bila ada)
       rows.sort((a,b)=>{
         const au=isUrgent(a[idx.status_flag??-1]);
         const bu=isUrgent(b[idx.status_flag??-1]);
         return (bu?1:0)-(au?1:0);
       });
 
-      const tbody=document.getElementById('shipBody'); tbody.innerHTML='';
+      const tbody=document.getElementById('shipBody');
+      tbody.innerHTML='';
+
       let urgentCount=0, doneCount=0;
 
       rows.forEach(r=>{
-        const vUrg = r[idx.status_flag??-1];
-        const vDone= r[idx.status_done??-1];
+        const vUrg   = r[idx.status_flag??-1];
+        const vDone  = r[idx.status_done??-1];
 
-        const rowUrg = isUrgent(vUrg);
-        if(rowUrg) urgentCount++;
-
+        const rowUrg  = isUrgent(vUrg);
         const rowDone = isRowDone(vDone);
+
+        if(rowUrg) urgentCount++;
         if(rowDone) doneCount++;
 
-        // build cells + warnai cell proses
-        const cells = header.map((_,i)=>{
+        const tds = header.map((_,i)=>{
           const val=S(r[i]);
-          const cellClass = (i===idx.kensa||i===idx.tepla||i===idx.seiseki||i===idx.etc1) && isDoneTextCell(val) ? 'cell-done':'';
-          return `<td class="${cellClass}">${val}</td>`;
+          let cls = '';
+          if(isCellDone(val)) cls='cell-done';
+          const isStatusCol = i===idx.status_done;
+          if(rowUrg && isStatusCol) cls='cell-urgent';
+          return `<td class="${cls}">${val}</td>`;
         });
 
-        // badge 済 di kolom pertama bila rowDone
-        if(rowDone){
+        if(rowDone && tds.length){
           const firstVal = S(r[0]);
-          cells[0] = `<td><span class="badge-done">済</span>${firstVal}</td>`;
+          tds[0] = `<td><span class="badge-done">済</span>${firstVal}</td>`;
         }
 
-        tbody.insertAdjacentHTML('beforeend',
-          `<tr class="${rowUrg?'row-urgent':''} ${rowDone?'row-done':''}">${cells.join('')}</tr>`);
+        tbody.insertAdjacentHTML(
+          'beforeend',
+          `<tr class="${rowUrg?'row-urgent':''} ${rowDone?'row-done':''}">${tds.join('')}</tr>`
+        );
       });
 
-      // Banner urgent ON/OFF
-      const banner = document.getElementById('urgent-banner');
-      banner.style.display = urgentCount>0 ? 'block' : 'none';
+      const banner=document.getElementById('urgent-banner');
+      if(urgentCount>0){
+        banner.textContent = `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`;
+      }else{
+        banner.textContent = "現在、至急案件はありません。";
+      }
 
-      // Jika SEMUA baris selesai → sembunyikan semua badge 済
-      if(doneCount === rows.length){
+      if(doneCount===rows.length){
         document.querySelectorAll('.badge-done').forEach(el=>el.remove());
       }
 
-      // Info
       document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）`;
       document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
-    }catch(err){
-      console.error(err);
+
+    }catch(e){
+      console.error(e);
       document.getElementById('shipHint').textContent='読み込みに失敗しました。シート名/公開設定をご確認ください。';
     }
   }
 
-  // Refresh & Live
   let timer=null, intervalMs=60000;
   function startAutoRefresh(ms){
     intervalMs=ms; clearInterval(timer);
@@ -189,7 +227,7 @@
     document.getElementById('intervalInfo').textContent=`Interval: ${Math.round(intervalMs/1000)}s`;
     const liveBtn=document.getElementById('btnLive');
     if(intervalMs<=5000){ liveBtn.classList.add('active'); liveBtn.textContent='Live: On'; }
-    else { liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off'; }
+    else{ liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off'; }
   }
   document.getElementById('btnRefresh').addEventListener('click', load);
   document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
