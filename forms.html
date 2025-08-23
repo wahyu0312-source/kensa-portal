@@ -22,11 +22,12 @@
 
     .card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.06)}
     .folder{background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
-    .folder-head{padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:#f9fafb}
+    .folder-head{padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:#f9fafb;font-weight:600}
     .folder-body{display:none;padding:12px}
     .subfolder{margin-bottom:10px}
     .subfolder strong{display:block;margin-bottom:6px}
     .link{display:block;padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;text-decoration:none;color:var(--ink);background:#fff}
+    .link span{display:block;font-size:12px;color:var(--muted)}
     .link:hover{background:#f0f9ff;border-color:#93c5fd}
     .hidden{display:none}
     .lock{display:flex;gap:8px;align-items:center}
@@ -70,9 +71,9 @@
     </div>
   </div>
 
-  <!-- Search (muncul setelah unlock) -->
+  <!-- Search -->
   <div id="searchWrap" class="card hidden" style="margin-top:12px;display:flex;gap:8px;align-items:center">
-    <input id="q" type="search" placeholder="検索（顧客名／サブフォルダ／フォーム名）"
+    <input id="q" type="search" placeholder="検索（顧客名／サブフォルダ／フォーム名／説明）"
            style="flex:1;padding:10px;border:1px solid #e5e7eb;border-radius:10px">
     <button id="btnSearch" style="padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;cursor:pointer">検索</button>
     <span id="hit" style="color:#64748b"></span>
@@ -85,39 +86,32 @@
 
 <script>
 document.getElementById('year').textContent = new Date().getFullYear();
-const PASSWORD = "kensa2025"; // ganti sesuai kebutuhan
+const PASSWORD = "kensa2025";
 
-// DATA: customer → subfolder → links
+// data contoh
 const DATA = [
   {customer:"オークマ",folders:[
-    {name:"Y軸",links:[{label:"2025-20",url:"https://wahyu0312-source.github.io/okuma46/"}],links:[{label:"2035-20",url:"https://wahyu0312-source.github.io/mb56/"}]},
-    {name:"X軸",links:[{label:"330380V",url:"https://wahyu0312-source.github.io/330380v/"}]},
-    {name:"Z軸",links:[{label:"MB 66V",url:"https://wahyu0312-source.github.io/mb66v/"}]}
+    {name:"Y軸",links:[
+      {label:"2825-20",desc:"治具部品 Y軸ブラケット",url:"#"},
+      {label:"2035-20",desc:"スペーサー組立",url:"#"}
+    ]},
+    {name:"X軸",links:[
+      {label:"330380V",desc:"試作部品 X軸スライド",url:"#"}
+    ]}
   ]},
   {customer:"山崎マザック",folders:[
-    {name:"Y軸",links:[]},
-    {name:"X軸",links:[]},
-    {name:"Z軸",links:[]}
+    {name:"Z軸",links:[
+      {label:"MB 66V",desc:"量産品 Z軸ガイド",url:"#"}
+    ]}
   ]}
 ];
 
-// Enter untuk unlock
+// unlock with enter
 document.addEventListener('DOMContentLoaded', ()=>{
-  const pwd = document.getElementById('pwd');
-  if(pwd){
-    pwd.addEventListener('keydown', (e)=>{
-      if(e.key === 'Enter'){ unlock(); }
-    });
-  }
-  // Search listeners
-  const q = document.getElementById('q');
-  const btn = document.getElementById('btnSearch');
-  function go(){
-    lastQuery = (q.value || '').trim().toLowerCase();
-    render(DATA);
-  }
-  if(q){ q.addEventListener('keydown', e=>{ if(e.key==='Enter') go(); }); }
-  if(btn){ btn.addEventListener('click', go); }
+  const pwd=document.getElementById('pwd');
+  pwd.addEventListener('keydown', e=>{ if(e.key==="Enter") unlock(); });
+  document.getElementById('q').addEventListener('keydown', e=>{ if(e.key==="Enter") search(); });
+  document.getElementById('btnSearch').addEventListener('click', search);
 });
 
 function unlock(){
@@ -129,50 +123,50 @@ function unlock(){
   render(DATA);
 }
 
-let lastQuery = "";
+let lastQuery="";
+function search(){
+  lastQuery=(document.getElementById('q').value||"").trim().toLowerCase();
+  render(DATA);
+}
+
 function render(src){
   const mount=document.getElementById('folders');
-  mount.innerHTML='';
-  let hits = 0;
+  mount.innerHTML="";
+  let hits=0;
 
   src.forEach(c=>{
-    const wrap=document.createElement('div');
-    wrap.className='folder';
-    wrap.innerHTML=`<div class="folder-head">${c.customer}</div><div class="folder-body"></div>`;
-    const body=wrap.querySelector('.folder-body');
+    const f=document.createElement('div');
+    f.className="folder";
+    f.innerHTML=`<div class="folder-head">${c.customer}</div><div class="folder-body"></div>`;
+    const body=f.querySelector('.folder-body');
 
     c.folders.forEach(sf=>{
       const sfDiv=document.createElement('div');
-      sfDiv.className='subfolder';
+      sfDiv.className="subfolder";
       sfDiv.innerHTML=`<strong>${sf.name}</strong>`;
-
       sf.links.forEach(l=>{
-        const hay = `${c.customer} ${sf.name} ${l.label}`.toLowerCase();
-        if(lastQuery && !hay.includes(lastQuery)){ return; }
-        const a = document.createElement('a');
-        a.className = 'link';
-        a.target = '_blank';
-        a.href = l.url;
-        a.textContent = l.label;
+        const hay=`${c.customer} ${sf.name} ${l.label} ${l.desc}`.toLowerCase();
+        if(lastQuery && !hay.includes(lastQuery)) return;
+        const a=document.createElement('a');
+        a.className="link";
+        a.href=l.url; a.target="_blank";
+        a.innerHTML=`${l.label}<span>${l.desc||""}</span>`;
         sfDiv.appendChild(a);
         hits++;
       });
-
       if(sfDiv.querySelector('.link')) body.appendChild(sfDiv);
     });
 
     if(body.children.length>0){
-      wrap.querySelector('.folder-head').onclick=()=>{
-        body.style.display = body.style.display==='block' ? 'none' : 'block';
+      f.querySelector('.folder-head').onclick=()=>{
+        body.style.display=body.style.display==="block"?"none":"block";
       };
-      mount.appendChild(wrap);
+      mount.appendChild(f);
     }
   });
 
-  const hit = document.getElementById('hit');
-  if(hit){ hit.textContent = hits ? `ヒット: ${hits}` : '該当なし'; }
+  document.getElementById('hit').textContent=hits?`ヒット: ${hits}`:"該当なし";
 }
 </script>
 </body>
 </html>
-
