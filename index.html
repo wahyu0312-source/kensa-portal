@@ -96,10 +96,10 @@
     // ============================
     // Spreadsheet A (出荷状況一覧)
     const SHIP_SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
-    const SHIP_TAB      = "出荷状況";     // ganti ke tab yang kamu pakai (mis. "最新情報")
+    const SHIP_TAB      = "最新情報";     // ganti ke tab yang kamu pakai (mis. "最新情報")
     // Spreadsheet B (Urgent)
     const URG_SHEET_ID  = "1jOB1xz1N4AcSQRYkBSoeqDmAAEQLp1dALlpal2ON5wo";
-    const URG_TAB       = "至急";         // silakan buat tab ini; bebas asal konsisten
+    const URG_TAB       = "urgent";         // silakan buat tab ini; bebas asal konsisten
 
     const csvUrl = (sheetId, tab) =>
       `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}&_ts=${Date.now()}`;
@@ -280,3 +280,4 @@
   </script>
 </body>
 </html>
+
