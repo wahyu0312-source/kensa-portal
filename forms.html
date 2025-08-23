@@ -60,23 +60,34 @@
 
 <main>
   <h1>出荷検査成績書フォルダ</h1>
+
+  <!-- Password -->
   <div id="lock" class="card">
     <div class="lock">
       <input id="pwd" type="password" placeholder="パスワード">
-      <button onclick="unlock()">確定</button>
+      <button id="btnUnlock" onclick="unlock()">解除</button>
       <span id="msg" style="color:red;"></span>
     </div>
   </div>
+
+  <!-- Search (muncul setelah unlock) -->
+  <div id="searchWrap" class="card hidden" style="margin-top:12px;display:flex;gap:8px;align-items:center">
+    <input id="q" type="search" placeholder="検索（顧客名／サブフォルダ／フォーム名）"
+           style="flex:1;padding:10px;border:1px solid #e5e7eb;border-radius:10px">
+    <button id="btnSearch" style="padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;cursor:pointer">検索</button>
+    <span id="hit" style="color:#64748b"></span>
+  </div>
+
   <div id="folders" class="hidden"></div>
 </main>
 
-<footer>&copy; <span id="year"></span> ワーユ</footer>
+<footer>&copy; <span id="year"></span> 東京精密発條株式会社</footer>
 
 <script>
 document.getElementById('year').textContent = new Date().getFullYear();
 const PASSWORD = "kensa2025"; // ganti sesuai kebutuhan
 
-// customer → subfolder → links
+// DATA: customer → subfolder → links
 const DATA = [
   {customer:"オークマ",folders:[
     {name:"Y軸",links:[{label:"OKUMA 46",url:"https://wahyu0312-source.github.io/okuma46/"}]},
@@ -90,37 +101,77 @@ const DATA = [
   ]}
 ];
 
+// Enter untuk unlock
+document.addEventListener('DOMContentLoaded', ()=>{
+  const pwd = document.getElementById('pwd');
+  if(pwd){
+    pwd.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){ unlock(); }
+    });
+  }
+  // Search listeners
+  const q = document.getElementById('q');
+  const btn = document.getElementById('btnSearch');
+  function go(){
+    lastQuery = (q.value || '').trim().toLowerCase();
+    render(DATA);
+  }
+  if(q){ q.addEventListener('keydown', e=>{ if(e.key==='Enter') go(); }); }
+  if(btn){ btn.addEventListener('click', go); }
+});
+
 function unlock(){
   const v=document.getElementById('pwd').value;
   if(v!==PASSWORD){document.getElementById('msg').textContent='パスワードが違います';return;}
   document.getElementById('lock').classList.add('hidden');
   document.getElementById('folders').classList.remove('hidden');
-  render();
+  document.getElementById('searchWrap').classList.remove('hidden');
+  render(DATA);
 }
-function render(){
+
+let lastQuery = "";
+function render(src){
   const mount=document.getElementById('folders');
   mount.innerHTML='';
-  DATA.forEach(c=>{
+  let hits = 0;
+
+  src.forEach(c=>{
     const wrap=document.createElement('div');
     wrap.className='folder';
     wrap.innerHTML=`<div class="folder-head">${c.customer}</div><div class="folder-body"></div>`;
     const body=wrap.querySelector('.folder-body');
+
     c.folders.forEach(sf=>{
       const sfDiv=document.createElement('div');
       sfDiv.className='subfolder';
       sfDiv.innerHTML=`<strong>${sf.name}</strong>`;
+
       sf.links.forEach(l=>{
-        sfDiv.innerHTML+=`<a class="link" target="_blank" href="${l.url}">${l.label}</a>`;
+        const hay = `${c.customer} ${sf.name} ${l.label}`.toLowerCase();
+        if(lastQuery && !hay.includes(lastQuery)){ return; }
+        const a = document.createElement('a');
+        a.className = 'link';
+        a.target = '_blank';
+        a.href = l.url;
+        a.textContent = l.label;
+        sfDiv.appendChild(a);
+        hits++;
       });
-      body.appendChild(sfDiv);
+
+      if(sfDiv.querySelector('.link')) body.appendChild(sfDiv);
     });
-    wrap.querySelector('.folder-head').onclick=()=>{
-      body.style.display = body.style.display==='block' ? 'none' : 'block';
-    };
-    mount.appendChild(wrap);
+
+    if(body.children.length>0){
+      wrap.querySelector('.folder-head').onclick=()=>{
+        body.style.display = body.style.display==='block' ? 'none' : 'block';
+      };
+      mount.appendChild(wrap);
+    }
   });
+
+  const hit = document.getElementById('hit');
+  if(hit){ hit.textContent = hits ? `ヒット: ${hits}` : '該当なし'; }
 }
 </script>
 </body>
 </html>
-
