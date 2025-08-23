@@ -11,7 +11,7 @@
       --accent:#2563eb; --danger:#b91c1c;
       --shadow:0 30px 60px rgba(15,23,42,.08);
       --radius:22px;
-      --done:#eaf3ff; /* biru muda kolom selesai */
+      --done:#e0f2fe; /* biru muda utk selesai (row/cell) */
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -38,6 +38,7 @@
 
     .controls{display:flex;gap:8px;align-items:center}
     .btn{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
+    .btn[disabled]{opacity:.6;cursor:not-allowed}
     .btn.active{border-color:#93c5fd;background:#f0f9ff}
     .small{font-size:12px;color:var(--muted)}
 
@@ -60,8 +61,8 @@
     }
     tbody tr:hover{background:#f1f5ff}
 
-    /* highlight kolom selesai */
-    th.col-done, td.col-done{ background: var(--done) !important; }
+    /* highlight cell selesai (per cell) */
+    td.cell-done{ background: var(--done) !important; }
 
     .section-title{display:flex;align-items:center;gap:10px;margin:24px 0 12px 0}
     .dot{width:12px;height:12px;border-radius:50%;background:#ef4444;display:inline-block}
@@ -91,6 +92,18 @@
       0%, 50%, 100% { background-color:#b91c1c; }
       25%, 75% { background-color:#ef4444; }
     }
+
+    /* 🎯 Row urgent & done */
+    tr.row-urgent td{
+      background:#fee2e2 !important; /* merah muda */
+      color:#b91c1c;
+      font-weight:600;
+    }
+    tr.row-done td{
+      background:var(--done) !important; /* biru muda */
+      color:#0f172a;
+      font-weight:600;
+    }
   </style>
 </head>
 <body>
@@ -117,8 +130,8 @@
     </nav>
 
     <div class="controls">
-      <button id="btnRefresh" class="btn">Refresh now</button>
-      <button id="btnLive" class="btn">Live: Off</button>
+      <button id="btnRefresh" class="btn" type="button">Refresh now</button>
+      <button id="btnLive" class="btn" type="button">Live: Off</button>
       <span id="intervalInfo" class="small">Interval: 60s</span>
     </div>
   </div>
@@ -159,10 +172,12 @@
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
 
+  // Spreadsheet
   const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
   const TAB_NAME = "最新情報";
   const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
 
+  // CSV
   function parseCSV(text){
     const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
     let m, row=[]; text=text.replace(/\r\n?/g,"\n");
@@ -176,35 +191,48 @@
   }
   const S = s => String(s ?? '').trim();
 
+  // header index
   function indexByName(header){
     const map={}; header.forEach((h,i)=> map[S(h)] = i);
     const find = names => { for(const n of names){ if(n in map) return map[n]; } return null; };
     return {
-      date:   find(["出荷日","日付","Date"]),
-      draw:   find(["図番","Drawing","図面"]),
-      order:  find(["注番","注文番号","Order"]),
-      cust:   find(["顧客名","客先","Customer"]),
-      item:   find(["商品名","品名","Item"]),
-      qty:    find(["数量","Qty"]),
-      status: find(["Status","ステータス","至急","状態"])
+      date:    find(["出荷日","日付","Date"]),
+      draw:    find(["図番","Drawing","図面"]),
+      order:   find(["注番","注文番号","Order"]),
+      cust:    find(["顧客名","客先","Customer"]),
+      item:    find(["商品名","品名","Item"]),
+      qty:     find(["数量","Qty"]),
+      status:  find(["Status","ステータス","至急","状態","進捗","完了"]),
+      // kolom2 opsional yang sering dipakai untuk “selesai”
+      kensa:   find(["検査チェックシート","検査チェック","検査"]),
+      tepla:   find(["テプラ","ラベル"]),
+      seiseki: find(["検査成績表","成績表"]),
+      seisanjotai: find(["製品状況","製品状態"])
     };
   }
 
+  // rules “selesai”
   const DONE_NAMES = ["長谷部","石橋","都合"];
-  function isDoneCell(val){
-    const v = S(val);
-    if(!v) return false;
-    if(v.includes("済")) return true;
-    return DONE_NAMES.some(n => v.includes(n));
+  function isDoneText(v){
+    const t = S(v).toLowerCase();
+    if(!t) return false;
+    if (t.includes("済") || t.includes("検査済") || t === "clear" || t === "ok" || t === "done" || t === "完了") return true;
+    return DONE_NAMES.some(n => S(v).includes(n));
   }
-  function isUrgent(statusValue){
-    const v = S(statusValue).toLowerCase();
-    return v==="至急" || v==="urgent" || v==="緊急" || v==="true" || v==="1";
+  function isUrgent(v){
+    const t = S(v).toLowerCase();
+    return t==="至急" || t==="urgent" || t==="緊急" || t==="true" || t==="1";
   }
 
+  // state
   let aborter = null;
+  let loading = false;
+
   async function load(){
     try{
+      // tombol state
+      setRefreshing(true);
+
       if(aborter) aborter.abort();
       aborter = new AbortController();
       const res  = await fetch(CSV_URL + "&_ts=" + Date.now(), {signal: aborter.signal, cache:'no-store'});
@@ -216,110 +244,26 @@
       let header = data[0];
       let rows   = data.slice(1);
 
-      const colDone = new Array(header.length).fill(true);
-      for(let c=0;c<header.length;c++){
-        for(let r=0;r<rows.length;r++){
-          const val = rows[r][c];
-          if(!isDoneCell(val)){ colDone[c] = false; break; }
-        }
-      }
-
       const idx = indexByName(header);
-      // 🚨 Sort urgent ke atas
+
+      // 👉 sort urgent ke atas
       rows.sort((a, b) => {
         const aUrg = isUrgent(a[idx.status ?? -1]);
         const bUrg = isUrgent(b[idx.status ?? -1]);
-        if (aUrg && !bUrg) return -1;
-        if (!aUrg && bUrg) return 1;
-        return 0;
+        return (bUrg?1:0) - (aUrg?1:0); // a urgent => negatif (naik)
       });
 
+      // Render header
       const headEl = document.getElementById('shipHead');
-      headEl.innerHTML = header.map((h,i)=>`<th class="${colDone[i]?'col-done':''}">${h}</th>`).join('');
+      headEl.innerHTML = header.map(h=>`<th>${h}</th>`).join('');
 
+      // Render body (beri class row-urgent / row-done, dan cell-done per cell)
       const tbody = document.getElementById('shipBody');
       tbody.innerHTML = '';
+
       rows.forEach(r=>{
         const cells=[...r]; while(cells.length<header.length) cells.push('');
-        const tds = cells.map((c,i)=>{
-          const cls = colDone[i] ? 'col-done' : '';
-          return `<td class="${cls}">${c}</td>`;
-        }).join('');
-        tbody.insertAdjacentHTML('beforeend', `<tr>${tds}</tr>`);
-      });
 
-      document.getElementById('shipHint').textContent =
-        `データ元: ${TAB_NAME}（${rows.length} 行）`;
-      document.getElementById('lastUpdated').textContent =
-        'Last update: ' + new Date().toLocaleString();
-
-      // URGENT list
-      const urgList = rows
-        .map(r=>({
-          item:S(r[idx.item  ?? -1]),
-          draw:S(r[idx.draw  ?? -1]),
-          order:S(r[idx.order ?? -1]),
-          cust:S(r[idx.cust  ?? -1]),
-          date:S(r[idx.date  ?? -1]),
-          qty: S(r[idx.qty   ?? -1]),
-          status:S(r[idx.status ?? -1])
-        }))
-        .filter(o=>isUrgent(o.status));
-
-      const ul = document.getElementById('urgentList');
-      const badge = document.getElementById('urgentCount');
-      ul.innerHTML = '';
-      badge.textContent = `${urgList.length} 件`;
-
-      if(urgList.length===0){
-        ul.innerHTML = `<li class="li"><span class="muted">現在、至急品目はありません。</span></li>`;
-        document.getElementById('urgent-banner').style.display = 'none';
-      }else{
-        urgList.forEach(u=>{
-          ul.insertAdjacentHTML('beforeend', `
-            <li class="li">
-              <div>
-                <strong>${u.item || '(品名未設定)'}</strong>
-                <span class="chip bad">至急</span>
-                <div class="muted">
-                  顧客: ${u.cust || '-'} ／ 出荷日: ${u.date || '-'}
-                  ${u.draw ? ' ／ 図番: ' + u.draw : ''}${u.order ? ' ／ 注番: ' + u.order : ''}
-                </div>
-              </div>
-              <span class="chip">${u.qty ? '数量: '+u.qty : ''}</span>
-            </li>
-          `);
-        });
-        document.getElementById('urgent-banner').style.display = 'block';
-      }
-    }catch(e){
-      if(e.name === 'AbortError') return;
-      console.error(e);
-      document.getElementById('shipHint').textContent = '読み込みに失敗しました。シート名/公開設定をご確認ください。';
-    }
-  }
-
-  let timer = null;
-  let intervalMs = 60000;
-
-  function startAutoRefresh(ms){
-    intervalMs = ms;
-    clearInterval(timer);
-    timer = setInterval(()=>{ if(document.visibilityState === 'visible'){ load(); } }, intervalMs);
-    document.getElementById('intervalInfo').textContent = `Interval: ${Math.round(intervalMs/1000)}s`;
-    const liveBtn = document.getElementById('btnLive');
-    if(intervalMs <= 5000){ liveBtn.classList.add('active'); liveBtn.textContent = 'Live: On'; }
-    else { liveBtn.classList.remove('active'); liveBtn.textContent = 'Live: Off'; }
-  }
-
-  document.getElementById('btnRefresh').addEventListener('click', load);
-  document.getElementById('btnLive').addEventListener('click', ()=>{
-    startAutoRefresh(intervalMs <= 5000 ? 60000 : 5000);
-    load();
-  });
-  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible'){ load(); } });
-
-  window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
-</script>
-</body>
-</html>
+        // row-done: 1) status kolom done, atau 2) semua kolom progress (jika ada) done
+        const statusVal = r[idx.status ?? -1];
+        const progCols = [idx.kensa, idx.tepla, idx.seiseki, idx.seisanjotai].filter(i=>
