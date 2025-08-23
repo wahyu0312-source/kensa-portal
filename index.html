@@ -3,281 +3,238 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>品質管理生産技術 - 出荷状況一覧</title>
+  <title>品質管理生産技術 - 出荷状況</title>
   <style>
     :root{
-      --bg1:#f0f4ff; --bg2:#e6ecff; --card:#ffffff; --text:#0f172a; --muted:#64748b; --border:#e5e7eb;
-      --accent:#2563eb; --danger:#b91c1c; --shadow:0 8px 24px rgba(15,23,42,.08);
+      --bg1:#eef2ff; --bg2:#f8fafc;
+      --card:#ffffff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
+      --accent:#2563eb; --danger:#b91c1c; --success:#16a34a;
+      --shadow:0 30px 60px rgba(15,23,42,.08);
+      --radius:22px;
     }
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",Helvetica,Arial;
-      background:linear-gradient(135deg,var(--bg1),var(--bg2));color:var(--text);}
-    header{background:#fff;border-bottom:1px solid var(--border);padding:12px 24px;
-      display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--ink);
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
+      background:
+        radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
+        radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
+        linear-gradient(120deg,var(--bg1),var(--bg2));
+    }
+    /* header */
+    header{
+      position:sticky;top:0;z-index:10;
+      background:#ffffffcc; backdrop-filter:blur(10px);
+      border-bottom:1px solid var(--border);
+    }
+    .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
+    .row{display:flex;justify-content:space-between;align-items:center;gap:16px}
     .brand{display:flex;align-items:center;gap:12px}
-    .brand img{width:42px;height:42px;border-radius:50%;object-fit:cover}
-    .brand .title{font-weight:700;font-size:1.1rem}
-    .brand .subtitle{color:var(--muted);font-size:.9rem}
-    nav a{text-decoration:none;margin-left:20px;color:var(--muted);font-weight:700}
-    nav a:hover{color:var(--accent)}
+    .brand svg{width:40px;height:40px}
+    .brand-title{display:flex;flex-direction:column}
+    nav a{margin-left:20px;color:var(--accent);font-weight:700;text-decoration:none}
+    nav a:hover{text-decoration:underline}
 
-    main{max-width:1200px;margin:30px auto;padding:0 20px}
-    h1{font-size:1.5rem;margin:0 0 16px 0}
-    h2{margin:0}
+    /* main & cards */
+    main{max-width:1200px;margin:28px auto;padding:0 20px}
+    h1{margin:0 0 16px 0}
+    .card{
+      background:linear-gradient(180deg,#ffffffcc,#fffffff2);
+      border:1px solid var(--border); border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px; overflow:auto;
+    }
 
-    .card{background:var(--card);padding:20px;border-radius:16px;box-shadow:var(--shadow);overflow:auto;border:1px solid var(--border)}
+    /* tables */
+    table{width:100%;border-collapse:separate;border-spacing:0;min-width:600px}
+    thead th{
+      background:#f8fafc; color:#475569; position:sticky;top:0; z-index:1;
+      text-align:left; font-weight:700; padding:12px 14px; border-bottom:1px solid var(--border)
+    }
+    tbody td{
+      padding:12px 14px; border-bottom:1px solid var(--border); white-space:nowrap
+    }
+    tbody tr:hover{background:#f1f5ff}
 
-    table{width:100%;border-collapse:collapse;font-size:.95rem}
-    th,td{padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;text-align:left}
-    thead th{background:#f9fafb;color:#475569;position:sticky;top:0}
-    tbody tr:last-child td{border-bottom:none}
-    tbody tr:hover{background:#f3f6ff}
-    .right{text-align:right}
-    .red{color:var(--danger);font-weight:700}
-    .muted{color:var(--muted)}
-
+    /* chips + list */
     .section-title{display:flex;align-items:center;gap:10px;margin:24px 0 12px 0}
+    .dot{width:12px;height:12px;border-radius:50%;background:#ef4444;display:inline-block}
     .chip{font-size:12px;border-radius:999px;padding:4px 10px;border:1px solid var(--border);background:#fff}
-    .chip.urgent{border-color:var(--danger);color:var(--danger)}
+    .chip.bad{border-color:var(--danger);color:var(--danger)}
     .list{list-style:none;margin:0;padding:0}
-    .list li{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px dashed var(--border)}
-    .hint{margin-top:8px}
+    .li{
+      display:flex;justify-content:space-between;align-items:center;gap:8px;
+      padding:12px 10px;border-bottom:1px dashed var(--border)
+    }
+    .muted{color:var(--muted)}
   </style>
 </head>
 <body>
-  <header>
+<header>
+  <div class="wrap row">
     <div class="brand">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Tokyo_Seimitsu_company_logo.svg/512px-Tokyo_Seimitsu_company_logo.svg.png" alt="logo">
-      <div>
-        <div class="title">品質管理生産技術</div>
-        <div class="subtitle">東京精密発條株式会社</div>
+      <svg viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="30" fill="#2563eb22"/>
+        <path d="M12 34h40M12 30h40M20 18h24v6H20zM20 40h24v6H20z"
+              stroke="#2563eb" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <circle cx="20" cy="32" r="3" fill="#2563eb"/>
+        <circle cx="44" cy="32" r="3" fill="#2563eb"/>
+      </svg>
+      <div class="brand-title">
+        <strong>品質管理生産技術</strong>
+        <span class="muted" style="font-size:12px">東京精密発條株式会社</span>
       </div>
     </div>
     <nav>
-      <a href="./index.html">ホーム</a>
-      <a href="./forms.html"><strong>出荷検査成績書</strong></a>
+      <a href="./index.html"><strong>ホーム</strong></a>
+      <a href="./forms.html">出荷検査成績書</a>
       <a href="./sagyoutejunsho.html">作業手順書</a>
     </nav>
-  </header>
+  </div>
+</header>
 
-  <main>
-    <h1>出荷状況一覧</h1>
+<main>
+  <!-- 出荷状況 -->
+  <h1>出荷状況一覧</h1>
+  <section class="card">
+    <table id="shipTable">
+      <thead><tr id="shipHead"></tr></thead>
+      <tbody id="shipBody"></tbody>
+    </table>
+    <div class="muted" id="shipHint" style="margin-top:6px"></div>
+  </section>
 
-    <!-- 出荷状況テーブル（Spreadsheet A） -->
-    <section class="card" id="tableCard">
-      <table id="sheet-table">
-        <thead><tr id="thead"></tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-      <div class="muted hint" id="tableHint"></div>
-    </section>
+  <!-- Urgent -->
+  <div class="section-title">
+    <span class="dot"></span>
+    <h2 style="margin:0">Urgent（至急）</h2>
+    <span id="urgentCount" class="chip">0 件</span>
+  </div>
+  <section class="card">
+    <ul id="urgentList" class="list"></ul>
+    <div id="urgentHint" class="muted" style="margin-top:6px"></div>
+  </section>
+</main>
 
-    <!-- Urgent（至急）（Spreadsheet B） -->
-    <div class="section-title">
-      <h2>🔴 Urgent（至急）</h2>
-      <span id="urgentCount" class="chip">0 件</span>
-    </div>
-    <section class="card">
-      <ul id="urgentList" class="list"></ul>
-      <div id="noUrgent" class="muted" style="display:none">現在、至急品目はありません。</div>
-      <div class="muted hint" id="urgentHint"></div>
-    </section>
-  </main>
+<footer class="wrap muted" style="text-align:center;padding:24px 20px">
+  &copy; <span id="year"></span> 東京精密発條株式会社
+</footer>
 
-  <footer class="muted" style="text-align:center;padding:24px">
-    &copy; <span id="year"></span> 東京精密発條株式会社
-  </footer>
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
 
-  <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
+  // =========================
+  // KONFIGURASI SPREADSHEET
+  // =========================
+  const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE"; // Spreadsheet A
+  const TAB_NAME = "出荷状況"; // ganti jika tab kamu beda (otomatis di-encode)
+  const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
 
-    // ============================
-    // KONFIGURASI GOOGLE SHEETS
-    // ============================
-    // Spreadsheet A (出荷状況一覧)
-    const SHIP_SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
-    const SHIP_TAB      = "最新情報";     // ganti ke tab yang kamu pakai (mis. "最新情報")
-    // Spreadsheet B (Urgent)
-    const URG_SHEET_ID  = "1jOB1xz1N4AcSQRYkBSoeqDmAAEQLp1dALlpal2ON5wo";
-    const URG_TAB       = "urgent";         // silakan buat tab ini; bebas asal konsisten
-
-    const csvUrl = (sheetId, tab) =>
-      `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}&_ts=${Date.now()}`;
-
-    // ============================
-    // CSV parser sederhana
-    // ============================
-    function parseCSV(text){
-      const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
-      let m, row=[]; text=text.replace(/\r\n?/g,"\n");
-      for (let i=0;i<text.length;){
-        re.lastIndex=i; m=re.exec(text); if(!m) break;
-        let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-        row.push(cell); i=re.lastIndex;
-        if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
-      }
-      // buang baris kosong total
-      return rows.filter(r=>r.length && r.some(c=>String(c).trim()!==""));
+  // ======================
+  // CSV parser sederhana
+  // ======================
+  function parseCSV(text){
+    const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
+    let m, row=[]; text=text.replace(/\r\n?/g,"\n");
+    for (let i=0;i<text.length;){
+      re.lastIndex=i; m=re.exec(text); if(!m) break;
+      let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
+      row.push(cell); i=re.lastIndex;
+      if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
     }
-    const S = s => String(s ?? "").trim();
+    return rows.filter(r=>r.length && r.some(c=>String(c).trim()!==""));
+  }
 
-    function buildIndex(header){
-      const map = {}; header.forEach((h,i)=> map[S(h)] = i);
-      const find = (names) => { for(const n of names) if(n in map) return map[n]; return null; };
-      return {
-        date:  find(["出荷日","日付","Date"]),
-        cust:  find(["顧客名","客先","Customer"]),
-        item:  find(["商品名","品名","Item"]),
-        qty:   find(["数量","Qty"]),
-        done:  find(["済み","進捗","Status"]),
-        urg:   find(["至急","Urgent"]),
-        dest:  find(["送り先","Destination"]),
-        order: find(["注番","Order"]),
-        model: find(["機種","Model"]),
-        draw:  find(["図番","Drawing"])
-      };
-    }
+  const S = s => String(s ?? '').trim();
 
-    // ================
-    // 出荷状況: render
-    // ================
-    async function loadShip(){
-      const res  = await fetch(csvUrl(SHIP_SHEET_ID, SHIP_TAB));
-      if(!res.ok) throw new Error("HTTP "+res.status);
-      const data = parseCSV(await res.text());
+  function indexByName(header){
+    const map={}; header.forEach((h,i)=> map[S(h)] = i);
+    // cari kolom standar
+    const find = names => { for(const n of names){ if(n in map) return map[n]; } return null; };
+    return {
+      date:  find(["出荷日","日付","Date"]),
+      cust:  find(["顧客名","客先","Customer"]),
+      item:  find(["商品名","品名","Item"]),
+      qty:   find(["数量","Qty"]),
+      done:  find(["済み","進捗","Status","状態"]),
+      status: find(["Status","ステータス","至急","状態"]) // KOLUM P = "Status"
+    };
+  }
+
+  function isUrgent(statusValue){
+    const v = S(statusValue).toLowerCase();
+    return v==="至急" || v==="urgent" || v==="緊急" || v==="true" || v==="1";
+  }
+
+  async function load(){
+    try{
+      const res  = await fetch(CSV_URL + "&_ts=" + Date.now());
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      const data = parseCSV(text);
       if(!data.length) return;
 
-      let header = data[0], rows = data.slice(1);
-      const headerWords = new Set(["出荷日","顧客名","図番","機種","商品名","数量","送り先","注番","済み","備考","製品状況"]);
-      if(!headerWords.has(S(header[0]))){
-        header = ["出荷日","顧客名","図番","機種","商品名","数量","送り先","注番","済み"];
-        rows   = data;
-      }
+      let header = data[0];
+      let rows   = data.slice(1);
 
-      // header
-      document.getElementById("thead").innerHTML =
-        header.map(h=>`<th>${h}</th>`).join("");
-
-      // rows
-      const tbody = document.getElementById("tbody");
-      tbody.innerHTML = "";
+      // ===== Render TABEL 出荷状況 =====
+      document.getElementById('shipHead').innerHTML =
+        header.map(h=>`<th>${h}</th>`).join('');
+      const tbody = document.getElementById('shipBody');
+      tbody.innerHTML = '';
       rows.forEach(r=>{
-        const cells=[...r]; while(cells.length<header.length) cells.push("");
-        const html = cells.map((c,idx)=>{
-          const lab=S(header[idx]);
-          const isDoneCol=/済/.test(lab);
-          const ng=isDoneCol && S(c) && S(c)!=="済み";
-          const alignRight=/数量|Qty|数/.test(lab);
-          return `<td class="${ng?'red':''}" style="${alignRight?'text-align:right':''}">${c}</td>`;
-        }).join("");
-        tbody.insertAdjacentHTML("beforeend", `<tr>${html}</tr>`);
+        const cells=[...r]; while(cells.length<header.length) cells.push('');
+        tbody.insertAdjacentHTML('beforeend',
+          `<tr>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`);
       });
+      document.getElementById('shipHint').textContent =
+        `データ元: ${TAB_NAME}（${rows.length} 行）`;
 
-      document.getElementById("tableHint").textContent =
-        `データ元: ${SHIP_TAB}（${rows.length} 行）`;
-      return {header, rows};
-    }
+      // ===== Render URGENT dari kolom P = Status =====
+      const idx = indexByName(header);
+      const urgList = rows
+        .map(r=>({
+          item:S(r[idx.item ?? -1]),
+          cust:S(r[idx.cust ?? -1]),
+          date:S(r[idx.date ?? -1]),
+          qty: S(r[idx.qty  ?? -1]),
+          status:S(r[idx.status ?? -1])
+        }))
+        .filter(o=>isUrgent(o.status));
 
-    // ==================
-    // Urgent（専用シート）
-    // ==================
-    async function loadUrgentDedicated(){
-      const res  = await fetch(csvUrl(URG_SHEET_ID, URG_TAB));
-      if(!res.ok) throw new Error("HTTP "+res.status);
-      const data = parseCSV(await res.text());
-      if(!data.length) throw new Error("empty urgent sheet");
-      const header = data[0], rows = data.slice(1);
-      const idx = buildIndex(header);
+      const ul = document.getElementById('urgentList');
+      const badge = document.getElementById('urgentCount');
+      const hint = document.getElementById('urgentHint');
+      ul.innerHTML = '';
+      badge.textContent = `${urgList.length} 件`;
+      hint.textContent  = `フィルタ: Status（列P）＝ 至急 / urgent / 緊急 / TRUE / 1`;
 
-      const urgent = rows.map(r=>({
-        date:S(r[idx.date ?? -1]),
-        cust:S(r[idx.cust ?? -1]),
-        item:S(r[idx.item ?? -1]),
-        qty: S(r[idx.qty  ?? -1]),
-        done:S(r[idx.done ?? -1])
-      })).filter(u=>Object.values(u).some(x=>S(x)!==""));
-
-      renderUrgent(urgent, `データ元: ${URG_TAB}（${urgent.length} 件）`);
-    }
-
-    // ==================
-    // Urgent（fallback）
-    // ==================
-    function loadUrgentFromMain(mainHeader, mainRows){
-      const idx = buildIndex(mainHeader);
-      const urgent = [];
-      mainRows.forEach(r=>{
-        const urg  = r[idx.urg  ?? -1];
-        const done = r[idx.done ?? -1];
-        let isUrg = false;
-        if(idx.urg != null){
-          const v = S(urg).toLowerCase();
-          isUrg = v==="true" || v==="1" || v.includes("至急");
-        }else if(idx.done != null){
-          isUrg = S(done) && S(done)!=="済み";
-        }
-        if(isUrg){
-          urgent.push({
-            date:S(r[idx.date ?? -1]),
-            cust:S(r[idx.cust ?? -1]),
-            item:S(r[idx.item ?? -1]),
-            qty: S(r[idx.qty  ?? -1]),
-            done:S(done)
-          });
-        }
-      });
-      renderUrgent(urgent, `データ元: ${SHIP_TAB}（フィルタ）${urgent.length?`：${urgent.length} 件`:''}`);
-    }
-
-    // ================
-    // Render Urgent UI
-    // ================
-    function renderUrgent(list, hint){
-      const ul = document.getElementById("urgentList");
-      const no = document.getElementById("noUrgent");
-      const badge = document.getElementById("urgentCount");
-      ul.innerHTML = "";
-      badge.textContent = `${list.length} 件`;
-      document.getElementById("urgentHint").textContent = hint || "";
-
-      if(list.length===0){ no.style.display='block'; return; }
-      no.style.display='none';
-
-      list.forEach(u=>{
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <div>
-            <strong>${u.item || '(品名未設定)'}</strong> <span class="chip urgent">至急</span>
-            <div class="muted">顧客: ${u.cust || '-'} ／ 出荷日: ${u.date || '-'}</div>
-          </div>
-          <span class="chip">
-            ${u.qty ? ('数量: ' + u.qty) : ''} ${u.done && u.done!=='済み' ? '／ 状態: '+u.done : ''}
-          </span>`;
-        ul.appendChild(li);
-      });
-    }
-
-    // ==================
-    // Boot + Refresh
-    // ==================
-    async function boot(){
-      try{
-        const main = await loadShip(); // tabel utama
-        try{
-          await loadUrgentDedicated(); // prioritas: sheet urgent khusus
-        }catch(_){
-          if(main) loadUrgentFromMain(main.header, main.rows); // fallback
-        }
-      }catch(e){
-        console.error(e);
-        document.getElementById("tableHint").textContent = "読み込みに失敗しました。シート名/公開設定をご確認ください。";
-        document.getElementById("urgentHint").textContent = "";
+      if(urgList.length===0){
+        ul.innerHTML = `<li class="li"><span class="muted">現在、至急品目はありません。</span></li>`;
+      }else{
+        urgList.forEach(u=>{
+          ul.insertAdjacentHTML('beforeend', `
+            <li class="li">
+              <div>
+                <strong>${u.item || '(品名未設定)'}</strong>
+                <span class="chip bad">至急</span>
+                <div class="muted">顧客: ${u.cust || '-'} ／ 出荷日: ${u.date || '-'}</div>
+              </div>
+              <span class="chip">${u.qty ? '数量: '+u.qty : ''}</span>
+            </li>
+          `);
+        });
       }
+    }catch(e){
+      console.error(e);
+      document.getElementById('shipHint').textContent = '読み込みに失敗しました。シート名/公開設定をご確認ください。';
     }
+  }
 
-    window.addEventListener("DOMContentLoaded", boot);
-    setInterval(boot, 60000); // auto-refresh 60 dtk
-  </script>
+  window.addEventListener('DOMContentLoaded', load);
+  // Auto-refresh 60 detik
+  setInterval(load, 60000);
+</script>
 </body>
 </html>
-
