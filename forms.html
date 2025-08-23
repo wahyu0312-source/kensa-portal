@@ -88,7 +88,7 @@
 document.getElementById('year').textContent = new Date().getFullYear();
 const PASSWORD = "kensa2025";
 
-// data contoh
+// ----- demo data -----
 const DATA = [
   {customer:"オークマ",folders:[
     {name:"Y軸",links:[
@@ -103,73 +103,132 @@ const DATA = [
   ]},
   {customer:"山崎マザック",folders:[
     {name:"Z軸",links:[
-      {label:"MB 66V",desc:"量産品 Z軸ガイド",url:"#"}
+      {label:"MB 66V",desc:"量産品 Z軸ガイド",url:"#"} // contoh masih '#'
     ]}
   ]}
 ];
 
-// unlock with enter
-document.addEventListener('DOMContentLoaded', ()=>{
-  const pwd=document.getElementById('pwd');
-  pwd.addEventListener('keydown', e=>{ if(e.key==="Enter") unlock(); });
-  document.getElementById('q').addEventListener('keydown', e=>{ if(e.key==="Enter") search(); });
+// ----- elements -----
+const elLock = document.getElementById('lock');
+const elFolders = document.getElementById('folders');
+const elSearchWrap = document.getElementById('searchWrap');
+const elPwd = document.getElementById('pwd');
+const elMsg = document.getElementById('msg');
+const elQ = document.getElementById('q');
+const elHit = document.getElementById('hit');
+
+let lastQuery = "";
+let openCustomers = new Set(); // simpan header yang terbuka
+
+// ----- restore state on load -----
+document.addEventListener('DOMContentLoaded', () => {
+  // enter handlers
+  elPwd.addEventListener('keydown', e => { if (e.key === "Enter") unlock(); });
+  elQ.addEventListener('keydown', e => { if (e.key === "Enter") search(); });
   document.getElementById('btnSearch').addEventListener('click', search);
+
+  // restore saved state
+  const unlocked = localStorage.getItem('kensa_unlocked') === '1';
+  const savedQuery = localStorage.getItem('kensa_query') || "";
+  const savedOpen = JSON.parse(localStorage.getItem('kensa_open') || "[]");
+
+  if (unlocked) {
+    elLock.classList.add('hidden');
+    elFolders.classList.remove('hidden');
+    elSearchWrap.classList.remove('hidden');
+    elQ.value = savedQuery;
+    lastQuery = (savedQuery || "").trim().toLowerCase();
+    openCustomers = new Set(savedOpen);
+    render(DATA);
+  }
 });
 
-function unlock(){
-  const v=document.getElementById('pwd').value;
-  if(v!==PASSWORD){document.getElementById('msg').textContent='パスワードが違います';return;}
-  document.getElementById('lock').classList.add('hidden');
-  document.getElementById('folders').classList.remove('hidden');
-  document.getElementById('searchWrap').classList.remove('hidden');
+function unlock() {
+  const v = elPwd.value;
+  if (v !== PASSWORD) { elMsg.textContent = 'パスワードが違います'; return; }
+  elMsg.textContent = '';
+  elLock.classList.add('hidden');
+  elFolders.classList.remove('hidden');
+  elSearchWrap.classList.remove('hidden');
+  localStorage.setItem('kensa_unlocked', '1');
   render(DATA);
 }
 
-let lastQuery="";
-function search(){
-  lastQuery=(document.getElementById('q').value||"").trim().toLowerCase();
+function search() {
+  lastQuery = (elQ.value || "").trim().toLowerCase();
+  localStorage.setItem('kensa_query', elQ.value || "");
   render(DATA);
 }
 
-function render(src){
-  const mount=document.getElementById('folders');
-  mount.innerHTML="";
-  let hits=0;
+function render(src) {
+  elFolders.innerHTML = "";
+  let hits = 0;
 
-  src.forEach(c=>{
-    const f=document.createElement('div');
-    f.className="folder";
-    f.innerHTML=`<div class="folder-head">${c.customer}</div><div class="folder-body"></div>`;
-    const body=f.querySelector('.folder-body');
+  src.forEach(c => {
+    const f = document.createElement('div');
+    f.className = "folder";
 
-    c.folders.forEach(sf=>{
-      const sfDiv=document.createElement('div');
-      sfDiv.className="subfolder";
-      sfDiv.innerHTML=`<strong>${sf.name}</strong>`;
-      sf.links.forEach(l=>{
-        const hay=`${c.customer} ${sf.name} ${l.label} ${l.desc}`.toLowerCase();
-        if(lastQuery && !hay.includes(lastQuery)) return;
-        const a=document.createElement('a');
-        a.className="link";
-        a.href=l.url; a.target="_blank";
-        a.innerHTML=`${l.label}<span>${l.desc||""}</span>`;
+    const head = document.createElement('div');
+    head.className = "folder-head";
+    head.textContent = c.customer;
+
+    const body = document.createElement('div');
+    body.className = "folder-body";
+    body.style.display = openCustomers.has(c.customer) ? "block" : "none";
+
+    // subfolders
+    c.folders.forEach(sf => {
+      const sfDiv = document.createElement('div');
+      sfDiv.className = "subfolder";
+      sfDiv.innerHTML = `<strong>${sf.name}</strong>`;
+
+      sf.links.forEach(l => {
+        const hay = `${c.customer} ${sf.name} ${l.label} ${l.desc}`.toLowerCase();
+        if (lastQuery && !hay.includes(lastQuery)) return;
+
+        const a = document.createElement('a');
+        a.className = "link";
+        a.href = l.url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.innerHTML = `${l.label}<span>${l.desc || ""}</span>`;
+
+        // cegah scroll ke atas jika masih '#'
+        a.addEventListener('click', (e) => {
+          if (!l.url || l.url === '#') {
+            e.preventDefault();
+            alert('Link belum di-set. Silakan isi URL yang benar.');
+          }
+        });
+
         sfDiv.appendChild(a);
         hits++;
       });
-      if(sfDiv.querySelector('.link')) body.appendChild(sfDiv);
+
+      if (sfDiv.querySelector('.link')) body.appendChild(sfDiv);
     });
 
-    if(body.children.length>0){
-      f.querySelector('.folder-head').onclick=()=>{
-        body.style.display=body.style.display==="block"?"none":"block";
-      };
-      mount.appendChild(f);
+    // toggle open/close
+    head.addEventListener('click', () => {
+      const nowOpen = body.style.display === "block";
+      body.style.display = nowOpen ? "none" : "block";
+      if (nowOpen) openCustomers.delete(c.customer);
+      else openCustomers.add(c.customer);
+      localStorage.setItem('kensa_open', JSON.stringify([...openCustomers]));
+    });
+
+    // hanya tampilkan folder yang punya isi (sesudah filter)
+    if (body.children.length > 0) {
+      f.appendChild(head);
+      f.appendChild(body);
+      elFolders.appendChild(f);
     }
   });
 
-  document.getElementById('hit').textContent=hits?`ヒット: ${hits}`:"該当なし";
+  elHit.textContent = hits ? `ヒット: ${hits}` : "該当なし";
 }
 </script>
 </body>
 </html>
+
 
