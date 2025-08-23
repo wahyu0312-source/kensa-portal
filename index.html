@@ -20,9 +20,13 @@
     .brand .subtitle{color:var(--muted);font-size:.9rem}
     nav a{text-decoration:none;margin-left:20px;color:var(--muted);font-weight:700}
     nav a:hover{color:var(--accent)}
+
     main{max-width:1200px;margin:30px auto;padding:0 20px}
     h1{font-size:1.5rem;margin:0 0 16px 0}
+    h2{margin:0}
+
     .card{background:var(--card);padding:20px;border-radius:16px;box-shadow:var(--shadow);overflow:auto;border:1px solid var(--border)}
+
     table{width:100%;border-collapse:collapse;font-size:.95rem}
     th,td{padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;text-align:left}
     thead th{background:#f9fafb;color:#475569;position:sticky;top:0}
@@ -31,12 +35,13 @@
     .right{text-align:right}
     .red{color:var(--danger);font-weight:700}
     .muted{color:var(--muted)}
-    /* Urgent list */
-    .list{list-style:none;margin:0;padding:0}
-    .list li{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px dashed var(--border)}
+
+    .section-title{display:flex;align-items:center;gap:10px;margin:24px 0 12px 0}
     .chip{font-size:12px;border-radius:999px;padding:4px 10px;border:1px solid var(--border);background:#fff}
     .chip.urgent{border-color:var(--danger);color:var(--danger)}
-    .section-title{display:flex;align-items:center;gap:10px;margin:24px 0 12px 0}
+    .list{list-style:none;margin:0;padding:0}
+    .list li{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px dashed var(--border)}
+    .hint{margin-top:8px}
   </style>
 </head>
 <body>
@@ -58,44 +63,50 @@
   <main>
     <h1>出荷状況一覧</h1>
 
-    <!-- 出荷状況テーブル -->
+    <!-- 出荷状況テーブル（Spreadsheet A） -->
     <section class="card" id="tableCard">
       <table id="sheet-table">
         <thead><tr id="thead"></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
-      <div class="muted" id="tableHint" style="margin-top:8px"></div>
+      <div class="muted hint" id="tableHint"></div>
     </section>
 
-    <!-- Urgent（至急） -->
+    <!-- Urgent（至急）（Spreadsheet B） -->
     <div class="section-title">
-      <h2 style="margin:0">🔴 Urgent（至急）</h2>
+      <h2>🔴 Urgent（至急）</h2>
       <span id="urgentCount" class="chip">0 件</span>
     </div>
     <section class="card">
       <ul id="urgentList" class="list"></ul>
       <div id="noUrgent" class="muted" style="display:none">現在、至急品目はありません。</div>
+      <div class="muted hint" id="urgentHint"></div>
     </section>
   </main>
 
-  <footer class="footer muted" style="text-align:center;padding:24px">
+  <footer class="muted" style="text-align:center;padding:24px">
     &copy; <span id="year"></span> 東京精密発條株式会社
   </footer>
 
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
 
-    // =========================================
-    // Spreadsheet CSV Export (Google GViz out:csv)
-    // =========================================
-    const SHEET_ID   = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
-    // GANTI kalau kamu mau tab lain. Nama Jepang OK (kita encode otomatis).
-    const SHEET_NAME = "最新情報";
-    const CSV_URL    = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+    // ============================
+    // KONFIGURASI GOOGLE SHEETS
+    // ============================
+    // Spreadsheet A (出荷状況一覧)
+    const SHIP_SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
+    const SHIP_TAB      = "出荷状況";     // ganti ke tab yang kamu pakai (mis. "最新情報")
+    // Spreadsheet B (Urgent)
+    const URG_SHEET_ID  = "1jOB1xz1N4AcSQRYkBSoeqDmAAEQLp1dALlpal2ON5wo";
+    const URG_TAB       = "至急";         // silakan buat tab ini; bebas asal konsisten
 
-    // =====================
+    const csvUrl = (sheetId, tab) =>
+      `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}&_ts=${Date.now()}`;
+
+    // ============================
     // CSV parser sederhana
-    // =====================
+    // ============================
     function parseCSV(text){
       const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
       let m, row=[]; text=text.replace(/\r\n?/g,"\n");
@@ -108,139 +119,164 @@
       // buang baris kosong total
       return rows.filter(r=>r.length && r.some(c=>String(c).trim()!==""));
     }
+    const S = s => String(s ?? "").trim();
 
-    // helper: normalisasi string
-    const S = s => String(s ?? '').trim();
-
-    // Deteksi header dan kolom penting
-    function columnsIndex(header){
-      const map = {};
-      header.forEach((h,i)=>{
-        const key = S(h);
-        map[key] = i;
-      });
-      // cari alias
-      const find = names => {
-        for(const n of names){ if(n in map) return map[n]; }
-      };
+    function buildIndex(header){
+      const map = {}; header.forEach((h,i)=> map[S(h)] = i);
+      const find = (names) => { for(const n of names) if(n in map) return map[n]; return null; };
       return {
-        idxDate:  find(["出荷日","日付","Date"]),
-        idxCust:  find(["顧客名","客先","Customer"]),
-        idxItem:  find(["商品名","品名","Item"]),
-        idxQty:   find(["数量","Qty"]),
-        idxDone:  find(["済み","進捗","Status"]),
-        idxUrg:   find(["至急","Urgent"]) // opsional
+        date:  find(["出荷日","日付","Date"]),
+        cust:  find(["顧客名","客先","Customer"]),
+        item:  find(["商品名","品名","Item"]),
+        qty:   find(["数量","Qty"]),
+        done:  find(["済み","進捗","Status"]),
+        urg:   find(["至急","Urgent"]),
+        dest:  find(["送り先","Destination"]),
+        order: find(["注番","Order"]),
+        model: find(["機種","Model"]),
+        draw:  find(["図番","Drawing"])
       };
     }
 
-    // =====================
-    // Render
-    // =====================
-    async function loadCSV(){
-      try{
-        const res  = await fetch(CSV_URL + "&_ts=" + Date.now()); // cache bust
-        if(!res.ok){ throw new Error("HTTP " + res.status); }
-        const text = await res.text();
-        const data = parseCSV(text);
-        if(!data.length) return;
+    // ================
+    // 出荷状況: render
+    // ================
+    async function loadShip(){
+      const res  = await fetch(csvUrl(SHIP_SHEET_ID, SHIP_TAB));
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      const data = parseCSV(await res.text());
+      if(!data.length) return;
 
-        // Header & rows
-        let header = data[0];
-        let rows   = data.slice(1);
+      let header = data[0], rows = data.slice(1);
+      const headerWords = new Set(["出荷日","顧客名","図番","機種","商品名","数量","送り先","注番","済み","備考","製品状況"]);
+      if(!headerWords.has(S(header[0]))){
+        header = ["出荷日","顧客名","図番","機種","商品名","数量","送り先","注番","済み"];
+        rows   = data;
+      }
 
-        // Jika baris 1 bukan header (misal langsung data), fallback header default
-        const headerWords = new Set(["出荷日","顧客名","図番","機種","商品名","数量","送り先","注番","済み","備考","製品状況"]);
-        if(!headerWords.has(S(header[0]))){
-          // default 9 kolom (A..I)
-          header = ["出荷日","顧客名","図番","機種","商品名","数量","送り先","注番","済み"];
-          rows   = data;
+      // header
+      document.getElementById("thead").innerHTML =
+        header.map(h=>`<th>${h}</th>`).join("");
+
+      // rows
+      const tbody = document.getElementById("tbody");
+      tbody.innerHTML = "";
+      rows.forEach(r=>{
+        const cells=[...r]; while(cells.length<header.length) cells.push("");
+        const html = cells.map((c,idx)=>{
+          const lab=S(header[idx]);
+          const isDoneCol=/済/.test(lab);
+          const ng=isDoneCol && S(c) && S(c)!=="済み";
+          const alignRight=/数量|Qty|数/.test(lab);
+          return `<td class="${ng?'red':''}" style="${alignRight?'text-align:right':''}">${c}</td>`;
+        }).join("");
+        tbody.insertAdjacentHTML("beforeend", `<tr>${html}</tr>`);
+      });
+
+      document.getElementById("tableHint").textContent =
+        `データ元: ${SHIP_TAB}（${rows.length} 行）`;
+      return {header, rows};
+    }
+
+    // ==================
+    // Urgent（専用シート）
+    // ==================
+    async function loadUrgentDedicated(){
+      const res  = await fetch(csvUrl(URG_SHEET_ID, URG_TAB));
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      const data = parseCSV(await res.text());
+      if(!data.length) throw new Error("empty urgent sheet");
+      const header = data[0], rows = data.slice(1);
+      const idx = buildIndex(header);
+
+      const urgent = rows.map(r=>({
+        date:S(r[idx.date ?? -1]),
+        cust:S(r[idx.cust ?? -1]),
+        item:S(r[idx.item ?? -1]),
+        qty: S(r[idx.qty  ?? -1]),
+        done:S(r[idx.done ?? -1])
+      })).filter(u=>Object.values(u).some(x=>S(x)!==""));
+
+      renderUrgent(urgent, `データ元: ${URG_TAB}（${urgent.length} 件）`);
+    }
+
+    // ==================
+    // Urgent（fallback）
+    // ==================
+    function loadUrgentFromMain(mainHeader, mainRows){
+      const idx = buildIndex(mainHeader);
+      const urgent = [];
+      mainRows.forEach(r=>{
+        const urg  = r[idx.urg  ?? -1];
+        const done = r[idx.done ?? -1];
+        let isUrg = false;
+        if(idx.urg != null){
+          const v = S(urg).toLowerCase();
+          isUrg = v==="true" || v==="1" || v.includes("至急");
+        }else if(idx.done != null){
+          isUrg = S(done) && S(done)!=="済み";
         }
-
-        // ----- TABEL -----
-        const thead=document.getElementById("thead");
-        thead.innerHTML = header.map(h=>`<th>${h}</th>`).join("");
-
-        const tbody=document.getElementById("tbody");
-        tbody.innerHTML="";
-        rows.forEach(r=>{
-          // pad cells supaya >= header.length
-          const cells = [...r];
-          while(cells.length < header.length) cells.push("");
-          const html = cells.map((c,idx)=>{
-            const label = S(header[idx]);
-            // kolom '済み' → merah jika bukan '済み'
-            const isDoneCol = /済/.test(label);
-            const ng = isDoneCol && S(c) && S(c) !== "済み";
-            const alignRight = /数量|Qty|数/.test(label);
-            return `<td class="${ng?'red':''}" style="${alignRight?'text-align:right':''}">${c}</td>`;
-          }).join("");
-          tbody.insertAdjacentHTML("beforeend", `<tr>${html}</tr>`);
-        });
-
-        // Info hint
-        document.getElementById('tableHint').textContent =
-          `データ元: ${SHEET_NAME}（${rows.length} 行）`;
-
-        // ----- URGENT -----
-        const idx = columnsIndex(header);
-        // Build record list untuk urgent
-        const urgent = [];
-        rows.forEach(r=>{
-          const date = r[idx.idxDate ?? -1];
-          const cust = r[idx.idxCust ?? -1];
-          const item = r[idx.idxItem ?? -1];
-          const qty  = r[idx.idxQty  ?? -1];
-          const done = r[idx.idxDone ?? -1];
-          const urg  = r[idx.idxUrg  ?? -1];
-
-          // rule: kalau ada kolom 至急 → pakai itu
-          let isUrgent = false;
-          if(idx.idxUrg != null){
-            const v = S(urg).toLowerCase();
-            isUrgent = v === "true" || v === "1" || v.includes("至急");
-          }else if(idx.idxDone != null){
-            // fallback: kolom 済み ≠ "済み"
-            isUrgent = S(done) && S(done) !== "済み";
-          }
-          if(isUrgent){
-            urgent.push({
-              date:S(date), cust:S(cust), item:S(item), qty:S(qty), done:S(done)
-            });
-          }
-        });
-
-        // Render urgent list
-        const ul = document.getElementById('urgentList');
-        const no = document.getElementById('noUrgent');
-        const badge = document.getElementById('urgentCount');
-        ul.innerHTML = '';
-        badge.textContent = `${urgent.length} 件`;
-        if(urgent.length === 0){
-          no.style.display = 'block';
-        }else{
-          no.style.display = 'none';
-          urgent.forEach(u=>{
-            const li = document.createElement('li');
-            li.innerHTML = `
-              <div>
-                <strong>${u.item || '(品名未設定)'}</strong> <span class="chip urgent">至急</span>
-                <div class="muted">顧客: ${u.cust || '-'} ／ 出荷日: ${u.date || '-'}</div>
-              </div>
-              <span class="chip">${u.qty ? ('数量: ' + u.qty) : ''} ${u.done && u.done!=='済み' ? '／ 状態: '+u.done : ''}</span>
-            `;
-            ul.appendChild(li);
+        if(isUrg){
+          urgent.push({
+            date:S(r[idx.date ?? -1]),
+            cust:S(r[idx.cust ?? -1]),
+            item:S(r[idx.item ?? -1]),
+            qty: S(r[idx.qty  ?? -1]),
+            done:S(done)
           });
         }
+      });
+      renderUrgent(urgent, `データ元: ${SHIP_TAB}（フィルタ）${urgent.length?`：${urgent.length} 件`:''}`);
+    }
 
+    // ================
+    // Render Urgent UI
+    // ================
+    function renderUrgent(list, hint){
+      const ul = document.getElementById("urgentList");
+      const no = document.getElementById("noUrgent");
+      const badge = document.getElementById("urgentCount");
+      ul.innerHTML = "";
+      badge.textContent = `${list.length} 件`;
+      document.getElementById("urgentHint").textContent = hint || "";
+
+      if(list.length===0){ no.style.display='block'; return; }
+      no.style.display='none';
+
+      list.forEach(u=>{
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div>
+            <strong>${u.item || '(品名未設定)'}</strong> <span class="chip urgent">至急</span>
+            <div class="muted">顧客: ${u.cust || '-'} ／ 出荷日: ${u.date || '-'}</div>
+          </div>
+          <span class="chip">
+            ${u.qty ? ('数量: ' + u.qty) : ''} ${u.done && u.done!=='済み' ? '／ 状態: '+u.done : ''}
+          </span>`;
+        ul.appendChild(li);
+      });
+    }
+
+    // ==================
+    // Boot + Refresh
+    // ==================
+    async function boot(){
+      try{
+        const main = await loadShip(); // tabel utama
+        try{
+          await loadUrgentDedicated(); // prioritas: sheet urgent khusus
+        }catch(_){
+          if(main) loadUrgentFromMain(main.header, main.rows); // fallback
+        }
       }catch(e){
-        console.error("CSV load error", e);
-        document.getElementById('tableHint').textContent = '読み込みに失敗しました。シート名/公開設定をご確認ください。';
+        console.error(e);
+        document.getElementById("tableHint").textContent = "読み込みに失敗しました。シート名/公開設定をご確認ください。";
+        document.getElementById("urgentHint").textContent = "";
       }
     }
 
-    // initial load + auto refresh
-    window.addEventListener("DOMContentLoaded", loadCSV);
-    setInterval(loadCSV, 60000);
+    window.addEventListener("DOMContentLoaded", boot);
+    setInterval(boot, 60000); // auto-refresh 60 dtk
   </script>
 </body>
 </html>
