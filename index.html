@@ -11,14 +11,10 @@
     --urgent-row:#fee2e2; --urgent-cell:#ef4444;
   }
   *{box-sizing:border-box}
-  body{
-    margin:0; color:var(--ink);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
-    background:
-      radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
-      radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
-      linear-gradient(120deg,var(--bg1),var(--bg2));
-  }
+  body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
+    background:radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
+               radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
+               linear-gradient(120deg,var(--bg1),var(--bg2));}
   header{position:sticky;top:0;z-index:10;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
   .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
   .row{display:flex;justify-content:space-between;align-items:center;gap:16px}
@@ -35,17 +31,13 @@
   thead th{background:#f8fafc;color:#475569;position:sticky;top:0;z-index:1;text-align:left;font-weight:700;padding:12px 14px;border-bottom:1px solid var(--border)}
   tbody td{padding:12px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
   tbody tr:hover{background:#f1f5ff}
-
-  /* Urgent styles */
   tr.row-urgent td{background:var(--urgent-row)!important;color:#b91c1c;font-weight:600}
   td.cell-urgent{background:var(--urgent-cell)!important;color:#fff!important;font-weight:800!important;border-radius:8px}
-
   .flag-urgent{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;background:#dc2626;color:#fff;font-weight:800;font-size:12px;margin-right:12px}
   .flag-urgent::before{content:"⚠";}
   .badge-done,.badge-todo{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;color:#fff;font-weight:800;font-size:13px;margin-right:12px}
   .badge-done{background:#0ea5e9}
   .badge-todo{background:#94a3b8}
-
   #urgent-banner{background:#b91c1c;color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:14px;font-weight:bold;text-align:center;animation:blink 1s infinite}
   @keyframes blink{0%,50%,100%{background:#b91c1c}25%,75%{background:#ef4444}}
   .export-bar{margin-top:12px;display:flex;gap:8px;justify-content:flex-end}
@@ -70,12 +62,10 @@
 
 <main>
   <div id="urgent-banner">現在、至急案件はありません。</div>
-
   <div style="display:flex;justify-content:space-between;align-items:end">
     <h1>出荷状況一覧</h1>
     <span id="lastUpdated" class="small"></span>
   </div>
-
   <section class="card">
     <table id="shipTable">
       <thead><tr id="shipHead"></tr></thead>
@@ -100,53 +90,117 @@
   const CSV_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
   const S=s=>String(s??'').trim();
 
-  function parseCSV(t){/* sama seperti punyamu */ /* ... */} 
-  // (potong bagian parseCSV, indexByName, dll tetap sama dengan punyamu di atas)
+  function parseCSV(t){
+    const rows=[],re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
+    let m,row=[]; t=t.replace(/\r\n?/g,"\n");
+    for(let i=0;i<t.length;){
+      re.lastIndex=i; m=re.exec(t); if(!m) break;
+      let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
+      row.push(cell); i=re.lastIndex;
+      if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
+    }
+    return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
+  }
+  function indexByName(header){/* sama persis punyamu */}
+  const valAt=(row,idx)=>(idx==null?"":(row[idx]??""));
 
-  // >>> tambahan: parse date
+  // fungsi isDoneValue, isClearValue, isRowDoneByStatus, isRowDoneByQC, isRowNotYet, isUrgent → sama seperti punyamu
+
   function parseJPDate(str){
     const s=String(str??"").trim();
     const mJP=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
     if(mJP) return new Date(mJP[1], mJP[2]-1, mJP[3]);
     const parts=s.replaceAll('-','/').split('/');
-    if(parts.length===3) return new Date(parts[0], parts[1]-1, parts[2]);
+    if(parts.length===3) return new Date(parts[0],parts[1]-1,parts[2]);
     return new Date(s);
   }
 
+  let aborter=null,isLoading=false;
   async function load(){
-    // ... ambil CSV, parse, indexByName (sama seperti punyamu) ...
+    try{
+      if(isLoading){ if(aborter) aborter.abort(); }
+      isLoading=true;
+      const btn=document.getElementById('btnRefresh');
+      const old=btn.textContent; btn.textContent='Loading...'; btn.disabled=true;
 
-    // setelah dapat rows:
-    // Urgent dulu, lalu sort descending 出荷日
-    rows.sort((a,b)=>{
-      const au=idx.status_flag!=null ? isUrgent(valAt(a,idx.status_flag)):false;
-      const bu=idx.status_flag!=null ? isUrgent(valAt(b,idx.status_flag)):false;
-      if(au!==bu) return au?-1:1;
-      const da=parseJPDate(valAt(a,idx.date));
-      const db=parseJPDate(valAt(b,idx.date));
-      return db-da; // terbaru di atas
-    });
+      if(aborter) aborter.abort();
+      aborter=new AbortController();
+      const res=await fetch(CSV_URL+"&_ts="+Date.now(),{signal:aborter.signal,cache:'no-store'});
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      const text=await res.text();
+      const data=parseCSV(text);
+      if(!data.length) return;
 
-    // ... render tbody (sama dengan punyamu) ...
+      const header=data[0], rows=data.slice(1);
+      const idx=indexByName(header);
+      document.getElementById('shipHead').innerHTML=header.map(h=>`<th>${h}</th>`).join('');
+
+      // Urgent dulu, lalu sort 出荷日 descending
+      rows.sort((a,b)=>{
+        const au=idx.status_flag!=null?isUrgent(valAt(a,idx.status_flag)):false;
+        const bu=idx.status_flag!=null?isUrgent(valAt(b,idx.status_flag)):false;
+        if(au!==bu) return au?-1:1;
+        const da=parseJPDate(valAt(a,idx.date));
+        const db=parseJPDate(valAt(b,idx.date));
+        return db-da;
+      });
+
+      const tbody=document.getElementById('shipBody');
+      tbody.innerHTML='';
+      let urgentCount=0;
+
+      rows.forEach(r=>{
+        const urgVal=valAt(r,idx.status_flag);
+        const rowUrg=idx.status_flag!=null?isUrgent(urgVal):false;
+        let rowDone=false;
+        if(idx.status_done!=null){ rowDone=isRowDoneByStatus(valAt(r,idx.status_done)); }
+        else{ rowDone=isRowDoneByQC(r,idx); }
+        const rowNotYet=!rowDone && isRowNotYet(r,idx);
+        if(rowUrg) urgentCount++;
+
+        const tds=header.map((_,i)=>{
+          const v=S(r[i]);
+          const isStatusCol=(idx.status_done!=null && i===idx.status_done);
+          const cls=rowUrg&&isStatusCol?'cell-urgent':'';
+          return `<td class="${cls}">${v}</td>`;
+        });
+        if(tds.length){
+          const dateText=idx.date!=null?S(valAt(r,idx.date)):S(r[0]??'');
+          if(rowUrg) tds[0]=`<td><span class="flag-urgent">至急</span>${dateText}</td>`;
+          else if(rowDone) tds[0]=`<td><span class="badge-done">済</span>${dateText}</td>`;
+          else if(rowNotYet) tds[0]=`<td><span class="badge-todo">未</span>${dateText}</td>`;
+          else tds[0]=`<td>${dateText}</td>`;
+        }
+        tbody.insertAdjacentHTML('beforeend',`<tr class="${rowUrg?'row-urgent':''}">${tds.join('')}</tr>`);
+      });
+
+      const banner=document.getElementById('urgent-banner');
+      banner.textContent=urgentCount>0?`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`:'現在、至急案件はありません。';
+      document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
+      btn.textContent=old; btn.disabled=false; isLoading=false;
+    }catch(e){
+      if(e.name!=="AbortError") console.error(e);
+      const btn=document.getElementById('btnRefresh');
+      btn.textContent='Refresh now'; btn.disabled=false; isLoading=false;
+      document.getElementById('shipHint').textContent='読み込み失敗しました。';
+    }
   }
 
-  // Export ke Excel
-  function exportExcel(){
-    const table=document.getElementById("shipTable");
-    const wb=XLSX.utils.table_to_book(table,{sheet:"出荷状況"});
-    XLSX.writeFile(wb,"出荷状況.xlsx");
-  }
-  // Export ke PDF
-  function exportPDF(){
-    const {jsPDF}=window.jspdf;
-    const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"});
-    doc.text("出荷状況一覧",40,40);
-    doc.autoTable({html:"#shipTable",startY:60,styles:{fontSize:9,cellPadding:4,halign:"center"}});
-    doc.save("出荷状況.pdf");
-  }
-
+  // Export
+  function exportExcel(){const table=document.getElementById("shipTable");const wb=XLSX.utils.table_to_book(table,{sheet:"出荷状況"});XLSX.writeFile(wb,"出荷状況.xlsx");}
+  function exportPDF(){const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"});doc.text("出荷状況一覧",40,40);doc.autoTable({html:"#shipTable",startY:60,styles:{fontSize:9,cellPadding:4,halign:"center"}});doc.save("出荷状況.pdf");}
   document.getElementById("btnExcel").addEventListener("click",exportExcel);
   document.getElementById("btnPDF").addEventListener("click",exportPDF);
+
+  // Auto-refresh
+  let timer=null, intervalMs=60000;
+  function startAutoRefresh(ms){intervalMs=ms;clearInterval(timer);timer=setInterval(()=>{if(document.visibilityState==='visible')load();},intervalMs);
+    document.getElementById('intervalInfo').textContent=`Interval: ${Math.round(intervalMs/1000)}s`;
+    const liveBtn=document.getElementById('btnLive');if(intervalMs<=5000){liveBtn.classList.add('active');liveBtn.textContent='Live: On';}else{liveBtn.classList.remove('active');liveBtn.textContent='Live: Off';}}
+  document.getElementById('btnRefresh').addEventListener('click',load);
+  document.getElementById('btnLive').addEventListener('click',()=>{startAutoRefresh(intervalMs<=5000?60000:5000);load();});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')load();});
+  window.addEventListener('DOMContentLoaded',()=>{load();startAutoRefresh(60000);});
 </script>
 </body>
 </html>
