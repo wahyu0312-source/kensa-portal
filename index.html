@@ -133,12 +133,13 @@
     };
   }
 
-  // aman lakukan akses nilai hanya jika index valid
+  // aman: hanya ambil nilai kalau index valid
   const valAt = (row, idx) => (idx==null ? "" : (row[idx] ?? ""));
 
+  // ✅ HAPUS 'clear' dari kata kunci selesai
   function isRowDone(v){
     const t=S(v).toLowerCase();
-    return !!t && (/済|検査済|出荷済|完了|ok|done|clear/.test(t));
+    return !!t && (/(?:^|\s)(?:済|検査済|出荷済|完了|ok|done)(?:\s|$)/.test(t));
   }
   function isUrgent(v){
     const t=S(v).toLowerCase();
@@ -150,15 +151,12 @@
 
   async function load(){
     try{
-      // UI: lock tombol Refresh saat loading
-      if(isLoading) { if(aborter) aborter.abort(); }
-      isLoading = true;
-      const btn = document.getElementById('btnRefresh');
-      btn.disabled = true;
-      const oldText = btn.textContent;
-      btn.textContent = 'Loading...';
+      // UI lock & abort request lama
+      if(isLoading){ if(aborter) aborter.abort(); }
+      isLoading=true;
+      const btn=document.getElementById('btnRefresh');
+      const old=btn.textContent; btn.textContent='Loading...'; btn.disabled=true;
 
-      // batalkan request sebelumnya bila ada
       if(aborter) aborter.abort();
       aborter=new AbortController();
 
@@ -171,10 +169,9 @@
       const header=data[0], rows=data.slice(1);
       const idx=indexByName(header);
 
-      // header
       document.getElementById('shipHead').innerHTML=header.map(h=>`<th>${h}</th>`).join('');
 
-      // urgent ke atas (kalau kolom urgent ada)
+      // Urgent ke atas (hanya jika kolom urgent ada)
       rows.sort((a,b)=>{
         const au = idx.status_flag!=null ? isUrgent(valAt(a, idx.status_flag)) : false;
         const bu = idx.status_flag!=null ? isUrgent(valAt(b, idx.status_flag)) : false;
@@ -187,15 +184,15 @@
       let urgentCount=0;
 
       rows.forEach(r=>{
-        const urgVal  = valAt(r, idx.status_flag);   // aman
-        const doneVal = valAt(r, idx.status_done);   // aman
+        const urgVal  = valAt(r, idx.status_flag);
+        const doneVal = valAt(r, idx.status_done);
 
         const rowUrg  = idx.status_flag!=null ? isUrgent(urgVal) : false;
         const rowDone = idx.status_done!=null ? isRowDone(doneVal) : false;
 
         if(rowUrg) urgentCount++;
 
-        // cells
+        // build cells
         const tds = header.map((_,i)=>{
           const v=S(r[i]);
           const isStatusCol = (idx.status_done!=null && i===idx.status_done);
@@ -205,7 +202,6 @@
 
         // kolom pertama (出荷日) → chip
         if(tds.length){
-          // pakai kolom '出荷日' kalau ada; fallback ke kolom pertama
           const dateText = idx.date!=null ? S(valAt(r, idx.date)) : S(r[0] ?? '');
           if(rowUrg){
             tds[0] = `<td><span class="flag-urgent">至急</span>${dateText}</td>`;
@@ -222,7 +218,7 @@
         );
       });
 
-      // banner
+      // Banner
       const banner=document.getElementById('urgent-banner');
       banner.textContent = urgentCount>0
         ? `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`
@@ -231,22 +227,18 @@
       document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）`;
       document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
 
-      // UI: restore tombol
-      btn.textContent = oldText;
-      btn.disabled = false;
-      isLoading = false;
+      // Restore tombol
+      btn.textContent=old; btn.disabled=false; isLoading=false;
 
     }catch(e){
       if(e.name!=="AbortError") console.error(e);
-      const btn = document.getElementById('btnRefresh');
-      btn.textContent = 'Refresh now';
-      btn.disabled = false;
-      isLoading = false;
+      const btn=document.getElementById('btnRefresh');
+      btn.textContent='Refresh now'; btn.disabled=false; isLoading=false;
       document.getElementById('shipHint').textContent='読み込みに失敗しました。シート名/公開設定をご確認ください。';
     }
   }
 
-  // auto-refresh
+  // Auto-refresh
   let timer=null, intervalMs=60000;
   function startAutoRefresh(ms){
     intervalMs=ms; clearInterval(timer);
