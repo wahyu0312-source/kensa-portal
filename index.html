@@ -8,7 +8,7 @@
   :root{
     --bg1:#eef2ff; --bg2:#f8fafc; --card:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
     --accent:#2563eb; --danger:#b91c1c; --shadow:0 30px 60px rgba(15,23,42,.08); --radius:22px;
-    --done:#e0f2fe; --urgent-row:#fee2e2; --urgent-cell:#ef4444;
+    --urgent-row:#fee2e2; --urgent-cell:#ef4444;
   }
   *{box-sizing:border-box}
   body{
@@ -35,26 +35,22 @@
   tbody td{padding:12px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
   tbody tr:hover{background:#f1f5ff}
 
-  /* Urgent */
+  /* Urgent styles */
   tr.row-urgent td{background:var(--urgent-row)!important;color:#b91c1c;font-weight:600}
   td.cell-urgent{background:var(--urgent-cell)!important;color:#fff!important;font-weight:800!important;border-radius:8px}
 
-  /* Done (cells & row) */
-  td.cell-done{background:var(--done)!important}
-  tr.row-done td{background:var(--done)!important;color:#0f172a;font-weight:600}
-
-  /* Chips kiri */
-  .badge-done{
-    display:inline-flex;align-items:center;justify-content:center;
-    width:28px;height:28px;border-radius:999px;background:#0ea5e9;color:#fff;
-    font-weight:800;font-size:13px;margin-right:8px
-  }
+  /* Chips kiri (出荷日 cell) */
   .flag-urgent{
     display:inline-flex;align-items:center;gap:6px;
     padding:2px 10px;border-radius:999px;background:#dc2626;color:#fff;
-    font-weight:800;font-size:12px;margin-right:8px
+    font-weight:800;font-size:12px;margin-right:12px
   }
   .flag-urgent::before{content:"⚠";}
+  .badge-done{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:28px;height:28px;border-radius:999px;background:#0ea5e9;color:#fff;
+    font-weight:800;font-size:13px;margin-right:12px
+  }
 
   /* Banner urgent: selalu tampil */
   #urgent-banner{
@@ -129,24 +125,18 @@
       qty:find(["数量","Qty"]),
       to:find(["送り先","納品先","送付先"]),
       note:find(["注番","注文番号","備考","注文","Order","注釈"]),
-      // kolom status “selesai”
       status_done:find(["納品状況","製品状況","製品状態","Status","ステータス","状態"]),
-      // kolom flag urgent
       status_flag:find(["至急","Urgent","Status","ステータス","状態"]),
     };
   }
 
   function isRowDone(v){
     const t=S(v).toLowerCase();
-    return !!t && (/済|検査済|出荷済|完了|clear|ok|done/.test(t));
+    return !!t && (/済|検査済|出荷済|完了|ok|done|clear/.test(t));
   }
   function isUrgent(v){
     const t=S(v).toLowerCase();
     return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true";
-  }
-  function isCellDone(v){
-    const t=S(v).toLowerCase();
-    return !!t && (/済|検査済|出荷済|完了|clear|ok|done/.test(t));
   }
 
   let aborter=null;
@@ -163,9 +153,10 @@
       const header=data[0], rows=data.slice(1);
       const idx=indexByName(header);
 
+      // header
       document.getElementById('shipHead').innerHTML=header.map(h=>`<th>${h}</th>`).join('');
 
-      // sort urgent ke atas
+      // urgent ke atas
       rows.sort((a,b)=>{
         const au=isUrgent(a[idx.status_flag??-1]);
         const bu=isUrgent(b[idx.status_flag??-1]);
@@ -175,63 +166,51 @@
       const tbody=document.getElementById('shipBody');
       tbody.innerHTML='';
 
-      let urgentCount=0, doneCount=0;
+      let urgentCount=0;
 
       rows.forEach(r=>{
-        const vUrg   = r[idx.status_flag??-1];
-        const vDone  = r[idx.status_done??-1];
+        const vUrg  = r[idx.status_flag ?? -1];
+        const vDone = r[idx.status_done ?? -1];
 
         const rowUrg  = isUrgent(vUrg);
         const rowDone = isRowDone(vDone);
 
         if(rowUrg) urgentCount++;
-        if(rowDone) doneCount++;
 
+        // cells
         const tds = header.map((_,i)=>{
           const val=S(r[i]);
-          let cls = '';
-          if(isCellDone(val)) cls='cell-done';
+          // warnai kolom status jika urgent
           const isStatusCol = i===idx.status_done;
-          if(rowUrg && isStatusCol) cls='cell-urgent'; // blok merah di kolom status
+          const cls = rowUrg && isStatusCol ? 'cell-urgent' : '';
           return `<td class="${cls}">${val}</td>`;
         });
 
-        // chip ⚠ 至急 di kolom pertama (prioritas di atas 済)
-        if(rowUrg && tds.length){
-          const firstVal = S(r[0]) || "";
-          tds[0] = `<td><span class="flag-urgent">至急</span>${firstVal}</td>`;
-        }
-        // badge 済 di kolom pertama jika selesai & bukan urgent
-        else if(rowDone && tds.length){
-          const firstVal = S(r[0]) || "";
-          tds[0] = `<td><span class="badge-done">済</span>${firstVal}</td>`;
+        // kolom pertama (出荷日) → chip
+        if(tds.length){
+          const dateText = S(r[0]) || '';
+          if(rowUrg){
+            tds[0] = `<td><span class="flag-urgent">至急</span>${dateText}</td>`;
+          }else if(rowDone){
+            tds[0] = `<td><span class="badge-done">済</span>${dateText}</td>`;
+          }else{
+            tds[0] = `<td>${dateText}</td>`;
+          }
         }
 
         tbody.insertAdjacentHTML(
           'beforeend',
-          `<tr class="${rowUrg?'row-urgent':''} ${rowDone?'row-done':''}">${tds.join('')}</tr>`
+          `<tr class="${rowUrg?'row-urgent':''}">${tds.join('')}</tr>`
         );
       });
 
-      // 🔴 Banner selalu ada
+      // banner
       const banner=document.getElementById('urgent-banner');
-      if(urgentCount>0){
-        banner.textContent = `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`;
-      }else{
-        banner.textContent = "現在、至急案件はありません。";
-      }
+      banner.textContent = urgentCount>0
+        ? `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`
+        : '現在、至急案件はありません。';
 
-      // Jika SEMUA baris selesai → hapus badge 済 dan pulihkan teks cell pertama
-      if(doneCount===rows.length){
-        document.querySelectorAll('#shipBody tr').forEach(tr=>{
-          const td = tr.querySelector('td:first-child');
-          if(td){
-            const textOnly = td.textContent.replace("済","").trim();
-            td.innerHTML = textOnly; // reset cell pertama ke teks murni
-          }
-        });
-      }
-
+      // info
       document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）`;
       document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
 
@@ -241,6 +220,7 @@
     }
   }
 
+  // auto-refresh
   let timer=null, intervalMs=60000;
   function startAutoRefresh(ms){
     intervalMs=ms; clearInterval(timer);
