@@ -40,30 +40,15 @@
   tr.row-urgent td{background:var(--urgent-row)!important;color:#b91c1c;font-weight:600}
   td.cell-urgent{background:var(--urgent-cell)!important;color:#fff!important;font-weight:800!important;border-radius:8px}
 
-  /* Chips kiri */
-  .flag-urgent{
-    display:inline-flex;align-items:center;gap:6px;
-    padding:2px 10px;border-radius:999px;background:#dc2626;color:#fff;
-    font-weight:800;font-size:12px;margin-right:12px
-  }
+  .flag-urgent{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;background:#dc2626;color:#fff;font-weight:800;font-size:12px;margin-right:12px}
   .flag-urgent::before{content:"⚠";}
-  .badge-done{
-    display:inline-flex;align-items:center;justify-content:center;
-    width:28px;height:28px;border-radius:999px;background:#0ea5e9;color:#fff;
-    font-weight:800;font-size:13px;margin-right:12px
-  }
-  .badge-todo{
-    display:inline-flex;align-items:center;justify-content:center;
-    width:28px;height:28px;border-radius:999px;background:#94a3b8;color:#fff;
-    font-weight:800;font-size:13px;margin-right:12px
-  }
+  .badge-done,.badge-todo{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;color:#fff;font-weight:800;font-size:13px;margin-right:12px}
+  .badge-done{background:#0ea5e9}
+  .badge-todo{background:#94a3b8}
 
-  /* Banner urgent: selalu tampil */
-  #urgent-banner{
-    background:#b91c1c;color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:14px;
-    font-weight:bold;text-align:center;animation:blink 1s infinite
-  }
+  #urgent-banner{background:#b91c1c;color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:14px;font-weight:bold;text-align:center;animation:blink 1s infinite}
   @keyframes blink{0%,50%,100%{background:#b91c1c}25%,75%{background:#ef4444}}
+  .export-bar{margin-top:12px;display:flex;gap:8px;justify-content:flex-end}
 </style>
 </head>
 <body>
@@ -96,9 +81,18 @@
       <thead><tr id="shipHead"></tr></thead>
       <tbody id="shipBody"></tbody>
     </table>
+    <div class="export-bar">
+      <button class="btn" id="btnExcel">Export Excel</button>
+      <button class="btn" id="btnPDF">Export PDF</button>
+    </div>
     <div class="muted small" id="shipHint"></div>
   </section>
 </main>
+
+<!-- Export libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <script>
   const SHEET_ID="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
@@ -106,209 +100,53 @@
   const CSV_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
   const S=s=>String(s??'').trim();
 
-  function parseCSV(t){
-    const rows=[],re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
-    let m,row=[]; t=t.replace(/\r\n?/g,"\n");
-    for(let i=0;i<t.length;){
-      re.lastIndex=i; m=re.exec(t); if(!m) break;
-      let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-      row.push(cell); i=re.lastIndex;
-      if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
-    }
-    return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
+  function parseCSV(t){/* sama seperti punyamu */ /* ... */} 
+  // (potong bagian parseCSV, indexByName, dll tetap sama dengan punyamu di atas)
+
+  // >>> tambahan: parse date
+  function parseJPDate(str){
+    const s=String(str??"").trim();
+    const mJP=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+    if(mJP) return new Date(mJP[1], mJP[2]-1, mJP[3]);
+    const parts=s.replaceAll('-','/').split('/');
+    if(parts.length===3) return new Date(parts[0], parts[1]-1, parts[2]);
+    return new Date(s);
   }
-
-  function indexByName(header){
-    const map={}; header.forEach((h,i)=>map[S(h)]=i);
-    const find=names=>{for(const n of names){if(n in map) return map[n];} return null;};
-    const findFuzzy = (regex) => {
-      for(let i=0;i<header.length;i++){
-        if(regex.test(S(header[i]))) return i;
-      }
-      return null;
-    };
-    return {
-      date:find(["出荷日","日付","Date"]),
-      cust:find(["顧客名","客先","Customer"]),
-      draw:find(["図番","Drawing","図面"]),
-      item:find(["商品名","品名","Item"]),
-      machine:find(["機種","機種名","Machine"]),
-      qty:find(["数量","Qty"]),
-      to:find(["送り先","納品先","送付先"]),
-      note:find(["注番","注文番号","備考","注文","Order","注釈"]),
-
-      // status selesai utama (製品状況)
-      status_done:find(["製品状況","製品状態","納品状況"]) ?? findFuzzy(/(製品|納品).*(状況|状態)/),
-
-      // QC fallback
-      qc_check:  find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFuzzy(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
-      qc_label:  find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"])            ?? findFuzzy(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
-      qc_result: find(["検査成績表","成績表","InspectionReport"])   ?? findFuzzy(/(検査|inspection).*(成績|report)/i),
-      qc_pack:   find(["梱包","Packing","包装"])                    ?? findFuzzy(/(梱包|packing|包装)/i),
-
-      // urgent di kolom Status
-      status_flag:find(["Status","ステータス","状態","至急"]) ?? findFuzzy(/status|至急/i),
-    };
-  }
-
-  const valAt = (row, idx) => (idx==null ? "" : (row[idx] ?? ""));
-
-  // ✅ selesai (hanya 済/完了/…済み/OK/Done) — TIDAK termasuk "clear"
-  function isDoneValue(v){
-    const t=S(v).toLowerCase();
-    return !!t && (/(済|完了|ok|done)/.test(t)); // 支持「作成済み」「検査済み」等
-  }
-  // ❗ clear = belum
-  function isClearValue(v){
-    const t=S(v).toLowerCase();
-    return !!t && /(^|\s)clear(\s|$)/.test(t);
-  }
-
-  function isRowDoneByStatus(v){ return isDoneValue(v); }
-
-  // selesai jika SEMUA QC bernilai done-ish (済/OK/Done). "Clear" tidak dihitung.
-  function isRowDoneByQC(row, idx){
-    const vals = [];
-    if(idx.qc_check!=null)  vals.push(valAt(row, idx.qc_check));
-    if(idx.qc_label!=null)  vals.push(valAt(row, idx.qc_label));
-    if(idx.qc_result!=null) vals.push(valAt(row, idx.qc_result));
-    if(idx.qc_pack!=null)   vals.push(valAt(row, idx.qc_pack));
-    if(vals.length===0) return false;
-    return vals.every(isDoneValue);
-  }
-  // belum (未) jika ada QC "Clear" atau status "Clear"
-  function isRowNotYet(row, idx){
-    if(idx.status_done!=null && isClearValue(valAt(row, idx.status_done))) return true;
-    const checks = [idx.qc_check, idx.qc_label, idx.qc_result, idx.qc_pack].filter(i=>i!=null);
-    if(!checks.length) return false;
-    return checks.some(i=>isClearValue(valAt(row, i)));
-  }
-
-  function isUrgent(v){
-    const t=S(v).toLowerCase();
-    return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true";
-  }
-
-  let aborter=null;
-  let isLoading=false;
 
   async function load(){
-    try{
-      if(isLoading){ if(aborter) aborter.abort(); }
-      isLoading=true;
-      const btn=document.getElementById('btnRefresh');
-      const old=btn.textContent; btn.textContent='Loading...'; btn.disabled=true;
+    // ... ambil CSV, parse, indexByName (sama seperti punyamu) ...
 
-      if(aborter) aborter.abort();
-      aborter=new AbortController();
+    // setelah dapat rows:
+    // Urgent dulu, lalu sort descending 出荷日
+    rows.sort((a,b)=>{
+      const au=idx.status_flag!=null ? isUrgent(valAt(a,idx.status_flag)):false;
+      const bu=idx.status_flag!=null ? isUrgent(valAt(b,idx.status_flag)):false;
+      if(au!==bu) return au?-1:1;
+      const da=parseJPDate(valAt(a,idx.date));
+      const db=parseJPDate(valAt(b,idx.date));
+      return db-da; // terbaru di atas
+    });
 
-      const res=await fetch(CSV_URL+"&_ts="+Date.now(),{signal:aborter.signal,cache:'no-store'});
-      if(!res.ok) throw new Error("HTTP "+res.status);
-      const text=await res.text();
-      const data=parseCSV(text);
-      if(!data.length) return;
-
-      const header=data[0], rows=data.slice(1);
-      const idx=indexByName(header);
-
-      document.getElementById('shipHead').innerHTML=header.map(h=>`<th>${h}</th>`).join('');
-
-      // Urgent ke atas
-      rows.sort((a,b)=>{
-        const au = idx.status_flag!=null ? isUrgent(valAt(a, idx.status_flag)) : false;
-        const bu = idx.status_flag!=null ? isUrgent(valAt(b, idx.status_flag)) : false;
-        return (bu?1:0)-(au?1:0);
-      });
-
-      const tbody=document.getElementById('shipBody');
-      tbody.innerHTML='';
-
-      let urgentCount=0;
-
-      rows.forEach(r=>{
-        const urgVal  = valAt(r, idx.status_flag);
-        const rowUrg  = idx.status_flag!=null ? isUrgent(urgVal) : false;
-
-        let rowDone=false;
-        if(idx.status_done!=null){
-          rowDone = isRowDoneByStatus(valAt(r, idx.status_done));
-        }else{
-          rowDone = isRowDoneByQC(r, idx);
-        }
-
-        // not-yet (未) bila belum done & ada "clear" di status/QC
-        const rowNotYet = !rowDone && isRowNotYet(r, idx);
-
-        if(rowUrg) urgentCount++;
-
-        const tds = header.map((_,i)=>{
-          const v=S(r[i]);
-          const isStatusCol = (idx.status_done!=null && i===idx.status_done);
-          const cls = rowUrg && isStatusCol ? 'cell-urgent' : '';
-          return `<td class="${cls}">${v}</td>`;
-        });
-
-        // chip pada kolom 出荷日
-        if(tds.length){
-          const dateText = idx.date!=null ? S(valAt(r, idx.date)) : S(r[0] ?? '');
-          if(rowUrg){
-            tds[0] = `<td><span class="flag-urgent">至急</span>${dateText}</td>`;
-          }else if(rowDone){
-            tds[0] = `<td><span class="badge-done">済</span>${dateText}</td>`;
-          }else if(rowNotYet){
-            tds[0] = `<td><span class="badge-todo">未</span>${dateText}</td>`;
-          }else{
-            tds[0] = `<td>${dateText}</td>`;
-          }
-        }
-
-        tbody.insertAdjacentHTML(
-          'beforeend',
-          `<tr class="${rowUrg?'row-urgent':''}">${tds.join('')}</tr>`
-        );
-      });
-
-      // Banner
-      const banner=document.getElementById('urgent-banner');
-      banner.textContent = urgentCount>0
-        ? `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`
-        : '現在、至急案件はありません。';
-
-      // Hint kolom terdeteksi
-      const hintParts = [];
-      hintParts.push(`Status列: ${idx.status_done!=null ? header[idx.status_done] : '—'}`);
-      const qcCols = ['qc_check','qc_label','qc_result','qc_pack']
-        .map(k=>idx[k]!=null ? header[idx[k]] : null).filter(Boolean);
-      hintParts.push(`QC列: ${qcCols.length? qcCols.join(', ') : '—'}`);
-      hintParts.push(`Urgent列: ${idx.status_flag!=null ? header[idx.status_flag] : '—'}`);
-      document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）｜${hintParts.join(' ｜ ')}`;
-      document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
-
-      btn.textContent=old; btn.disabled=false; isLoading=false;
-
-    }catch(e){
-      if(e.name!=="AbortError") console.error(e);
-      const btn=document.getElementById('btnRefresh');
-      btn.textContent='Refresh now'; btn.disabled=false; isLoading=false;
-      document.getElementById('shipHint').textContent='読み込みに失敗しました。シート名/公開設定をご確認ください。';
-    }
+    // ... render tbody (sama dengan punyamu) ...
   }
 
-  // Auto-refresh
-  let timer=null, intervalMs=60000;
-  function startAutoRefresh(ms){
-    intervalMs=ms; clearInterval(timer);
-    timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs);
-    document.getElementById('intervalInfo').textContent=`Interval: ${Math.round(intervalMs/1000)}s`;
-    const liveBtn=document.getElementById('btnLive');
-    if(intervalMs<=5000){ liveBtn.classList.add('active'); liveBtn.textContent='Live: On'; }
-    else{ liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off'; }
+  // Export ke Excel
+  function exportExcel(){
+    const table=document.getElementById("shipTable");
+    const wb=XLSX.utils.table_to_book(table,{sheet:"出荷状況"});
+    XLSX.writeFile(wb,"出荷状況.xlsx");
   }
-  document.getElementById('btnRefresh').addEventListener('click', load);
-  document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
-  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
+  // Export ke PDF
+  function exportPDF(){
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"});
+    doc.text("出荷状況一覧",40,40);
+    doc.autoTable({html:"#shipTable",startY:60,styles:{fontSize:9,cellPadding:4,halign:"center"}});
+    doc.save("出荷状況.pdf");
+  }
 
-  window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
+  document.getElementById("btnExcel").addEventListener("click",exportExcel);
+  document.getElementById("btnPDF").addEventListener("click",exportPDF);
 </script>
 </body>
 </html>
