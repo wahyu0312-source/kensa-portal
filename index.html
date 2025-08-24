@@ -35,12 +35,8 @@
   thead th{background:#f8fafc;color:#475569;position:sticky;top:0;z-index:1;text-align:left;font-weight:700;padding:12px 14px;border-bottom:1px solid var(--border)}
   tbody td{padding:12px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
   tbody tr:hover{background:#f1f5ff}
-
-  /* Urgent styles */
   tr.row-urgent td{background:var(--urgent-row)!important;color:#b91c1c;font-weight:600}
   td.cell-urgent{background:var(--urgent-cell)!important;color:#fff!important;font-weight:800!important;border-radius:8px}
-
-  /* Chips kiri (出荷日 cell) */
   .flag-urgent{
     display:inline-flex;align-items:center;gap:6px;
     padding:2px 10px;border-radius:999px;background:#dc2626;color:#fff;
@@ -52,8 +48,6 @@
     width:28px;height:28px;border-radius:999px;background:#0ea5e9;color:#fff;
     font-weight:800;font-size:13px;margin-right:12px
   }
-
-  /* Banner urgent: selalu tampil */
   #urgent-banner{
     background:#b91c1c;color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:14px;
     font-weight:bold;text-align:center;animation:blink 1s infinite
@@ -79,7 +73,6 @@
 </header>
 
 <main>
-  <!-- 🔴 Banner urgent (selalu ada) -->
   <div id="urgent-banner">現在、至急案件はありません。</div>
 
   <div style="display:flex;justify-content:space-between;align-items:end">
@@ -117,7 +110,17 @@
   function indexByName(header){
     const map={}; header.forEach((h,i)=>map[S(h)]=i);
     const find=names=>{for(const n of names){if(n in map) return map[n];} return null;};
+
+    // regex bantu untuk nama yang mirip
+    const findFuzzy = (regex) => {
+      for(let i=0;i<header.length;i++){
+        if(regex.test(S(header[i]))) return i;
+      }
+      return null;
+    };
+
     return {
+      // kolom utama tabel
       date:find(["出荷日","日付","Date"]),
       cust:find(["顧客名","客先","Customer"]),
       draw:find(["図番","Drawing","図面"]),
@@ -127,33 +130,34 @@
       to:find(["送り先","納品先","送付先"]),
       note:find(["注番","注文番号","備考","注文","Order","注釈"]),
 
-      // 1) kolom status selesai (pakai salah satu ini jika ada)
-      status_done:find(["納品状況","製品状況","製品状態","Status","ステータス","状態"]),
+      // ✅ kolom status selesai utama
+      status_done:find(["製品状況","製品状態","納品状況","Status(完了)"]) ?? findFuzzy(/(製品|納品).*(状況|状態)/),
 
-      // 2) kolom-kolom QC fallback (semua harus Clear untuk dianggap selesai)
-      qc_check:find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]),
-      qc_label:find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"]),
-      qc_result:find(["検査成績表","成績表","InspectionReport"]),
+      // ✅ kolom QC fallback (semua harus Clear/OK/Done/済)
+      qc_check:  find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFuzzy(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
+      qc_label:  find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"])            ?? findFuzzy(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
+      qc_result: find(["検査成績表","成績表","InspectionReport"])   ?? findFuzzy(/(検査|inspection).*(成績|report)/i),
+      qc_pack:   find(["梱包","Packing","包装"])                    ?? findFuzzy(/(梱包|packing|包装)/i),
 
-      // kolom flag urgent (opsional)
-      status_flag:find(["至急","Urgent","Status","ステータス","状態"]),
+      // ✅ kolom urgent
+      status_flag:find(["Status","ステータス","状態","至急"]) ?? findFuzzy(/status|至急/i),
     };
   }
 
   const valAt = (row, idx) => (idx==null ? "" : (row[idx] ?? ""));
 
-  // selesai bila kata-kata ini (untuk kolom status)
+  // selesai oleh status (di kolom 製品状況): OK/Done/Clear/済/出荷済/完了
   function isRowDoneByStatus(v){
     const t=S(v).toLowerCase();
-    // <— tanpa 'clear' agar tidak salah tandai
-    return !!t && (/(?:^|\s)(?:済|検査済|出荷済|完了|ok|done)(?:\s|$)/.test(t));
+    return !!t && (/(?:^|\s)(?:済|検査済|出荷済|完了|ok|done|clear)(?:\s|$)/.test(t));
   }
-  // selesai bila semua QC = clear (untuk fallback)
+  // selesai oleh QC fallback: SEMUA QC clear/ok/done/済
   function isRowDoneByQC(row, idx){
     const vals = [];
     if(idx.qc_check!=null)  vals.push(S(valAt(row, idx.qc_check)).toLowerCase());
     if(idx.qc_label!=null)  vals.push(S(valAt(row, idx.qc_label)).toLowerCase());
     if(idx.qc_result!=null) vals.push(S(valAt(row, idx.qc_result)).toLowerCase());
+    if(idx.qc_pack!=null)   vals.push(S(valAt(row, idx.qc_pack)).toLowerCase());
     if(vals.length===0) return false;
     return vals.every(v=>v==="clear" || v==="ok" || v==="done" || v==="済");
   }
@@ -167,7 +171,6 @@
 
   async function load(){
     try{
-      // Lock button & abort request lama
       if(isLoading){ if(aborter) aborter.abort(); }
       isLoading=true;
       const btn=document.getElementById('btnRefresh');
@@ -185,7 +188,6 @@
       const header=data[0], rows=data.slice(1);
       const idx=indexByName(header);
 
-      // render header
       document.getElementById('shipHead').innerHTML=header.map(h=>`<th>${h}</th>`).join('');
 
       // Urgent ke atas
@@ -204,11 +206,11 @@
         const urgVal  = valAt(r, idx.status_flag);
         const rowUrg  = idx.status_flag!=null ? isUrgent(urgVal) : false;
 
+        // selesai via 製品状況; kalau tidak ada → QC fallback
         let rowDone=false;
         if(idx.status_done!=null){
           rowDone = isRowDoneByStatus(valAt(r, idx.status_done));
         }else{
-          // fallback QC (semua clear → dianggap selesai)
           rowDone = isRowDoneByQC(r, idx);
         }
 
@@ -221,7 +223,7 @@
           return `<td class="${cls}">${v}</td>`;
         });
 
-        // kolom pertama (出荷日) → chip
+        // chip pada kolom 出荷日
         if(tds.length){
           const dateText = idx.date!=null ? S(valAt(r, idx.date)) : S(r[0] ?? '');
           if(rowUrg){
@@ -245,7 +247,14 @@
         ? `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`
         : '現在、至急案件はありません。';
 
-      document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）`;
+      // Hint: kolom yang terdeteksi
+      const hintParts = [];
+      hintParts.push(`Status列: ${idx.status_done!=null ? header[idx.status_done] : '—'}`);
+      const qcCols = ['qc_check','qc_label','qc_result','qc_pack']
+        .map(k=>idx[k]!=null ? header[idx[k]] : null).filter(Boolean);
+      hintParts.push(`QC列: ${qcCols.length? qcCols.join(', ') : '—'}`);
+      hintParts.push(`Urgent列: ${idx.status_flag!=null ? header[idx.status_flag] : '—'}`);
+      document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）｜${hintParts.join(' ｜ ')}`;
       document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
 
       btn.textContent=old; btn.disabled=false; isLoading=false;
