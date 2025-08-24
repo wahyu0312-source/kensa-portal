@@ -26,6 +26,7 @@
   nav a:hover{text-decoration:underline}
   .controls{display:flex;gap:8px;align-items:center}
   .btn{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
+  .btn[disabled]{opacity:.6;cursor:wait}
   .btn.active{border-color:#93c5fd;background:#f0f9ff}
   .small{font-size:12px;color:var(--muted)}
   main{max-width:1200px;margin:28px auto;padding:0 20px}
@@ -125,10 +126,15 @@
       qty:find(["数量","Qty"]),
       to:find(["送り先","納品先","送付先"]),
       note:find(["注番","注文番号","備考","注文","Order","注釈"]),
+      // kolom status selesai (WAJIB untuk menyalakan badge 済)
       status_done:find(["納品状況","製品状況","製品状態","Status","ステータス","状態"]),
+      // kolom flag urgent (opsional)
       status_flag:find(["至急","Urgent","Status","ステータス","状態"]),
     };
   }
+
+  // aman lakukan akses nilai hanya jika index valid
+  const valAt = (row, idx) => (idx==null ? "" : (row[idx] ?? ""));
 
   function isRowDone(v){
     const t=S(v).toLowerCase();
@@ -140,10 +146,22 @@
   }
 
   let aborter=null;
+  let isLoading=false;
+
   async function load(){
     try{
+      // UI: lock tombol Refresh saat loading
+      if(isLoading) { if(aborter) aborter.abort(); }
+      isLoading = true;
+      const btn = document.getElementById('btnRefresh');
+      btn.disabled = true;
+      const oldText = btn.textContent;
+      btn.textContent = 'Loading...';
+
+      // batalkan request sebelumnya bila ada
       if(aborter) aborter.abort();
       aborter=new AbortController();
+
       const res=await fetch(CSV_URL+"&_ts="+Date.now(),{signal:aborter.signal,cache:'no-store'});
       if(!res.ok) throw new Error("HTTP "+res.status);
       const text=await res.text();
@@ -156,10 +174,10 @@
       // header
       document.getElementById('shipHead').innerHTML=header.map(h=>`<th>${h}</th>`).join('');
 
-      // urgent ke atas
+      // urgent ke atas (kalau kolom urgent ada)
       rows.sort((a,b)=>{
-        const au=isUrgent(a[idx.status_flag??-1]);
-        const bu=isUrgent(b[idx.status_flag??-1]);
+        const au = idx.status_flag!=null ? isUrgent(valAt(a, idx.status_flag)) : false;
+        const bu = idx.status_flag!=null ? isUrgent(valAt(b, idx.status_flag)) : false;
         return (bu?1:0)-(au?1:0);
       });
 
@@ -169,26 +187,26 @@
       let urgentCount=0;
 
       rows.forEach(r=>{
-        const vUrg  = r[idx.status_flag ?? -1];
-        const vDone = r[idx.status_done ?? -1];
+        const urgVal  = valAt(r, idx.status_flag);   // aman
+        const doneVal = valAt(r, idx.status_done);   // aman
 
-        const rowUrg  = isUrgent(vUrg);
-        const rowDone = isRowDone(vDone);
+        const rowUrg  = idx.status_flag!=null ? isUrgent(urgVal) : false;
+        const rowDone = idx.status_done!=null ? isRowDone(doneVal) : false;
 
         if(rowUrg) urgentCount++;
 
         // cells
         const tds = header.map((_,i)=>{
-          const val=S(r[i]);
-          // warnai kolom status jika urgent
-          const isStatusCol = i===idx.status_done;
+          const v=S(r[i]);
+          const isStatusCol = (idx.status_done!=null && i===idx.status_done);
           const cls = rowUrg && isStatusCol ? 'cell-urgent' : '';
-          return `<td class="${cls}">${val}</td>`;
+          return `<td class="${cls}">${v}</td>`;
         });
 
         // kolom pertama (出荷日) → chip
         if(tds.length){
-          const dateText = S(r[0]) || '';
+          // pakai kolom '出荷日' kalau ada; fallback ke kolom pertama
+          const dateText = idx.date!=null ? S(valAt(r, idx.date)) : S(r[0] ?? '');
           if(rowUrg){
             tds[0] = `<td><span class="flag-urgent">至急</span>${dateText}</td>`;
           }else if(rowDone){
@@ -210,12 +228,20 @@
         ? `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`
         : '現在、至急案件はありません。';
 
-      // info
       document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）`;
       document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
 
+      // UI: restore tombol
+      btn.textContent = oldText;
+      btn.disabled = false;
+      isLoading = false;
+
     }catch(e){
-      console.error(e);
+      if(e.name!=="AbortError") console.error(e);
+      const btn = document.getElementById('btnRefresh');
+      btn.textContent = 'Refresh now';
+      btn.disabled = false;
+      isLoading = false;
       document.getElementById('shipHint').textContent='読み込みに失敗しました。シート名/公開設定をご確認ください。';
     }
   }
