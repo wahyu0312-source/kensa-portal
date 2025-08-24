@@ -126,20 +126,36 @@
       qty:find(["数量","Qty"]),
       to:find(["送り先","納品先","送付先"]),
       note:find(["注番","注文番号","備考","注文","Order","注釈"]),
-      // kolom status selesai (WAJIB untuk menyalakan badge 済)
+
+      // 1) kolom status selesai (pakai salah satu ini jika ada)
       status_done:find(["納品状況","製品状況","製品状態","Status","ステータス","状態"]),
+
+      // 2) kolom-kolom QC fallback (semua harus Clear untuk dianggap selesai)
+      qc_check:find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]),
+      qc_label:find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"]),
+      qc_result:find(["検査成績表","成績表","InspectionReport"]),
+
       // kolom flag urgent (opsional)
       status_flag:find(["至急","Urgent","Status","ステータス","状態"]),
     };
   }
 
-  // aman: hanya ambil nilai kalau index valid
   const valAt = (row, idx) => (idx==null ? "" : (row[idx] ?? ""));
 
-  // ✅ HAPUS 'clear' dari kata kunci selesai
-  function isRowDone(v){
+  // selesai bila kata-kata ini (untuk kolom status)
+  function isRowDoneByStatus(v){
     const t=S(v).toLowerCase();
+    // <— tanpa 'clear' agar tidak salah tandai
     return !!t && (/(?:^|\s)(?:済|検査済|出荷済|完了|ok|done)(?:\s|$)/.test(t));
+  }
+  // selesai bila semua QC = clear (untuk fallback)
+  function isRowDoneByQC(row, idx){
+    const vals = [];
+    if(idx.qc_check!=null)  vals.push(S(valAt(row, idx.qc_check)).toLowerCase());
+    if(idx.qc_label!=null)  vals.push(S(valAt(row, idx.qc_label)).toLowerCase());
+    if(idx.qc_result!=null) vals.push(S(valAt(row, idx.qc_result)).toLowerCase());
+    if(vals.length===0) return false;
+    return vals.every(v=>v==="clear" || v==="ok" || v==="done" || v==="済");
   }
   function isUrgent(v){
     const t=S(v).toLowerCase();
@@ -151,7 +167,7 @@
 
   async function load(){
     try{
-      // UI lock & abort request lama
+      // Lock button & abort request lama
       if(isLoading){ if(aborter) aborter.abort(); }
       isLoading=true;
       const btn=document.getElementById('btnRefresh');
@@ -169,9 +185,10 @@
       const header=data[0], rows=data.slice(1);
       const idx=indexByName(header);
 
+      // render header
       document.getElementById('shipHead').innerHTML=header.map(h=>`<th>${h}</th>`).join('');
 
-      // Urgent ke atas (hanya jika kolom urgent ada)
+      // Urgent ke atas
       rows.sort((a,b)=>{
         const au = idx.status_flag!=null ? isUrgent(valAt(a, idx.status_flag)) : false;
         const bu = idx.status_flag!=null ? isUrgent(valAt(b, idx.status_flag)) : false;
@@ -185,14 +202,18 @@
 
       rows.forEach(r=>{
         const urgVal  = valAt(r, idx.status_flag);
-        const doneVal = valAt(r, idx.status_done);
-
         const rowUrg  = idx.status_flag!=null ? isUrgent(urgVal) : false;
-        const rowDone = idx.status_done!=null ? isRowDone(doneVal) : false;
+
+        let rowDone=false;
+        if(idx.status_done!=null){
+          rowDone = isRowDoneByStatus(valAt(r, idx.status_done));
+        }else{
+          // fallback QC (semua clear → dianggap selesai)
+          rowDone = isRowDoneByQC(r, idx);
+        }
 
         if(rowUrg) urgentCount++;
 
-        // build cells
         const tds = header.map((_,i)=>{
           const v=S(r[i]);
           const isStatusCol = (idx.status_done!=null && i===idx.status_done);
@@ -227,7 +248,6 @@
       document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）`;
       document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
 
-      // Restore tombol
       btn.textContent=old; btn.disabled=false; isLoading=false;
 
     }catch(e){
