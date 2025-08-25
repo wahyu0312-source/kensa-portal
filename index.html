@@ -11,10 +11,14 @@
     --urgent-row:#fee2e2; --urgent-cell:#ef4444;
   }
   *{box-sizing:border-box}
-  body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
-    background:radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
-               radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
-               linear-gradient(120deg,var(--bg1),var(--bg2));}
+  body{
+    margin:0; color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
+    background:
+      radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
+      linear-gradient(120deg,var(--bg1),var(--bg2));
+  }
   header{position:sticky;top:0;z-index:10;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
   .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
   .row{display:flex;justify-content:space-between;align-items:center;gap:16px}
@@ -27,17 +31,21 @@
   .small{font-size:12px;color:var(--muted)}
   main{max-width:1200px;margin:28px auto;padding:0 20px}
   .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;overflow:auto}
-  table{width:100%;border-collapse:separate;border-spacing:0;min-width:600px}
+  table{width:100%;border-collapse:separate;border-spacing:0;min-width:900px}
   thead th{background:#f8fafc;color:#475569;position:sticky;top:0;z-index:1;text-align:left;font-weight:700;padding:12px 14px;border-bottom:1px solid var(--border)}
   tbody td{padding:12px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
   tbody tr:hover{background:#f1f5ff}
+
+  /* Urgent styles */
   tr.row-urgent td{background:var(--urgent-row)!important;color:#b91c1c;font-weight:600}
   td.cell-urgent{background:var(--urgent-cell)!important;color:#fff!important;font-weight:800!important;border-radius:8px}
+
   .flag-urgent{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;background:#dc2626;color:#fff;font-weight:800;font-size:12px;margin-right:12px}
   .flag-urgent::before{content:"⚠";}
   .badge-done,.badge-todo{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;color:#fff;font-weight:800;font-size:13px;margin-right:12px}
   .badge-done{background:#0ea5e9}
   .badge-todo{background:#94a3b8}
+
   #urgent-banner{background:#b91c1c;color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:14px;font-weight:bold;text-align:center;animation:blink 1s infinite}
   @keyframes blink{0%,50%,100%{background:#b91c1c}25%,75%{background:#ef4444}}
   .export-bar{margin-top:12px;display:flex;gap:8px;justify-content:flex-end}
@@ -46,7 +54,11 @@
 <body>
 <header>
   <div class="wrap row">
-    <div><strong>品質管理生産技術</strong></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <!-- Logo: pastikan tsh.png ada di folder yang sama -->
+      <img src="tsh.png" alt="TSH" style="height:36px">
+      <strong>品質管理生産技術</strong>
+    </div>
     <nav>
       <a href="./index.html"><strong>ホーム</strong></a>
       <a href="./forms.html">出荷検査成績書</a>
@@ -62,10 +74,12 @@
 
 <main>
   <div id="urgent-banner">現在、至急案件はありません。</div>
+
   <div style="display:flex;justify-content:space-between;align-items:end">
     <h1>出荷状況一覧</h1>
     <span id="lastUpdated" class="small"></span>
   </div>
+
   <section class="card">
     <table id="shipTable">
       <thead><tr id="shipHead"></tr></thead>
@@ -85,14 +99,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-  const SHEET_ID="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
-  const TAB_NAME="最新情報";
-  const CSV_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
-  const S=s=>String(s??'').trim();
+  // ===== Config =====
+  const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
+  const TAB_NAME ="最新情報"; // pastikan sama persis
+  const CSV_URL  =`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
+  const S = s => String(s ?? '').trim();
 
+  // ===== Utils =====
   function parseCSV(t){
-    const rows=[],re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
-    let m,row=[]; t=t.replace(/\r\n?/g,"\n");
+    const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
+    let m, row=[]; t=t.replace(/\r\n?/g,"\n");
     for(let i=0;i<t.length;){
       re.lastIndex=i; m=re.exec(t); if(!m) break;
       let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
@@ -101,21 +117,73 @@
     }
     return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
   }
-  function indexByName(header){/* sama persis punyamu */}
-  const valAt=(row,idx)=>(idx==null?"":(row[idx]??""));
 
-  // fungsi isDoneValue, isClearValue, isRowDoneByStatus, isRowDoneByQC, isRowNotYet, isUrgent → sama seperti punyamu
+  function indexByName(header){
+    const map={}; header.forEach((h,i)=>map[S(h)]=i);
+    const find=names=>{for(const n of names){if(n in map) return map[n];} return null;};
+    const findFuzzy = (regex) => {
+      for(let i=0;i<header.length;i++){
+        if(regex.test(S(header[i]))) return i;
+      }
+      return null;
+    };
+    return {
+      date:find(["出荷日","日付","Date"]),
+      cust:find(["顧客名","客先","Customer"]),
+      draw:find(["図番","Drawing","図面"]),
+      item:find(["商品名","品名","Item"]),
+      machine:find(["機種","機種名","Machine"]),
+      qty:find(["数量","Qty"]),
+      to:find(["送り先","納品先","送付先"]),
+      note:find(["注番","注文番号","備考","注文","Order","注釈"]),
+
+      status_done:find(["製品状況","製品状態","納品状況"]) ?? findFuzzy(/(製品|納品).*(状況|状態)/),
+
+      qc_check:  find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFuzzy(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
+      qc_label:  find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"])            ?? findFuzzy(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
+      qc_result: find(["検査成績表","成績表","InspectionReport"])   ?? findFuzzy(/(検査|inspection).*(成績|report)/i),
+      qc_pack:   find(["梱包","Packing","包装"])                    ?? findFuzzy(/(梱包|packing|包装)/i),
+
+      status_flag:find(["Status","ステータス","状態","至急"]) ?? findFuzzy(/status|至急/i),
+    };
+  }
+
+  const valAt = (row, idx) => (idx==null ? "" : (row[idx] ?? ""));
+
+  function isDoneValue(v){ const t=S(v).toLowerCase(); return !!t && (/(済|完了|ok|done)/.test(t)); }
+  function isClearValue(v){ const t=S(v).toLowerCase(); return !!t && /(^|\s)clear(\s|$)/.test(t); }
+  function isRowDoneByStatus(v){ return isDoneValue(v); }
+  function isRowDoneByQC(row, idx){
+    const vals=[];
+    if(idx.qc_check!=null)  vals.push(valAt(row, idx.qc_check));
+    if(idx.qc_label!=null)  vals.push(valAt(row, idx.qc_label));
+    if(idx.qc_result!=null) vals.push(valAt(row, idx.qc_result));
+    if(idx.qc_pack!=null)   vals.push(valAt(row, idx.qc_pack));
+    if(vals.length===0) return false;
+    return vals.every(isDoneValue);
+  }
+  function isRowNotYet(row, idx){
+    if(idx.status_done!=null && isClearValue(valAt(row, idx.status_done))) return true;
+    const checks=[idx.qc_check,idx.qc_label,idx.qc_result,idx.qc_pack].filter(i=>i!=null);
+    if(!checks.length) return false;
+    return checks.some(i=>isClearValue(valAt(row,i)));
+  }
+  function isUrgent(v){ const t=S(v).toLowerCase(); return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true"; }
 
   function parseJPDate(str){
     const s=String(str??"").trim();
     const mJP=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
     if(mJP) return new Date(mJP[1], mJP[2]-1, mJP[3]);
     const parts=s.replaceAll('-','/').split('/');
-    if(parts.length===3) return new Date(parts[0],parts[1]-1,parts[2]);
-    return new Date(s);
+    if(parts.length===3) return new Date(parts[0], parts[1]-1, parts[2]);
+    const d=new Date(s);
+    return isNaN(d)?new Date(0):d;
   }
 
-  let aborter=null,isLoading=false;
+  // ===== State =====
+  let aborter=null, isLoading=false;
+
+  // ===== Main loader =====
   async function load(){
     try{
       if(isLoading){ if(aborter) aborter.abort(); }
@@ -125,82 +193,122 @@
 
       if(aborter) aborter.abort();
       aborter=new AbortController();
-      const res=await fetch(CSV_URL+"&_ts="+Date.now(),{signal:aborter.signal,cache:'no-store'});
+
+      const url = CSV_URL + "&_ts=" + Date.now(); // cache buster
+      const res=await fetch(url,{signal:aborter.signal,cache:'no-store'});
       if(!res.ok) throw new Error("HTTP "+res.status);
       const text=await res.text();
       const data=parseCSV(text);
-      if(!data.length) return;
+      console.log("[DEBUG] CSV parsed", data); // DEBUG
 
-      const header=data[0], rows=data.slice(1);
+      if(!data.length){ throw new Error("CSV empty"); }
+
+      const header=data[0], rowsRaw=data.slice(1);
+      console.log("[DEBUG] Header:", header);
+      console.log("[DEBUG] Rows count:", rowsRaw.length);
+
       const idx=indexByName(header);
+
+      // Render <thead>
       document.getElementById('shipHead').innerHTML=header.map(h=>`<th>${h}</th>`).join('');
 
-      // Urgent dulu, lalu sort 出荷日 descending
-      rows.sort((a,b)=>{
-        const au=idx.status_flag!=null?isUrgent(valAt(a,idx.status_flag)):false;
-        const bu=idx.status_flag!=null?isUrgent(valAt(b,idx.status_flag)):false;
+      // Urgent first, then 出荷日 desc
+      const rows=[...rowsRaw].sort((a,b)=>{
+        const au=idx.status_flag!=null ? isUrgent(valAt(a, idx.status_flag)) : false;
+        const bu=idx.status_flag!=null ? isUrgent(valAt(b, idx.status_flag)) : false;
         if(au!==bu) return au?-1:1;
-        const da=parseJPDate(valAt(a,idx.date));
-        const db=parseJPDate(valAt(b,idx.date));
-        return db-da;
+        const da=parseJPDate(valAt(a, idx.date));
+        const db=parseJPDate(valAt(b, idx.date));
+        return db - da;
       });
 
       const tbody=document.getElementById('shipBody');
       tbody.innerHTML='';
-      let urgentCount=0;
 
+      let urgentCount=0;
       rows.forEach(r=>{
-        const urgVal=valAt(r,idx.status_flag);
-        const rowUrg=idx.status_flag!=null?isUrgent(urgVal):false;
+        const urgVal  = valAt(r, idx.status_flag);
+        const rowUrg  = idx.status_flag!=null ? isUrgent(urgVal) : false;
+
         let rowDone=false;
-        if(idx.status_done!=null){ rowDone=isRowDoneByStatus(valAt(r,idx.status_done)); }
-        else{ rowDone=isRowDoneByQC(r,idx); }
-        const rowNotYet=!rowDone && isRowNotYet(r,idx);
+        if(idx.status_done!=null) rowDone = isRowDoneByStatus(valAt(r, idx.status_done));
+        else                      rowDone = isRowDoneByQC(r, idx);
+
+        const rowNotYet = !rowDone && isRowNotYet(r, idx);
         if(rowUrg) urgentCount++;
 
-        const tds=header.map((_,i)=>{
+        const tds = header.map((_,i)=>{
           const v=S(r[i]);
-          const isStatusCol=(idx.status_done!=null && i===idx.status_done);
-          const cls=rowUrg&&isStatusCol?'cell-urgent':'';
+          const isStatusCol = (idx.status_done!=null && i===idx.status_done);
+          const cls = rowUrg && isStatusCol ? 'cell-urgent' : '';
           return `<td class="${cls}">${v}</td>`;
         });
+
+        // left chip on 出荷日
         if(tds.length){
-          const dateText=idx.date!=null?S(valAt(r,idx.date)):S(r[0]??'');
-          if(rowUrg) tds[0]=`<td><span class="flag-urgent">至急</span>${dateText}</td>`;
-          else if(rowDone) tds[0]=`<td><span class="badge-done">済</span>${dateText}</td>`;
-          else if(rowNotYet) tds[0]=`<td><span class="badge-todo">未</span>${dateText}</td>`;
-          else tds[0]=`<td>${dateText}</td>`;
+          const dateText = idx.date!=null ? S(valAt(r, idx.date)) : S(r[0] ?? '');
+          if(rowUrg)      tds[0] = `<td><span class="flag-urgent">至急</span>${dateText}</td>`;
+          else if(rowDone)tds[0] = `<td><span class="badge-done">済</span>${dateText}</td>`;
+          else if(rowNotYet) tds[0] = `<td><span class="badge-todo">未</span>${dateText}</td>`;
+          else            tds[0] = `<td>${dateText}</td>`;
         }
-        tbody.insertAdjacentHTML('beforeend',`<tr class="${rowUrg?'row-urgent':''}">${tds.join('')}</tr>`);
+
+        tbody.insertAdjacentHTML('beforeend', `<tr class="${rowUrg?'row-urgent':''}">${tds.join('')}</tr>`);
       });
 
+      // Banner + hint
       const banner=document.getElementById('urgent-banner');
-      banner.textContent=urgentCount>0?`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`:'現在、至急案件はありません。';
+      banner.textContent = urgentCount>0
+        ? `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`
+        : '現在、至急案件はありません。';
+
+      const qcCols = ['qc_check','qc_label','qc_result','qc_pack']
+        .map(k=>idx[k]!=null ? header[idx[k]] : null).filter(Boolean);
+      document.getElementById('shipHint').textContent =
+        `データ元: ${TAB_NAME}（${rows.length} 行）｜Status列: ${idx.status_done!=null ? header[idx.status_done] : '—'} ｜ QC列: ${qcCols.length? qcCols.join(', ') : '—'} ｜ Urgent列: ${idx.status_flag!=null ? header[idx.status_flag] : '—'}`;
+
       document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
+
       btn.textContent=old; btn.disabled=false; isLoading=false;
     }catch(e){
-      if(e.name!=="AbortError") console.error(e);
+      console.error("[ERROR] load()", e);
       const btn=document.getElementById('btnRefresh');
       btn.textContent='Refresh now'; btn.disabled=false; isLoading=false;
-      document.getElementById('shipHint').textContent='読み込み失敗しました。';
+      document.getElementById('shipHint').textContent='読み込みに失敗しました。シート名/公開設定/列名をご確認ください。';
     }
   }
 
-  // Export
-  function exportExcel(){const table=document.getElementById("shipTable");const wb=XLSX.utils.table_to_book(table,{sheet:"出荷状況"});XLSX.writeFile(wb,"出荷状況.xlsx");}
-  function exportPDF(){const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"});doc.text("出荷状況一覧",40,40);doc.autoTable({html:"#shipTable",startY:60,styles:{fontSize:9,cellPadding:4,halign:"center"}});doc.save("出荷状況.pdf");}
-  document.getElementById("btnExcel").addEventListener("click",exportExcel);
-  document.getElementById("btnPDF").addEventListener("click",exportPDF);
+  // ===== Export =====
+  function exportExcel(){
+    const table=document.getElementById("shipTable");
+    const wb=XLSX.utils.table_to_book(table,{sheet:"出荷状況"});
+    XLSX.writeFile(wb,"出荷状況.xlsx");
+  }
+  function exportPDF(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({orientation:"landscape", unit:"pt", format:"a4"});
+    doc.setFontSize(14); doc.text("出荷状況一覧", 40, 40);
+    doc.autoTable({html:"#shipTable", startY:60, styles:{fontSize:9, cellPadding:4, halign:"center", valign:"middle"}, headStyles:{fillColor:[238,242,247]}});
+    doc.save("出荷状況.pdf");
+  }
+  document.getElementById("btnExcel").addEventListener("click", exportExcel);
+  document.getElementById("btnPDF").addEventListener("click", exportPDF);
 
-  // Auto-refresh
+  // ===== Auto-refresh =====
   let timer=null, intervalMs=60000;
-  function startAutoRefresh(ms){intervalMs=ms;clearInterval(timer);timer=setInterval(()=>{if(document.visibilityState==='visible')load();},intervalMs);
+  function startAutoRefresh(ms){
+    intervalMs=ms; clearInterval(timer);
+    timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs);
     document.getElementById('intervalInfo').textContent=`Interval: ${Math.round(intervalMs/1000)}s`;
-    const liveBtn=document.getElementById('btnLive');if(intervalMs<=5000){liveBtn.classList.add('active');liveBtn.textContent='Live: On';}else{liveBtn.classList.remove('active');liveBtn.textContent='Live: Off';}}
-  document.getElementById('btnRefresh').addEventListener('click',load);
-  document.getElementById('btnLive').addEventListener('click',()=>{startAutoRefresh(intervalMs<=5000?60000:5000);load();});
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')load();});
-  window.addEventListener('DOMContentLoaded',()=>{load();startAutoRefresh(60000);});
+    const liveBtn=document.getElementById('btnLive');
+    if(intervalMs<=5000){ liveBtn.classList.add('active'); liveBtn.textContent='Live: On'; }
+    else{ liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off'; }
+  }
+  document.getElementById('btnRefresh').addEventListener('click', load);
+  document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
+
+  window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
 </script>
 </body>
 </html>
