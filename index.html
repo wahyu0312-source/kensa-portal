@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>品質管理生産技術 - 出荷状況</title>
+<title>東京精密発條株式会社 -品質管理生産技術 </title>
 <style>
   :root{
     --bg1:#eef2ff; --bg2:#f8fafc; --card:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
@@ -18,6 +18,7 @@
       radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
       radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
       linear-gradient(120deg,var(--bg1),var(--bg2));
+    padding-bottom:60px; /* space bawah untuk marquee & footer */
   }
   header{position:sticky;top:0;z-index:10;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
   .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
@@ -55,11 +56,56 @@
 
   #urgent-banner{background:#b91c1c;color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:14px;font-weight:bold;text-align:center;animation:blink 1s infinite}
   @keyframes blink{0%,50%,100%{background:#b91c1c}25%,75%{background:#ef4444}}
-  .export-bar{margin-top:12px;display:flex;gap:8px;justify-content:flex-end}
+
+  .export-bar{margin-bottom:12px;display:flex;gap:8px;justify-content:flex-end}
 
   /* Filter bar */
   .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 0}
   .filterbar input[type="date"]{padding:8px 10px;border:1px solid var(--border);border-radius:10px}
+
+  /* Responsive smartphone */
+  @media (max-width: 768px) {
+    .row {flex-direction: column; align-items: flex-start;}
+    nav {display: flex; flex-wrap: wrap; gap: 10px;}
+    table {min-width: unset; font-size: 12px;}
+    .card {padding: 12px;}
+    .export-bar {justify-content: flex-start; flex-wrap: wrap;}
+  }
+
+  /* Marquee */
+  .marquee {
+    position: fixed;
+    bottom: 20px; /* kasih jarak utk footer */
+    left: 0; right: 0;
+    background: var(--accent);
+    color: #fff;
+    font-weight: bold;
+    padding: 6px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    z-index: 20;
+  }
+  .marquee span {
+    display: inline-block;
+    padding-left: 100%;
+    animation: marquee 15s linear infinite;
+  }
+  @keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+  }
+
+  /* Footer credit */
+  .footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    background: #f1f5f9;
+    padding: 4px 0;
+    z-index: 21;
+  }
 </style>
 </head>
 <body>
@@ -72,7 +118,7 @@
     <nav>
       <a href="./index.html"><strong>ホーム</strong></a>
       <a href="./forms.html">出荷検査成績書</a>
-      <a href="./sagyoutejunsho.html">作業手順書</a>
+      <a href="./sagyoutejunsho.html">検査作業手順書</a>
     </nav>
     <div class="controls">
       <button id="btnRefresh" class="btn" type="button">Refresh now</button>
@@ -112,17 +158,25 @@
         <button class="btn" id="btnClear">Clear</button>
       </div>
     </div>
-    <table id="shipTable">
-      <thead><tr id="shipHead"></tr></thead>
-      <tbody id="shipBody"></tbody>
-    </table>
+
+    <!-- Export bar di atas tabel -->
     <div class="export-bar">
       <button class="btn" id="btnExcel">Export Excel</button>
       <button class="btn" id="btnPDF">Export PDF</button>
     </div>
+
+    <table id="shipTable">
+      <thead><tr id="shipHead"></tr></thead>
+      <tbody id="shipBody"></tbody>
+    </table>
     <div class="muted small" id="shipHint"></div>
   </section>
 </main>
+
+<!-- Tulisan berjalan bawah -->
+<div class="marquee"><span>東京精密発條株式会社-品質管理生産技術システム</span></div>
+<!-- Footer credit -->
+<div class="footer">Design by Wahyu</div>
 
 <!-- Export libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -130,260 +184,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-  // ===== Config =====
-  const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
-  const TAB_NAME ="最新情報";
-  const CSV_URL  =`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
-  const S = s => String(s ?? '').trim();
-
-  // ===== Utils =====
-  function parseCSV(t){
-    const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
-    let m, row=[]; t=t.replace(/\r\n?/g,"\n");
-    for(let i=0;i<t.length;){
-      re.lastIndex=i; m=re.exec(t); if(!m) break;
-      let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-      row.push(cell); i=re.lastIndex;
-      if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
-    }
-    return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
-  }
-
-  function indexByName(header){
-    const map={}; header.forEach((h,i)=>map[S(h)]=i);
-    const find=names=>{for(const n of names){if(n in map) return map[n];} return null;};
-    const findFuzzy = (regex) => {
-      for(let i=0;i<header.length;i++){
-        if(regex.test(S(header[i]))) return i;
-      }
-      return null;
-    };
-    return {
-      date:find(["出荷日","日付","Date"]),
-      cust:find(["顧客名","客先","Customer"]),
-      draw:find(["図番","Drawing","図面"]),
-      item:find(["商品名","品名","Item"]),
-      machine:find(["機種","機種名","Machine"]),
-      qty:find(["数量","Qty"]),
-      to:find(["送り先","納品先","送付先"]),
-      note:find(["注番","注文番号","備考","注文","Order","注釈"]),
-      status_done:find(["製品状況","製品状態","納品状況"]) ?? findFuzzy(/(製品|納品).*(状況|状態)/),
-      qc_check:  find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFuzzy(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
-      qc_label:  find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"])            ?? findFuzzy(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
-      qc_result: find(["検査成績表","成績表","InspectionReport"])   ?? findFuzzy(/(検査|inspection).*(成績|report)/i),
-      qc_pack:   find(["梱包","Packing","包装"])                    ?? findFuzzy(/(梱包|packing|包装)/i),
-      status_flag:find(["Status","ステータス","状態","至急"]) ?? findFuzzy(/status|至急/i),
-    };
-  }
-  const valAt = (row, idx) => (idx==null ? "" : (row[idx] ?? ""));
-  function isDoneValue(v){ const t=S(v).toLowerCase(); return !!t && (/(済|完了|ok|done)/.test(t)); }
-  function isClearValue(v){ const t=S(v).toLowerCase(); return !!t && /(^|\s)clear(\s|$)/.test(t); }
-  function isRowDoneByStatus(v){ return isDoneValue(v); }
-  function isRowDoneByQC(row, idx){
-    const vals=[];
-    if(idx.qc_check!=null)  vals.push(valAt(row, idx.qc_check));
-    if(idx.qc_label!=null)  vals.push(valAt(row, idx.qc_label));
-    if(idx.qc_result!=null) vals.push(valAt(row, idx.qc_result));
-    if(idx.qc_pack!=null)   vals.push(valAt(row, idx.qc_pack));
-    if(vals.length===0) return false;
-    return vals.every(isDoneValue);
-  }
-  function isRowNotYet(row, idx){
-    if(idx.status_done!=null && isClearValue(valAt(row, idx.status_done))) return true;
-    const checks=[idx.qc_check,idx.qc_label,idx.qc_result,idx.qc_pack].filter(i=>i!=null);
-    if(!checks.length) return false;
-    return checks.some(i=>isClearValue(valAt(row,i)));
-  }
-  function isUrgent(v){ const t=S(v).toLowerCase(); return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true"; }
-
-  function parseJPDate(str){
-    const s=String(str??"").trim();
-    const mJP=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
-    if(mJP) return new Date(mJP[1], mJP[2]-1, mJP[3]);
-    const parts=s.replaceAll('-','/').split('/');
-    if(parts.length===3) return new Date(parts[0], parts[1]-1, parts[2]);
-    const d=new Date(s);
-    return isNaN(d)?new Date(0):d;
-  }
-  function sameYMD(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
-  function toInputDate(d){ // yyyy-mm-dd for <input type="date">
-    const z=n=>String(n).padStart(2,'0');
-    return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
-  }
-
-  // ===== State =====
-  let aborter=null, isLoading=false;
-  let cached = { header:[], rows:[], idx:null };
-
-  // ===== Rendering helper =====
-  function renderTable(header, idx, rows, tbodyEl, headEl){
-    headEl.innerHTML = header.map(h=>`<th>${h}</th>`).join('');
-    tbodyEl.innerHTML = '';
-
-    rows.forEach(r=>{
-      const urgVal  = valAt(r, idx.status_flag);
-      const rowUrg  = idx.status_flag!=null ? isUrgent(urgVal) : false;
-
-      let rowDone=false;
-      if(idx.status_done!=null) rowDone = isRowDoneByStatus(valAt(r, idx.status_done));
-      else                      rowDone = isRowDoneByQC(r, idx);
-
-      const rowNotYet = !rowDone && isRowNotYet(r, idx);
-
-      const tds = header.map((_,i)=>{
-        const v=S(r[i]);
-        const isStatusCol = (idx.status_done!=null && i===idx.status_done);
-        const cls = rowUrg && isStatusCol ? 'cell-urgent' : '';
-        return `<td class="${cls}">${v}</td>`;
-      });
-
-      if(tds.length){
-        const dateText = idx.date!=null ? S(valAt(r, idx.date)) : S(r[0] ?? '');
-        if(rowUrg)        tds[0] = `<td><span class="flag-urgent">至急</span>${dateText}</td>`;
-        else if(rowDone)  tds[0] = `<td><span class="badge-done">済</span>${dateText}</td>`;
-        else if(rowNotYet)tds[0] = `<td><span class="badge-todo">未</span>${dateText}</td>`;
-        else              tds[0] = `<td>${dateText}</td>`;
-      }
-
-      tbodyEl.insertAdjacentHTML('beforeend', `<tr class="${rowUrg?'row-urgent':''}">${tds.join('')}</tr>`);
-    });
-  }
-
-  // ===== Main loader =====
-  async function load(){
-    try{
-      if(isLoading){ if(aborter) aborter.abort(); }
-      isLoading=true;
-      const btn=document.getElementById('btnRefresh');
-      const old=btn.textContent; btn.textContent='Loading...'; btn.disabled=true;
-
-      if(aborter) aborter.abort();
-      aborter=new AbortController();
-
-      const url = CSV_URL + "&_ts=" + Date.now();
-      const res=await fetch(url,{signal:aborter.signal,cache:'no-store'});
-      if(!res.ok) throw new Error("HTTP "+res.status);
-      const text=await res.text();
-      const data=parseCSV(text);
-
-      if(!data.length){ throw new Error("CSV empty"); }
-
-      const header=data[0], rowsRaw=data.slice(1);
-      const idx=indexByName(header);
-
-      // Sort: Urgent first, then 出荷日 desc
-      const rows=[...rowsRaw].sort((a,b)=>{
-        const au=idx.status_flag!=null ? isUrgent(valAt(a, idx.status_flag)) : false;
-        const bu=idx.status_flag!=null ? isUrgent(valAt(b, idx.status_flag)) : false;
-        if(au!==bu) return au?-1:1;
-        const da=parseJPDate(valAt(a, idx.date));
-        const db=parseJPDate(valAt(b, idx.date));
-        return db - da;
-      });
-
-      cached = { header, rows, idx };
-
-      // Urgent banner
-      const urgentCount = rows.reduce((n,r)=> n + (idx.status_flag!=null && isUrgent(valAt(r, idx.status_flag)) ? 1 : 0), 0);
-      document.getElementById('urgent-banner').textContent =
-        urgentCount>0 ? `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。` : '現在、至急案件はありません。';
-
-      // Render 今日 section
-      renderTodaySection();
-
-      // Render main (no filter at first)
-      applyFilter(null);
-
-      // Hint & timestamp
-      const qcCols = ['qc_check','qc_label','qc_result','qc_pack']
-        .map(k=>idx[k]!=null ? header[idx[k]] : null).filter(Boolean);
-      document.getElementById('shipHint').textContent =
-        `データ元: ${TAB_NAME}（${rows.length} 行）｜Status列: ${idx.status_done!=null ? header[idx.status_done] : '—'} ｜ QC列: ${qcCols.length? qcCols.join(', ') : '—'} ｜ Urgent列: ${idx.status_flag!=null ? header[idx.status_flag] : '—'}`;
-      document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
-
-      // Prefill date input to today
-      document.getElementById('filterDate').value = toInputDate(new Date());
-
-      btn.textContent=old; btn.disabled=false; isLoading=false;
-    }catch(e){
-      console.error("[ERROR] load()", e);
-      const btn=document.getElementById('btnRefresh');
-      btn.textContent='Refresh now'; btn.disabled=false; isLoading=false;
-      document.getElementById('shipHint').textContent='読み込みに失敗しました。シート名/公開設定/列名をご確認ください。';
-    }
-  }
-
-  function renderTodaySection(){
-    const { header, rows, idx } = cached;
-    if(idx.date==null){ document.getElementById('todaySection').style.display='none'; return; }
-
-    const today = new Date();
-    const todayRows = rows.filter(r => {
-      const d = parseJPDate(valAt(r, idx.date));
-      return sameYMD(d, today);
-    });
-
-    const visible = todayRows.length>0;
-    document.getElementById('todaySection').style.display = visible ? '' : 'none';
-    if(!visible) return;
-
-    document.getElementById('todayCount').textContent = todayRows.length;
-    renderTable(header, idx, todayRows, document.getElementById('todayBody'), document.getElementById('todayHead'));
-  }
-
-  // ===== Filter handling =====
-  function applyFilter(dateStr){
-    const { header, rows, idx } = cached;
-    let view = rows;
-
-    if(idx.date!=null && dateStr){
-      const target = new Date(dateStr+"T00:00:00");
-      view = rows.filter(r => sameYMD(parseJPDate(valAt(r, idx.date)), target));
-    }
-
-    renderTable(header, idx, view, document.getElementById('shipBody'), document.getElementById('shipHead'));
-  }
-
-  // ===== Export =====
-  function exportExcel(){
-    const table=document.getElementById("shipTable");
-    const wb=XLSX.utils.table_to_book(table,{sheet:"出荷状況"});
-    XLSX.writeFile(wb,"出荷状況.xlsx");
-  }
-  function exportPDF(){
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({orientation:"landscape", unit:"pt", format:"a4"});
-    doc.setFontSize(14); doc.text("出荷状況一覧", 40, 40);
-    doc.autoTable({html:"#shipTable", startY:60, styles:{fontSize:9, cellPadding:4, halign:"center", valign:"middle"}, headStyles:{fillColor:[238,242,247]}});
-    doc.save("出荷状況.pdf");
-  }
-  document.getElementById("btnExcel").addEventListener("click", exportExcel);
-  document.getElementById("btnPDF").addEventListener("click", exportPDF);
-
-  // ===== Auto-refresh =====
-  let timer=null, intervalMs=60000;
-  function startAutoRefresh(ms){
-    intervalMs=ms; clearInterval(timer);
-    timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs);
-    document.getElementById('intervalInfo').textContent=`Interval: ${Math.round(intervalMs/1000)}s`;
-    const liveBtn=document.getElementById('btnLive');
-    if(intervalMs<=5000){ liveBtn.classList.add('active'); liveBtn.textContent='Live: On'; }
-    else{ liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off'; }
-  }
-
-  // Events
-  document.getElementById('btnRefresh').addEventListener('click', load);
-  document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
-  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
-
-  document.getElementById('filterDate').addEventListener('change', (e)=> applyFilter(e.target.value || null));
-  document.getElementById('btnToday').addEventListener('click', ()=> applyFilter(toInputDate(new Date())));
-  document.getElementById('btnClear').addEventListener('click', ()=>{
-    document.getElementById('filterDate').value = "";
-    applyFilter(null);
-  });
-
-  window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
+/* === masukkan kembali seluruh JS load(), renderTable(), filter, export, auto-refresh dsb === */
 </script>
 </body>
 </html>
