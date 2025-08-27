@@ -74,8 +74,22 @@
           <option value="15">15</option>
           <option value="30">30</option>
         </select>
-        <label class="small">月別の対象年:</label>
+
+        <label class="small">顧客フィルタ:</label>
+        <select id="selCust" class="btn"></select>
+
+        <label class="small">対象 年:</label>
         <select id="selYear" class="btn"></select>
+
+        <label class="small">対象 月:</label>
+        <select id="selMonth" class="btn">
+          <option value="ALL" selected>All</option>
+          <option value="01">1</option><option value="02">2</option><option value="03">3</option>
+          <option value="04">4</option><option value="05">5</option><option value="06">6</option>
+          <option value="07">7</option><option value="08">8</option><option value="09">9</option>
+          <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+        </select>
+
         <button class="btn" id="btnExcelCharts">Export Charts Excel</button>
       </div>
     </div>
@@ -159,7 +173,7 @@
     const parts=s.replaceAll('-','/').split('/');
     if(parts.length===3) return new Date(parts[0], parts[1]-1, parts[2]);
     const d=new Date(s);
-    return isNaN(d)?null:d; // invalid -> null (tidak ikut hitung)
+    return isNaN(d)?null:d; // invalid -> null (tidak dihitung)
   }
   const ymKey=(d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 
@@ -167,120 +181,130 @@
   let aborter=null, isLoading=false;
   let cached={ header:[], rows:[], idx:null };
   let charts={ cust:null, month:null, year:null };
-  let yearsAvailable=[]; // untuk dropdown tahun
-  let lastAgg=null;      // untuk export
+  let yearsAvailable=[], customersAvailable=[];
+  let lastAgg=null;
 
-  // ===== Aggregate (済のみ) =====
-  function aggregateAll(rows, idx, topN, yearForMonth){
+  // ===== Aggregate =====
+  function aggregate({rows, idx, topN, yearPick, monthPick, custPick}){
     const hasQty = idx.qty!=null;
-    const mapCust=new Map(), mapMonth=new Map(), mapYear=new Map();
+    const custMap=new Map(), monthMap=new Map(), yearMap=new Map();
 
     for(const r of rows){
-      if(!isDoneRow(r, idx)) continue; // hanya "済"
+      if(!isDoneRow(r, idx)) continue; // only "済"
       const qty = hasQty ? parseQty(valAt(r, idx.qty)) : 1;
-
-      // 顧客
       const cust = idx.cust!=null ? (S(valAt(r, idx.cust)) || '不明') : '不明';
-      mapCust.set(cust, (mapCust.get(cust)||0) + qty);
+      const d = idx.date!=null ? parseJPDate(valAt(r, idx.date)) : null;
 
-      // 月/年
-      if(idx.date!=null){
-        const d=parseJPDate(valAt(r, idx.date));
-        if(d && d.getTime()>0){
+      // 顧客別 (untuk chart kiri atas): gunakan filter tahun+bulan
+      if(d){
+        const y = String(d.getFullYear());
+        const m = String(d.getMonth()+1).padStart(2,'0');
+        if(y===String(yearPick) && (monthPick==='ALL' || m===monthPick)){
+          custMap.set(cust, (custMap.get(cust)||0)+qty);
+        }
+      }
+
+      // 月別 (12 bulan dari yearPick) + optional customer filter
+      if(d && String(d.getFullYear())===String(yearPick)){
+        if(custPick==='ALL' || cust===custPick){
+          monthMap.set(ymKey(d), (monthMap.get(ymKey(d))||0)+qty);
+        }
+      }
+
+      // 年別 (semua tahun) + optional customer filter
+      if(d){
+        if(custPick==='ALL' || cust===custPick){
           const y=String(d.getFullYear());
-          mapYear.set(y, (mapYear.get(y)||0)+qty);
-          if(y===String(yearForMonth)){
-            const m=ymKey(d);
-            mapMonth.set(m, (mapMonth.get(m)||0)+qty);
-          }
+          yearMap.set(y, (yearMap.get(y)||0)+qty);
         }
       }
     }
 
     // 顧客 TopN
-    const custArr=Array.from(mapCust.entries()).sort((a,b)=>b[1]-a[1]).slice(0, topN);
+    const custArr=Array.from(custMap.entries()).sort((a,b)=>b[1]-a[1]).slice(0, topN);
     const byCust={ labels:custArr.map(([k])=>k), data:custArr.map(([,v])=>v), hasQty };
 
-    // 月別（isi 12 bulan walau 0）
-    const months=[...Array(12)].map((_,i)=>`${yearForMonth}-${String(i+1).padStart(2,'0')}`);
-    const byMonth={ labels:months, data:months.map(k=>mapMonth.get(k)||0) };
+    // 月別 12 bulan (label 1..12)
+    const monthsIdx=[...Array(12)].map((_,i)=>i+1);
+    const monthsKeys=monthsIdx.map(m=>`${yearPick}-${String(m).padStart(2,'0')}`);
+    const byMonth={ labels:monthsIdx.map(m=>String(m)), data:monthsKeys.map(k=>monthMap.get(k)||0) };
 
-    // 年別（urut naik）
-    const yLabels=Array.from(mapYear.keys()).sort();
-    const byYear={ labels:yLabels, data:yLabels.map(k=>mapYear.get(k)||0) };
+    // 年別
+    const yLabels=Array.from(yearMap.keys()).sort();
+    const byYear={ labels:yLabels, data:yLabels.map(k=>yearMap.get(k)||0) };
 
-    lastAgg={ byCust, byMonth, byYear, yearForMonth };
+    lastAgg={ byCust, byMonth, byYear, yearPick, monthPick, custPick };
     return lastAgg;
   }
 
-  // ===== Render Charts =====
-  Chart.register(ChartDataLabels);
   function intTick(v){ return Number.isInteger(v)?v:''; }
 
-  function renderCharts(){
-    const topN = +document.getElementById('selTop').value || 10;
-    const yearForMonth = document.getElementById('selYear').value;
-    const agg = aggregateAll(cached.rows, cached.idx, topN, yearForMonth);
+  // ===== Render =====
+  function render(){
+    const topN=+document.getElementById('selTop').value || 10;
+    const yearPick=document.getElementById('selYear').value;
+    const monthPick=document.getElementById('selMonth').value;
+    const custPick=document.getElementById('selCust').value;
 
+    const agg=aggregate({rows:cached.rows, idx:cached.idx, topN, yearPick, monthPick, custPick});
     const note=document.getElementById('chartNote');
-    if(!agg.byCust.hasQty) note.textContent='⚠ 「数量」列が見つかりません。列名を「数量 / Qty」にしてください。（暫定的に1件=1で集計）';
-    else note.textContent='顧客別・月別・年別の数量合計（済のみ）';
+    note.textContent = `顧客別: ${yearPick}年${monthPick==='ALL'?'（全月）':(parseInt(monthPick,10)+'月')} ／ 月別: ${yearPick}年${custPick==='ALL'?'（全顧客）':'（'+custPick+'）'} ／ 年別: ${custPick==='ALL'?'全顧客':''+custPick}`;
 
-    // 顧客別（横棒）
-    const custCtx=document.getElementById('chartByCust').getContext('2d');
-    const custCfg={
+    // 顧客別（横棒）— keterangan bulan tampil di judul
+    const ctx1=document.getElementById('chartByCust').getContext('2d');
+    const cfg1={
       type:'bar',
       data:{ labels: agg.byCust.labels, datasets:[{ label:'数量（済）', data:agg.byCust.data }] },
       options:{
         indexAxis:'y', maintainAspectRatio:false,
-        plugins:{ legend:{display:false}, title:{display:true,text:'出荷検査（顧客別｜済）'},
+        plugins:{ legend:{display:false}, title:{display:true,text:`出荷検査（顧客別｜済｜${yearPick}年${monthPick==='ALL'?'全月':(parseInt(monthPick,10)+'月')}）`},
           datalabels:{ anchor:'end', align:'right', formatter:(v)=>v } },
         scales:{ x:{ beginAtZero:true, ticks:{ callback:intTick } } }
       }
     };
-    charts.cust ? (charts.cust.data=custCfg.data, charts.cust.options=custCfg.options, charts.cust.update())
-                : charts.cust=new Chart(custCtx, custCfg);
+    if(charts.cust){ charts.cust.data=cfg1.data; charts.cust.options=cfg1.options; charts.cust.update(); }
+    else charts.cust=new Chart(ctx1,cfg1);
 
-    // 月別
-    const monCtx=document.getElementById('chartByMonth').getContext('2d');
-    const monCfg={
+    // 月別（label 1..12 saja）
+    const ctx2=document.getElementById('chartByMonth').getContext('2d');
+    const cfg2={
       type:'bar',
       data:{ labels: agg.byMonth.labels, datasets:[{ label:`数量（済）`, data:agg.byMonth.data }] },
       options:{
         maintainAspectRatio:false,
-        plugins:{ legend:{display:false}, title:{display:true,text:`出荷検査（月別｜済｜${yearForMonth}年）`},
+        plugins:{ legend:{display:false}, title:{display:true,text:`出荷検査（月別｜済｜${yearPick}年${custPick==='ALL'?'（全顧客）':'（'+custPick+'）'}`},
           datalabels:{ anchor:'end', align:'end', rotation:-90, formatter:(v)=>v, clip:true } },
         scales:{ y:{ beginAtZero:true, ticks:{ callback:intTick } }, x:{ ticks:{ autoSkip:false, maxRotation:0 } } }
       }
     };
-    charts.month ? (charts.month.data=monCfg.data, charts.month.options=monCfg.options, charts.month.update())
-                 : charts.month=new Chart(monCtx, monCfg);
+    if(charts.month){ charts.month.data=cfg2.data; charts.month.options=cfg2.options; charts.month.update(); }
+    else charts.month=new Chart(ctx2,cfg2);
 
     // 年別
-    const yrCtx=document.getElementById('chartByYear').getContext('2d');
-    const yrCfg={
+    const ctx3=document.getElementById('chartByYear').getContext('2d');
+    const cfg3={
       type:'bar',
       data:{ labels: agg.byYear.labels, datasets:[{ label:'数量（済）', data:agg.byYear.data }] },
       options:{
         maintainAspectRatio:false,
-        plugins:{ legend:{display:false}, title:{display:true,text:'出荷検査（年別｜済）'},
+        plugins:{ legend:{display:false}, title:{display:true,text:`出荷検査（年別｜済｜${custPick==='ALL'?'全顧客':custPick}）`},
           datalabels:{ anchor:'end', align:'end', formatter:(v)=>v } },
         scales:{ y:{ beginAtZero:true, ticks:{ callback:intTick } } }
       }
     };
-    charts.year ? (charts.year.data=yrCfg.data, charts.year.options=yrCfg.options, charts.year.update())
-                : charts.year=new Chart(yrCtx, yrCfg);
+    if(charts.year){ charts.year.data=cfg3.data; charts.year.options=cfg3.options; charts.year.update(); }
+    else charts.year=new Chart(ctx3,cfg3);
   }
 
   // ===== Fetch =====
   async function load(){
     try{
-      if(isLoading){ if(aborter) aborter.abort(); }
+      if(isLoading){ aborter?.abort(); }
       isLoading=true;
       const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
       btn.textContent='Loading...'; btn.disabled=true;
 
-      aborter && aborter.abort(); aborter=new AbortController();
+      aborter=new AbortController();
       const res=await fetch(CSV_URL + "&_ts=" + Date.now(), {signal:aborter.signal, cache:'no-store'});
       if(!res.ok) throw new Error("HTTP "+res.status);
       const text=await res.text(); const arr=parseCSV(text); if(!arr.length) throw new Error('CSV empty');
@@ -289,21 +313,31 @@
       const rows=[...rowsRaw];
       cached={header, rows, idx};
 
-      // kumpulkan tahun yang tersedia (dari baris "済")
-      const yearSet=new Set();
+      // kumpulkan tahun & customer (dari baris "済")
+      const yearSet=new Set(), custSet=new Set();
       for(const r of rows){
         if(!isDoneRow(r, idx)) continue;
         if(idx.date!=null){
           const d=parseJPDate(valAt(r, idx.date));
           if(d && d.getTime()>0) yearSet.add(String(d.getFullYear()));
         }
+        if(idx.cust!=null){
+          const c=S(valAt(r, idx.cust));
+          if(c) custSet.add(c);
+        }
       }
       yearsAvailable=[...yearSet].sort();
+      customersAvailable=['ALL', ...[...custSet].sort()];
+
       const selYear=document.getElementById('selYear');
       selYear.innerHTML = yearsAvailable.map(y=>`<option value="${y}">${y}</option>`).join('');
       selYear.value = yearsAvailable.at(-1) || new Date().getFullYear();
 
-      renderCharts();
+      const selCust=document.getElementById('selCust');
+      selCust.innerHTML = customersAvailable.map(c=>`<option value="${c}">${c==='ALL'?'ALL（全顧客）':c}</option>`).join('');
+      selCust.value = 'ALL';
+
+      render();
 
       btn.textContent=old; btn.disabled=false; isLoading=false;
     }catch(e){
@@ -313,16 +347,16 @@
     }
   }
 
-  // ===== Export Charts Excel =====
+  // ===== Export =====
   function exportChartsExcel(){
     if(!lastAgg) return;
     const wb = XLSX.utils.book_new();
     const ws1 = XLSX.utils.aoa_to_sheet([["顧客名","数量（済）"], ...lastAgg.byCust.labels.map((n,i)=>[n, lastAgg.byCust.data[i]])]);
-    XLSX.utils.book_append_sheet(wb, ws1, "顧客別(済)");
-    const ws2 = XLSX.utils.aoa_to_sheet([["年月","数量（済）"], ...lastAgg.byMonth.labels.map((k,i)=>[k, lastAgg.byMonth.data[i]])]);
-    XLSX.utils.book_append_sheet(wb, ws2, `月別(${lastAgg.yearForMonth})`);
+    XLSX.utils.book_append_sheet(wb, ws1, `顧客別(${lastAgg.yearPick}-${lastAgg.monthPick})`);
+    const ws2 = XLSX.utils.aoa_to_sheet([["月","数量（済）"], ...lastAgg.byMonth.labels.map((k,i)=>[k, lastAgg.byMonth.data[i]])]);
+    XLSX.utils.book_append_sheet(wb, ws2, `月別(${lastAgg.yearPick}${lastAgg.custPick==='ALL'?'':'-'+lastAgg.custPick})`);
     const ws3 = XLSX.utils.aoa_to_sheet([["年","数量（済）"], ...lastAgg.byYear.labels.map((k,i)=>[k, lastAgg.byYear.data[i]])]);
-    XLSX.utils.book_append_sheet(wb, ws3, "年別(済)");
+    XLSX.utils.book_append_sheet(wb, ws3, `年別(${lastAgg.custPick})`);
     XLSX.writeFile(wb, "出荷検査_グラフ集計(済).xlsx");
   }
 
@@ -341,8 +375,7 @@
   document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
   document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
 
-  document.getElementById('selTop').addEventListener('change', renderCharts);
-  document.getElementById('selYear').addEventListener('change', renderCharts);
+  ['selTop','selYear','selMonth','selCust'].forEach(id=>document.getElementById(id).addEventListener('change', render));
   document.getElementById('btnExcelCharts').addEventListener('click', exportChartsExcel);
 
   window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
