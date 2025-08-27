@@ -296,35 +296,38 @@
     }
   }
 </script>
-  <!-- Teks berjalan -->
-<div class="marquee">
-  <span>⚙️ 品質管理生産技術システムポータルへようこそ ｜ 本日も安全第一でお願いします ｜ 水分補給して下さいお願い致します</span>
+ <!-- Teks berjalan bawah halaman -->
+<div class="marquee-bottom">
+  <span>⚙️ 品質管理生産技術ポータルへようこそ ｜ 本日も安全第一でお願いします ｜ 水分補給して下さいお願い致します</span>
 </div>
 
 <style>
-.marquee {
+.marquee-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
   width: 100%;
   overflow: hidden;
   white-space: nowrap;
-  box-sizing: border-box;
-  background: #2563eb;   /* warna background */
-  color: #fff;           /* warna teks */
+  background: #2563eb;   /* warna background bar */
+  color: #fff;
   padding: 8px 0;
+  z-index: 9999;         /* pastikan selalu di atas konten lain */
 }
-.marquee span {
+.marquee-bottom span {
   display: inline-block;
   padding-left: 100%;
-  animation: marquee 25s linear infinite;
+  animation: marquee-bottom 15s linear infinite;
   font-weight: bold;
   font-size: 14px;
 }
-@keyframes marquee {
+@keyframes marquee-bottom {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-100%); }
 }
 </style>
-
 </body>
 </html>
+
 
 
