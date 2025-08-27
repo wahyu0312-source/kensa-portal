@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>出荷検査（グラフ）</title>
+<style>
+  :root{--bg1:#eef2ff;--bg2:#f8fafc;--card:#fff;--ink:#0f172a;--muted:#64748b;--border:#e5e7eb;--accent:#2563eb;--shadow:0 30px 60px rgba(15,23,42,.08);--radius:22px}
+  *{box-sizing:border-box}
+  body{
+    margin:0;color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
+    background:radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),linear-gradient(120deg,var(--bg1),var(--bg2));
+    padding-bottom:64px;
+  }
+  header{position:sticky;top:0;z-index:10;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+  .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:16px}
+  nav a{margin-left:20px;color:var(--accent);font-weight:700;text-decoration:none}
+  nav a:hover{text-decoration:underline}
+  .controls{display:flex;gap:8px;align-items:center}
+  .btn{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
+  .btn[disabled]{opacity:.6;cursor:wait}
+  .btn.active{border-color:#93c5fd;background:#f0f9ff}
+  .small{font-size:12px;color:var(--muted)}
+  main{max-width:1200px;margin:28px auto;padding:0 20px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+  .card-title{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px}
+  .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .filterbar input[type="date"]{padding:8px 10px;border:1px solid var(--border);border-radius:10px}
+  .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chart-box{background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px;min-height:360px;display:flex;align-items:center;justify-content:center}
+  .chart-box canvas{width:100%!important;height:320px!important}
+  @media (max-width: 768px){.row{flex-direction:column;align-items:flex-start}.chart-grid{grid-template-columns:1fr}}
+  .marquee{position:fixed;left:0;right:0;bottom:20px;background:var(--accent);color:#fff;font-weight:bold;padding:6px 0;white-space:nowrap;overflow:hidden;z-index:20}
+  .marquee span{display:inline-block;padding-left:100%;animation:marquee 25s linear infinite}
+  @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+  .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:var(--muted);background:#f1f5f9;padding:4px 0;z-index:21}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap row">
+    <div style="display:flex;align-items:center;gap:10px">
+      <img src="tsh.png" alt="TSH" style="height:36px">
+      <strong>品質管理生産技術</strong>
+    </div>
+    <nav>
+      <a href="./index.html">ホーム</a>
+      <a href="./forms.html">出荷検査成績書</a>
+      <a href="./sagyoutejunsho.html">出荷検査作業手順書</a>
+      <a href="./charts.html"><strong>出荷検査（グラフ）</strong></a>
+    </nav>
+    <div class="controls">
+      <button id="btnRefresh" class="btn" type="button">Refresh now</button>
+      <button id="btnLive" class="btn" type="button">Live: Off</button>
+      <span id="intervalInfo" class="small">Interval: 60s</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="card" style="margin-bottom:16px">
+    <div class="card-title">
+      <h2 style="margin:0">出荷検査 — グラフ</h2>
+      <div class="filterbar">
+        <label class="small">出荷日フィルタ：</label>
+        <input type="date" id="filterDate">
+        <button class="btn" id="btnToday">本日</button>
+        <button class="btn" id="btnClear">Clear</button>
+        <label class="small">Top</label>
+        <select id="selTop" class="btn">
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="15">15</option>
+        </select>
+        <button class="btn" id="btnExcelCharts">Export Charts Excel</button>
+      </div>
+    </div>
+    <div class="small" id="chartNote">顧客別・月別・年別の数量合計（済のみ｜現在の表示に連動）</div>
+  </section>
+
+  <section class="card">
+    <div class="chart-grid">
+      <div class="chart-box"><canvas id="paretoChart" aria-label="出荷検査 パレート（顧客別｜済）"></canvas></div>
+      <div class="chart-box"><canvas id="chartByMonth" aria-label="出荷検査 月別（済）"></canvas></div>
+      <div class="chart-box"><canvas id="chartByYear" aria-label="出荷検査 年別（済）"></canvas></div>
+    </div>
+  </section>
+</main>
+
+<div class="marquee"><span>出荷検査（グラフ） - 最新データで自動更新</span></div>
+<div class="footer">Design by Wahyu</div>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<script>
+  // ===== Config =====
+  const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
+  const TAB_NAME ="最新情報";
+  const CSV_URL  =`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
+  const S = s => String(s ?? '').trim();
+  Chart.register(ChartDataLabels);
+
+  // ===== CSV parser =====
+  function parseCSV(t){
+    const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
+    let m, row=[]; t=t.replace(/\r\n?/g,"\n");
+    for(let i=0;i<t.length;){
+      re.lastIndex=i; m=re.exec(t); if(!m) break;
+      let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
+      row.push(cell); i=re.lastIndex;
+      if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
+    }
+    return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
+  }
+
+  // ===== Column index =====
+  function indexByName(header){
+    const map={}; header.forEach((h,i)=>map[S(h)]=i);
+    const find=(names)=>{ for(const n of names){ if(n in map) return map[n]; } return null; };
+    const findFuzzy=(re)=>{ for(let i=0;i<header.length;i++){ if(re.test(S(header[i]))) return i; } return null; };
+    return {
+      date:find(["出荷日","日付","Date"]),
+      cust:find(["顧客名","客先","Customer"]),
+      qty: find(["数量","Qty","数量(個)","数量pcs"]) ?? findFuzzy(/数量|qty|個数|pcs/i),
+      status_done:find(["製品状況","製品状態","納品状況"]) ?? findFuzzy(/(製品|納品).*(状況|状態)/),
+      qc_check:  find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFuzzy(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
+      qc_label:  find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"])            ?? findFuzzy(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
+      qc_result: find(["検査成績表","成績表","InspectionReport"])   ?? findFuzzy(/(検査|inspection).*(成績|report)/i),
+      qc_pack:   find(["梱包","Packing","包装"])                    ?? findFuzzy(/(梱包|packing|包装)/i),
+    };
+  }
+  const valAt = (row, idx) => (idx==null ? "" : (row[idx] ?? ""));
+  const parseQty = (v)=>{ const t=S(v).replace(/,/g,''); const n=parseFloat(t); return isNaN(n)?0:n; };
+
+  function isDoneValue(v){ const t=S(v).toLowerCase(); return !!t && (/(済|完了|ok|done)/.test(t)); }
+  function isRowDoneByQC(row, idx){
+    const vals=[];
+    if(idx.qc_check!=null)  vals.push(valAt(row, idx.qc_check));
+    if(idx.qc_label!=null)  vals.push(valAt(row, idx.qc_label));
+    if(idx.qc_result!=null) vals.push(valAt(row, idx.qc_result));
+    if(idx.qc_pack!=null)   vals.push(valAt(row, idx.qc_pack));
+    return vals.length? vals.every(isDoneValue) : false;
+  }
+
+  function parseJPDate(str){
+    const s=String(str??"").trim();
+    const m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+    if(m) return new Date(m[1], m[2]-1, m[3]);
+    const parts=s.replaceAll('-','/').split('/');
+    if(parts.length===3) return new Date(parts[0], parts[1]-1, parts[2]);
+    const d=new Date(s);
+    return isNaN(d)?null:d; // invalid -> null (hindari 1970)
+  }
+  const ymKey=(d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  function sameYMD(a,b){ if(!a||!b) return false; return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+  function toInputDate(d){ const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`; }
+
+  // ===== State =====
+  let aborter=null, isLoading=false;
+  let cached={ header:[], rows:[], idx:null };
+  let charts={ pareto:null, month:null, year:null };
+  let lastAgg=null;
+
+  // ===== Aggregation (済のみ) =====
+  function isDoneRow(r, idx){
+    if(idx.status_done!=null) return isDoneValue(valAt(r, idx.status_done));
+    return isRowDoneByQC(r, idx);
+  }
+
+  function aggregate(view, idx, topN){
+    const hasQty = idx.qty!=null;
+    const mapCust=new Map(), mapMonth=new Map(), mapYear=new Map();
+
+    for(const r of view){
+      if(!isDoneRow(r, idx)) continue; // 済のみ
+      const qty = hasQty ? parseQty(valAt(r, idx.qty)) : 1;
+      // 顧客
+      const cust = idx.cust!=null ? (S(valAt(r, idx.cust)) || '不明') : '不明';
+      mapCust.set(cust, (mapCust.get(cust)||0) + qty);
+      // 月・年
+      if(idx.date!=null){
+        const d=parseJPDate(valAt(r, idx.date));
+        if(d && d.getTime()>0){
+          mapMonth.set(ymKey(d), (mapMonth.get(ymKey(d))||0)+qty);
+          mapYear.set(String(d.getFullYear()), (mapYear.get(String(d.getFullYear()))||0)+qty);
+        }
+      }
+    }
+
+    const custArr = Array.from(mapCust.entries()).sort((a,b)=>b[1]-a[1]);
+    const total = custArr.reduce((n,[,v])=>n+v,0);
+    const top = custArr.slice(0, topN);
+    let cum=0;
+    const pareto = {
+      labels: top.map(([k])=>k),
+      barData: top.map(([,v])=>v),
+      cumPct: top.map(([,v])=>{ cum+=v; return total? +(cum/total*100).toFixed(1) : 0; }),
+      total, hasQty
+    };
+
+    const monthKeys = Array.from(mapMonth.keys()).sort();
+    const byMonth = { labels: monthKeys, data: monthKeys.map(k=>mapMonth.get(k)) };
+
+    const yearKeys = Array.from(mapYear.keys()).sort();
+    const byYear = { labels: yearKeys, data: yearKeys.map(k=>mapYear.get(k)) };
+
+    lastAgg = { pareto, byMonth, byYear };
+    return lastAgg;
+  }
+
+  function intTick(v){ return Number.isInteger(v) ? v : ''; }
+
+  // ===== Render =====
+  function renderAll(view){
+    const topN = +document.getElementById('selTop').value || 10;
+    const agg = aggregate(view, cached.idx, topN);
+    const note = document.getElementById('chartNote');
+    if(!agg.pareto.hasQty) note.textContent='⚠ 「数量」列が見つかりません。列名を「数量 / Qty」にしてください。（暫定的に1件=1で集計）';
+    else note.textContent='顧客別・月別・年別の数量合計（済のみ｜現在の表示に連動）';
+
+    // Pareto
+    const pctx = document.getElementById('paretoChart').getContext('2d');
+    const pcfg = {
+      type:'bar',
+      data:{
+        labels: agg.pareto.labels,
+        datasets:[
+          { type:'bar', label:'数量（済）', data:agg.pareto.barData, yAxisID:'y',
+            datalabels:{ anchor:'end', align:'end', formatter:(v)=>v } },
+          { type:'line', label:'累積％', data:agg.pareto.cumPct, yAxisID:'y1', tension:.2, pointRadius:3,
+            datalabels:{ anchor:'end', align:'top', formatter:(v)=>v+'%' } }
+        ]
+      },
+      options:{
+        maintainAspectRatio:false,
+        plugins:{ legend:{display:true}, title:{display:true,text:'出荷検査 パレート（顧客別｜済）'}, tooltip:{mode:'index',intersect:false} },
+        scales:{
+          y:{ beginAtZero:true, ticks:{ precision:0 } },
+          y1:{ beginAtZero:true, max:100, position:'right', grid:{ drawOnChartArea:false }, ticks:{ callback:(v)=>v+'%' } },
+          x:{ ticks:{ autoSkip:false, maxRotation:0 } }
+        }
+      }
+    };
+    charts.pareto ? (charts.pareto.data=pcfg.data, charts.pareto.options=pcfg.options, charts.pareto.update())
+                  : charts.pareto=new Chart(pctx, pcfg);
+
+    // Month
+    const mctx = document.getElementById('chartByMonth').getContext('2d');
+    const mcfg = {
+      type:'bar',
+      data:{ labels: agg.byMonth.labels, datasets:[{ label:'数量（済）', data:agg.byMonth.data }] },
+      options:{
+        maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, title:{display:true,text:'出荷検査（月別｜済）'},
+          datalabels:{ anchor:'end', align:'end', rotation:-90, formatter:(v)=>v, clip:true } },
+        scales:{ y:{ beginAtZero:true, ticks:{ callback:intTick } }, x:{ ticks:{ autoSkip:true, maxRotation:0 } } }
+      }
+    };
+    charts.month ? (charts.month.data=mcfg.data, charts.month.options=mcfg.options, charts.month.update())
+                 : charts.month=new Chart(mctx, mcfg);
+
+    // Year
+    const yctx = document.getElementById('chartByYear').getContext('2d');
+    const ycfg = {
+      type:'bar',
+      data:{ labels: agg.byYear.labels, datasets:[{ label:'数量（済）', data:agg.byYear.data }] },
+      options:{
+        maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, title:{display:true,text:'出荷検査（年別｜済）'},
+          datalabels:{ anchor:'end', align:'end', formatter:(v)=>v } },
+        scales:{ y:{ beginAtZero:true, ticks:{ callback:intTick } } }
+      }
+    };
+    charts.year ? (charts.year.data=ycfg.data, charts.year.options=ycfg.options, charts.year.update())
+                : charts.year=new Chart(yctx, ycfg);
+  }
+
+  // ===== Fetch & filter =====
+  async function load(){
+    try{
+      if(isLoading){ if(aborter) aborter.abort(); }
+      isLoading=true;
+      const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
+      btn.textContent='Loading...'; btn.disabled=true;
+
+      aborter && aborter.abort(); aborter=new AbortController();
+      const res=await fetch(CSV_URL + "&_ts=" + Date.now(), {signal:aborter.signal, cache:'no-store'});
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      const text=await res.text(); const arr=parseCSV(text); if(!arr.length) throw new Error('CSV empty');
+
+      const header=arr[0], rowsRaw=arr.slice(1), idx=indexByName(header);
+      const rows=[...rowsRaw];
+      cached={header, rows, idx};
+
+      document.getElementById('filterDate').value = toInputDate(new Date());
+      applyFilter();
+
+      btn.textContent=old; btn.disabled=false; isLoading=false;
+    }catch(e){
+      console.error(e);
+      const btn=document.getElementById('btnRefresh'); btn.textContent='Refresh now'; btn.disabled=false; isLoading=false;
+      document.getElementById('chartNote').textContent='読み込みに失敗しました。シート名/公開設定/列名をご確認ください。';
+    }
+  }
+
+  function getFilteredView(){
+    const { rows, idx } = cached;
+    const dateStr = document.getElementById('filterDate').value;
+    if(idx.date!=null && dateStr){
+      const target=new Date(dateStr+"T00:00:00");
+      return rows.filter(r=>{
+        const d=parseJPDate(valAt(r, idx.date));
+        return d && sameYMD(d, target);
+      });
+    }
+    return rows;
+  }
+
+  function applyFilter(){ renderAll(getFilteredView()); }
+
+  // ===== Export Charts Excel =====
+  function exportChartsExcel(){
+    if(!lastAgg) return;
+    const wb = XLSX.utils.book_new();
+    const p = lastAgg.pareto;
+    const ws1 = XLSX.utils.aoa_to_sheet([["顧客名","数量（済）","累積％"], ...p.labels.map((n,i)=>[n, p.barData[i], p.cumPct[i]])]);
+    XLSX.utils.book_append_sheet(wb, ws1, "Pareto顧客");
+    const ws2 = XLSX.utils.aoa_to_sheet([["年月","数量（済）"], ...lastAgg.byMonth.labels.map((k,i)=>[k, lastAgg.byMonth.data[i]])]);
+    XLSX.utils.book_append_sheet(wb, ws2, "月別(済)");
+    const ws3 = XLSX.utils.aoa_to_sheet([["年","数量（済）"], ...lastAgg.byYear.labels.map((k,i)=>[k, lastAgg.byYear.data[i]])]);
+    XLSX.utils.book_append_sheet(wb, ws3, "年別(済)");
+    XLSX.writeFile(wb, "出荷検査_グラフ集計(済).xlsx");
+  }
+
+  // ===== Auto refresh & events =====
+  let timer=null, intervalMs=60000;
+  function startAutoRefresh(ms){
+    intervalMs=ms; clearInterval(timer);
+    timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs);
+    document.getElementById('intervalInfo').textContent=`Interval: ${Math.round(intervalMs/1000)}s`;
+    const liveBtn=document.getElementById('btnLive');
+    if(intervalMs<=5000){ liveBtn.classList.add('active'); liveBtn.textContent='Live: On'; }
+    else{ liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off'; }
+  }
+
+  document.getElementById('btnRefresh').addEventListener('click', load);
+  document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
+
+  document.getElementById('filterDate').addEventListener('change', applyFilter);
+  document.getElementById('btnToday').addEventListener('click', ()=>{ document.getElementById('filterDate').value = toInputDate(new Date()); applyFilter(); });
+  document.getElementById('btnClear').addEventListener('click', ()=>{ document.getElementById('filterDate').value = ""; applyFilter(); });
+  document.getElementById('selTop').addEventListener('change', applyFilter);
+  document.getElementById('btnExcelCharts').addEventListener('click', exportChartsExcel);
+
+  window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
+</script>
+</body>
+</html>
