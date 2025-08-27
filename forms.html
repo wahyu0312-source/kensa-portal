@@ -296,6 +296,35 @@
     }
   }
 </script>
+  <!-- Teks berjalan -->
+<div class="marquee">
+  <span>⚙️ 品質管理生産技術システムポータルへようこそ ｜ 本日も安全第一でお願いします ｜ 水分補給して下さいお願い致します</span>
+</div>
+
+<style>
+.marquee {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  box-sizing: border-box;
+  background: #2563eb;   /* warna background */
+  color: #fff;           /* warna teks */
+  padding: 8px 0;
+}
+.marquee span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 25s linear infinite;
+  font-weight: bold;
+  font-size: 14px;
+}
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+</style>
+
 </body>
 </html>
+
 
