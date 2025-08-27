@@ -18,7 +18,7 @@
       radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
       radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
       linear-gradient(120deg,var(--bg1),var(--bg2));
-    padding-bottom: 64px; /* ruang ekstra untuk marquee + footer */
+    padding-bottom: 64px;
   }
   header{position:sticky;top:0;z-index:10;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
   .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
@@ -39,13 +39,11 @@
   tbody td{padding:12px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
   tbody tr:hover{background:#f1f5ff}
 
-  /* Urgent styles */
   tr.row-urgent td{background:var(--urgent-row)!important;color:#b91c1c;font-weight:600}
   td.cell-urgent{background:var(--urgent-cell)!important;color:#fff!important;font-weight:800!important;border-radius:8px}
 
   .flag-urgent{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;background:#dc2626;color:#fff;font-weight:800;font-size:12px;margin-right:12px}
   .flag-urgent::before{content:"⚠";}
-
   .badge-done,.badge-todo{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;color:#fff;font-weight:800;font-size:13px;margin-right:12px}
   .badge-done{background:#0ea5e9}
   .badge-todo{background:#94a3b8}
@@ -57,73 +55,29 @@
   #urgent-banner{background:#b91c1c;color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:14px;font-weight:bold;text-align:center;animation:blink 1s infinite}
   @keyframes blink{0%,50%,100%{background:#b91c1c}25%,75%{background:#ef4444}}
 
-  /* Export bar di atas tabel */
-  .export-bar{margin-bottom:12px;display:flex;gap:8px;justify-content:flex-end}
+  .export-bar{margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 
-  /* Filter bar */
   .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 0}
   .filterbar input[type="date"]{padding:8px 10px;border:1px solid var(--border);border-radius:10px}
 
-  /* Chart layout */
-  .chart-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:16px;
-  }
-  .chart-box{
-    background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px;
-    min-height:320px; display:flex; align-items:center; justify-content:center;
-  }
+  .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chart-box{background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px;min-height:320px;display:flex;align-items:center;justify-content:center}
   .chart-box canvas{width:100%!important;height:300px!important}
 
-  /* Responsive smartphone */
-  @media (max-width: 1024px){
-    table{min-width: unset;}
-  }
-  @media (max-width: 768px) {
+  @media (max-width: 1024px){table{min-width: unset;}}
+  @media (max-width: 768px){
     .row {flex-direction: column; align-items: flex-start;}
     nav {display: flex; flex-wrap: wrap; gap: 10px;}
     table {min-width: unset; font-size: 12px;}
     .card {padding: 12px;}
-    .export-bar {justify-content: flex-start; flex-wrap: wrap;}
     .chart-grid{grid-template-columns:1fr}
   }
 
-  /* Marquee berjalan (fixed) */
-  .marquee {
-    position: fixed;
-    left: 0; right: 0;
-    bottom: 20px;
-    background: var(--accent);
-    color: #fff;
-    font-weight: bold;
-    padding: 6px 0;
-    white-space: nowrap;
-    overflow: hidden;
-    z-index: 20;
-    text-align: left;
-  }
-  .marquee span {
-    display: inline-block;
-    padding-left: 100%;
-    animation: marquee 25s linear infinite;
-  }
-  @keyframes marquee {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
-  }
+  .marquee{position:fixed;left:0;right:0;bottom:20px;background:var(--accent);color:#fff;font-weight:bold;padding:6px 0;white-space:nowrap;overflow:hidden;z-index:20;text-align:left}
+  .marquee span{display:inline-block;padding-left:100%;animation:marquee 25s linear infinite}
+  @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
 
-  /* Footer credit (fixed paling bawah) */
-  .footer {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    text-align: center;
-    font-size: 12px;
-    color: var(--muted);
-    background: #f1f5f9;
-    padding: 4px 0;
-    z-index: 21;
-  }
+  .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:var(--muted);background:#f1f5f9;padding:4px 0;z-index:21}
 </style>
 </head>
 <body>
@@ -177,10 +131,10 @@
       </div>
     </div>
 
-    <!-- Export bar di atas tabel -->
     <div class="export-bar">
-      <button class="btn" id="btnExcel">Export Excel</button>
-      <button class="btn" id="btnPDF">Export PDF</button>
+      <button class="btn" id="btnExcel">Export Excel (Table)</button>
+      <button class="btn" id="btnPDF">Export PDF (Table)</button>
+      <button class="btn" id="btnExcelCharts">Export Charts Excel</button>
     </div>
 
     <table id="shipTable">
@@ -190,30 +144,29 @@
     <div class="muted small" id="shipHint"></div>
   </section>
 
-  <!-- Charts: hanya 顧客名×数量 + breakdown bulan & tahun -->
+  <!-- Charts -->
   <section class="card" id="chartsCard">
     <div class="card-title">
-      <h2 style="margin:0">可視化（数量ベース）</h2>
+      <h2 style="margin:0">出荷検査 — 可視化（数量ベース）</h2>
       <span class="small subtle" id="chartNote">顧客別・月別・年別の数量合計（現在の表示に連動）</span>
     </div>
     <div class="chart-grid">
-      <div class="chart-box"><canvas id="chartByCust" aria-label="顧客別 数量"></canvas></div>
-      <div class="chart-box"><canvas id="chartByMonth" aria-label="月別 数量"></canvas></div>
-      <div class="chart-box"><canvas id="chartByYear" aria-label="年別 数量"></canvas></div>
+      <div class="chart-box"><canvas id="chartByCust" aria-label="出荷検査 顧客別 数量"></canvas></div>
+      <div class="chart-box"><canvas id="chartByMonth" aria-label="出荷検査 月別 数量"></canvas></div>
+      <div class="chart-box"><canvas id="chartByYear" aria-label="出荷検査 年別 数量"></canvas></div>
     </div>
   </section>
 </main>
 
-<!-- Marquee + Footer -->
 <div class="marquee"><span>品質管理生産技術システム - 最新の出荷状況を表示しています</span></div>
 <div class="footer">Design by Wahyu</div>
 
-<!-- Export libraries -->
+<!-- Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 <script>
   // ===== Config =====
@@ -248,11 +201,6 @@
       date:find(["出荷日","日付","Date"]),
       cust:find(["顧客名","客先","Customer"]),
       qty: find(["数量","Qty","量","数量(個)","数量pcs"]) ?? findFuzzy(/数量|qty|個数|pcs/i),
-      draw:find(["図番","Drawing","図面"]),
-      item:find(["商品名","品名","Item"]),
-      machine:find(["機種","機種名","Machine"]),
-      to:find(["送り先","納品先","送付先"]),
-      note:find(["注番","注文番号","備考","注文","Order","注釈"]),
       status_done:find(["製品状況","製品状態","納品状況"]) ?? findFuzzy(/(製品|納品).*(状況|状態)/),
       qc_check:  find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFuzzy(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
       qc_label:  find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"])            ?? findFuzzy(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
@@ -262,13 +210,7 @@
     };
   }
   const valAt = (row, idx) => (idx==null ? "" : (row[idx] ?? ""));
-
-  // Parse 数量 safely: "1,234", " 5 ", "", "12.5"
-  function parseQty(v){
-    const t = S(v).replace(/,/g,'');
-    const n = parseFloat(t);
-    return isNaN(n) ? 0 : n;
-  }
+  function parseQty(v){ const t = S(v).replace(/,/g,''); const n = parseFloat(t); return isNaN(n) ? 0 : n; }
 
   function isDoneValue(v){ const t=S(v).toLowerCase(); return !!t && (/(済|完了|ok|done)/.test(t)); }
   function isClearValue(v){ const t=S(v).toLowerCase(); return !!t && /(^|\s)clear(\s|$)/.test(t); }
@@ -297,9 +239,9 @@
     const parts=s.replaceAll('-','/').split('/');
     if(parts.length===3) return new Date(parts[0], parts[1]-1, parts[2]);
     const d=new Date(s);
-    return isNaN(d)?new Date(0):d;
+    return isNaN(d)?null:d;            // <-- invalid -> null (bukan 1970)
   }
-  function sameYMD(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+  function sameYMD(a,b){ if(!a||!b) return false; return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
   function toInputDate(d){ const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`; }
   const ymKey = (d)=> `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 
@@ -329,7 +271,8 @@
       });
 
       if(tds.length){
-        const dateText = idx.date!=null ? S(valAt(r, idx.date)) : S(r[0] ?? '');
+        const d = idx.date!=null ? parseJPDate(valAt(r, idx.date)) : null;
+        const dateText = d ? toInputDate(d) : (S(r[0] ?? ''));
         if(rowUrg)        tds[0] = `<td><span class="flag-urgent">至急</span>${dateText}</td>`;
         else if(rowDone)  tds[0] = `<td><span class="badge-done">済</span>${dateText}</td>`;
         else if(rowNotYet)tds[0] = `<td><span class="badge-todo">未</span>${dateText}</td>`;
@@ -340,132 +283,111 @@
     });
   }
 
-  // ===== Chart helpers (ONLY 顧客名×数量, 月別×数量, 年別×数量) =====
+  // ===== Charts (顧客・月・年) =====
+  Chart.register(ChartDataLabels);
   let charts = { byCust:null, byMonth:null, byYear:null };
 
   function aggregateForCharts(view, idx){
     const hasQty = idx.qty!=null;
     const hasDate = idx.date!=null;
-    const mapCust = new Map();     // 顧客 -> sum 数量
-    const mapMonth = new Map();    // YYYY-MM -> sum 数量
-    const mapYear = new Map();     // YYYY -> sum 数量
+    const mapCust = new Map();
+    const mapMonth = new Map();
+    const mapYear = new Map();
 
     for(const r of view){
       const qty = hasQty ? parseQty(valAt(r, idx.qty)) : 0;
 
-      // 顧客別
+      // 顧客
       const cust = idx.cust!=null ? (S(valAt(r, idx.cust)) || '不明') : '不明';
       mapCust.set(cust, (mapCust.get(cust)||0) + qty);
 
-      // 月/年別
+      // 月/年
       if(hasDate){
         const d = parseJPDate(valAt(r, idx.date));
-        if(!isNaN(d)){
-          const y = String(d.getFullYear());
+        if(d && d.getTime() > 0){             // <-- hindari 1970/null
+          mapYear.set(String(d.getFullYear()), (mapYear.get(String(d.getFullYear()))||0) + qty);
           const m = ymKey(d);
-          mapYear.set(y, (mapYear.get(y)||0) + qty);
           mapMonth.set(m, (mapMonth.get(m)||0) + qty);
         }
       }
     }
 
-    // 顧客 Top10
     const custArr = Array.from(mapCust.entries()).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const custLabels = custArr.map(([k])=>k);
-    const custData   = custArr.map(([,v])=>v);
+    const byCust = { labels: custArr.map(([k])=>k), data: custArr.map(([,v])=>v) };
 
-    // 月別: sort ascending by YYYY-MM
     const monthLabels = Array.from(mapMonth.keys()).sort();
-    const monthData   = monthLabels.map(k=>mapMonth.get(k));
+    const byMonth = { labels: monthLabels, data: monthLabels.map(k=>mapMonth.get(k)) };
 
-    // 年別: sort ascending by YYYY
     const yearLabels = Array.from(mapYear.keys()).sort();
-    const yearData   = yearLabels.map(k=>mapYear.get(k));
+    const byYear = { labels: yearLabels, data: yearLabels.map(k=>mapYear.get(k)) };
 
-    return {
-      hasQty, hasDate,
-      byCust:{ labels:custLabels, data:custData },
-      byMonth:{ labels:monthLabels, data:monthData },
-      byYear:{ labels:yearLabels, data:yearData },
-    };
+    return { hasQty, hasDate, byCust, byMonth, byYear };
   }
+
+  function integerTick(value){ return Number.isInteger(value) ? value : ''; }
 
   function renderCharts(view){
     const noteEl = document.getElementById('chartNote');
     const agg = aggregateForCharts(view, cached.idx);
 
-    // update note jika kolom penting hilang
     if(!agg.hasQty){
-      noteEl.textContent = '⚠ シートに「数量」列が見つかりません。チャートは0になります。列名を「数量 / Qty」にしてください。';
+      noteEl.textContent = '⚠ 「数量」列が見つかりません。列名を「数量 / Qty」にしてください。';
     }else if(!agg.hasDate){
-      noteEl.textContent = '⚠ 「出荷日」列が見つかりません。月別・年別は表示できません。列名を「出荷日 / 日付 / Date」にしてください。';
+      noteEl.textContent = '⚠ 「出荷日」列が見つかりません。月別・年別は作成できません。';
     }else{
       noteEl.textContent = '顧客別・月別・年別の数量合計（現在の表示に連動）';
     }
 
-    // 顧客別
+    // 顧客別（横棒） with labels
     const ctxCust = document.getElementById('chartByCust').getContext('2d');
-    if(charts.byCust){
-      charts.byCust.data.labels = agg.byCust.labels;
-      charts.byCust.data.datasets[0].data = agg.byCust.data;
-      charts.byCust.update();
-    }else{
-      charts.byCust = new Chart(ctxCust, {
-        type: 'bar',
-        data: {
-          labels: agg.byCust.labels,
-          datasets: [{ label: '顧客別 数量（Top10）', data: agg.byCust.data }]
+    const custCfg = {
+      type: 'bar',
+      data: { labels: agg.byCust.labels, datasets: [{ label: '数量', data: agg.byCust.data }] },
+      options: {
+        indexAxis:'y', maintainAspectRatio:false,
+        plugins:{
+          legend:{ display:false },
+          title:{ display:true, text:'出荷検査（顧客別）' },
+          datalabels:{ anchor:'end', align:'right', formatter:(v)=>v }
         },
-        options: {
-          indexAxis:'y',
-          maintainAspectRatio:false,
-          plugins:{ legend:{ display:true } },
-          scales:{ x:{ beginAtZero:true } }
-        }
-      });
-    }
+        scales:{ x:{ beginAtZero:true, ticks:{ callback: integerTick } } }
+      }
+    };
+    charts.byCust ? (charts.byCust.config.data = custCfg.data, charts.byCust.update()) : charts.byCust = new Chart(ctxCust, custCfg);
 
-    // 月別
+    // 月別（バーチャート）
     const ctxMonth = document.getElementById('chartByMonth').getContext('2d');
-    if(charts.byMonth){
-      charts.byMonth.data.labels = agg.byMonth.labels;
-      charts.byMonth.data.datasets[0].data = agg.byMonth.data;
-      charts.byMonth.update();
-    }else{
-      charts.byMonth = new Chart(ctxMonth, {
-        type: 'line',
-        data: {
-          labels: agg.byMonth.labels,
-          datasets: [{ label: '月別 数量', data: agg.byMonth.data, tension: .25, fill: false }]
+    const monthCfg = {
+      type: 'bar',
+      data: { labels: agg.byMonth.labels, datasets: [{ label: '数量', data: agg.byMonth.data }] },
+      options: {
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{ display:false },
+          title:{ display:true, text:'出荷検査（月別）' },
+          datalabels:{ anchor:'end', align:'end', rotation:-90, formatter:(v)=>v, clip:true }
         },
-        options: {
-          maintainAspectRatio:false,
-          plugins:{ legend:{ display:true }, tooltip:{ enabled:true } },
-          scales:{ y:{ beginAtZero:true } }
-        }
-      });
-    }
+        scales:{ y:{ beginAtZero:true, ticks:{ callback: integerTick } }, x:{ ticks:{ autoSkip:true, maxRotation:0 } } }
+      }
+    };
+    charts.byMonth ? (charts.byMonth.config.data = monthCfg.data, charts.byMonth.update()) : charts.byMonth = new Chart(ctxMonth, monthCfg);
 
-    // 年別
+    // 年別（バーチャート）
     const ctxYear = document.getElementById('chartByYear').getContext('2d');
-    if(charts.byYear){
-      charts.byYear.data.labels = agg.byYear.labels;
-      charts.byYear.data.datasets[0].data = agg.byYear.data;
-      charts.byYear.update();
-    }else{
-      charts.byYear = new Chart(ctxYear, {
-        type: 'bar',
-        data: {
-          labels: agg.byYear.labels,
-          datasets: [{ label: '年別 数量', data: agg.byYear.data }]
+    const yearCfg = {
+      type: 'bar',
+      data: { labels: agg.byYear.labels, datasets: [{ label: '数量', data: agg.byYear.data }] },
+      options: {
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{ display:false },
+          title:{ display:true, text:'出荷検査（年別）' },
+          datalabels:{ anchor:'end', align:'end', formatter:(v)=>v }
         },
-        options: {
-          maintainAspectRatio:false,
-          plugins:{ legend:{ display:true } },
-          scales:{ y:{ beginAtZero:true } }
-        }
-      });
-    }
+        scales:{ y:{ beginAtZero:true, ticks:{ callback: integerTick } } }
+      }
+    };
+    charts.byYear ? (charts.byYear.config.data = yearCfg.data, charts.byYear.update()) : charts.byYear = new Chart(ctxYear, yearCfg);
   }
 
   // ===== Main loader =====
@@ -484,20 +406,21 @@
       if(!res.ok) throw new Error("HTTP "+res.status);
       const text=await res.text();
       const data=parseCSV(text);
-
-      if(!data.length){ throw new Error("CSV empty"); }
+      if(!data.length) throw new Error("CSV empty");
 
       const header=data[0], rowsRaw=data.slice(1);
       const idx=indexByName(header);
 
-      // Sort: Urgent first, then 出荷日 desc
+      // Sort: Urgent first, then 出荷日 desc (invalid date -> very old)
       const rows=[...rowsRaw].sort((a,b)=>{
         const au=idx.status_flag!=null ? isUrgent(valAt(a, idx.status_flag)) : false;
         const bu=idx.status_flag!=null ? isUrgent(valAt(b, idx.status_flag)) : false;
         if(au!==bu) return au?-1:1;
-        const da=idx.date!=null ? parseJPDate(valAt(a, idx.date)) : new Date(0);
-        const db=idx.date!=null ? parseJPDate(valAt(b, idx.date)) : new Date(0);
-        return db - da;
+        const da=idx.date!=null ? parseJPDate(valAt(a, idx.date)) : null;
+        const db=idx.date!=null ? parseJPDate(valAt(b, idx.date)) : null;
+        const ta = da ? da.getTime() : -Infinity;
+        const tb = db ? db.getTime() : -Infinity;
+        return tb - ta;
       });
 
       cached = { header, rows, idx };
@@ -507,22 +430,18 @@
       document.getElementById('urgent-banner').textContent =
         urgentCount>0 ? `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。` : '現在、至急案件はありません。';
 
-      // Render 今日 section
       renderTodaySection();
-
-      // Render main (no filter at first)
       applyFilter(null);
 
-      // Hint & timestamp
-      const qcCols = ['qc_check','qc_label','qc_result','qc_pack']
-        .map(k=>idx[k]!=null ? header[idx[k]] : null).filter(Boolean);
+      const cols = [];
+      if(idx.qty!=null) cols.push('数量:'+header[idx.qty]);
+      if(idx.cust!=null) cols.push('顧客:'+header[idx.cust]);
+      if(idx.date!=null) cols.push('出荷日:'+header[idx.date]);
       document.getElementById('shipHint').textContent =
-        `データ元: ${TAB_NAME}（${rows.length} 行）｜数量列: ${idx.qty!=null ? header[idx.qty] : '—'} ｜ 顧客列: ${idx.cust!=null ? header[idx.cust] : '—'} ｜ 出荷日列: ${idx.date!=null ? header[idx.date] : '—'} ｜ Urgent列: ${idx.status_flag!=null ? header[idx.status_flag] : '—'}`;
+        `データ元: ${TAB_NAME}（${rows.length} 行）｜${cols.join(' ｜ ')} ｜ Urgent列: ${idx.status_flag!=null ? header[idx.status_flag] : '—'}`;
       document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
 
-      // Prefill date input ke hari ini
       document.getElementById('filterDate').value = toInputDate(new Date());
-
       btn.textContent=old; btn.disabled=false; isLoading=false;
     }catch(e){
       console.error("[ERROR] load()", e);
@@ -539,7 +458,7 @@
     const today = new Date();
     const todayRows = rows.filter(r => {
       const d = parseJPDate(valAt(r, idx.date));
-      return sameYMD(d, today);
+      return d && sameYMD(d, today);
     });
 
     const visible = todayRows.length>0;
@@ -557,14 +476,17 @@
 
     if(idx.date!=null && dateStr){
       const target = new Date(dateStr+"T00:00:00");
-      view = rows.filter(r => sameYMD(parseJPDate(valAt(r, idx.date)), target));
+      view = rows.filter(r => {
+        const d = parseJPDate(valAt(r, idx.date));
+        return d && sameYMD(d, target);
+      });
     }
 
     renderTable(header, idx, view, document.getElementById('shipBody'), document.getElementById('shipHead'));
-    renderCharts(view); // sinkron dengan tabel
+    renderCharts(view);
   }
 
-  // ===== Export =====
+  // ===== Export (table) =====
   function exportExcel(){
     const table=document.getElementById("shipTable");
     const wb=XLSX.utils.table_to_book(table,{sheet:"出荷状況"});
@@ -577,8 +499,37 @@
     doc.autoTable({html:"#shipTable", startY:60, styles:{fontSize:9, cellPadding:4, halign:"center", valign:"middle"}, headStyles:{fillColor:[238,242,247]}});
     doc.save("出荷状況.pdf");
   }
-  document.getElementById("btnExcel").addEventListener("click", exportExcel);
-  document.getElementById("btnPDF").addEventListener("click", exportPDF);
+
+  // ===== Export (charts -> Excel) =====
+  function exportChartsExcel(){
+    const view = (function(){
+      const { rows, idx } = cached;
+      const dateStr = document.getElementById('filterDate').value;
+      if(idx.date!=null && dateStr){
+        const target = new Date(dateStr+"T00:00:00");
+        return rows.filter(r => {
+          const d = parseJPDate(valAt(r, idx.date));
+          return d && sameYMD(d, target);
+        });
+      }
+      return rows;
+    })();
+
+    const agg = aggregateForCharts(view, cached.idx);
+    const wb = XLSX.utils.book_new();
+
+    function aoaToSheet(title, labels, values, headers){
+      const aoa = [headers, ...labels.map((l,i)=>[l, values[i]])];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      XLSX.utils.book_append_sheet(wb, ws, title);
+    }
+
+    aoaToSheet("顧客別",  agg.byCust.labels,  agg.byCust.data,  ["顧客名","数量"]);
+    aoaToSheet("月別",    agg.byMonth.labels, agg.byMonth.data, ["年月","数量"]);
+    aoaToSheet("年別",    agg.byYear.labels,  agg.byYear.data,  ["年","数量"]);
+
+    XLSX.writeFile(wb, "出荷検査_チャート集計.xlsx");
+  }
 
   // ===== Auto-refresh =====
   let timer=null, intervalMs=60000;
@@ -602,6 +553,10 @@
     document.getElementById('filterDate').value = "";
     applyFilter(null);
   });
+
+  document.getElementById("btnExcel").addEventListener("click", exportExcel);
+  document.getElementById("btnPDF").addEventListener("click", exportPDF);
+  document.getElementById("btnExcelCharts").addEventListener("click", exportChartsExcel);
 
   window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
 </script>
