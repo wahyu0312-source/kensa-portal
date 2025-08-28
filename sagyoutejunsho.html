@@ -8,15 +8,29 @@
     :root{--bg:#f7f7f9;--card:#fff;--ink:#222;--muted:#6b7280;--border:#e5e7eb;--accent:#2563eb}
     *{box-sizing:border-box}
     body{margin:0;background:linear-gradient(120deg,#eef4ff,#f8fafc);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif}
-    header{position:sticky;top:0;background:#ffffffcc;backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+
+    /* header */
+    header{position:sticky;top:0;background:#ffffffcc;backdrop-filter:blur(8px);border-bottom:1px solid var(--border);z-index:20}
     .container{max-width:1200px;margin:0 auto;padding:12px 20px}
     .row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:12px;min-height:44px}
+    .brand img.logo{height:38px;width:auto;display:block}
+    .brand svg{display:none;width:38px;height:38px}
+    .brand-title{display:flex;flex-direction:column}
+    .brand-title small{font-size:12px;color:var(--muted)}
+
+    nav{display:flex;align-items:center}
     nav a{margin-left:20px;color:var(--accent);font-weight:700;text-decoration:none}
     nav a:hover{text-decoration:underline}
+    .btn-chart{display:inline-block;padding:9px 14px;border-radius:9999px;background:var(--accent);color:#fff !important;border:1px solid #1e4fdc;box-shadow:0 6px 16px rgba(37,99,235,.25);text-decoration:none;margin-left:20px}
+    .btn-chart:hover{text-decoration:none;filter:brightness(1.05)}
+
+    /* main */
     main{max-width:1200px;margin:24px auto;padding:0 20px}
     .grid{display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr))}
     @media (max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media (max-width:600px){.grid{grid-template-columns:1fr}}
+
     .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,.06);padding:18px}
     .folder{cursor:pointer}
     .folder h3{margin:0 0 8px 0}
@@ -24,16 +38,39 @@
     .folder.open .docs{display:block}
     .doc{padding:6px 0;border-bottom:1px dashed var(--border);display:flex;justify-content:space-between}
     .doc a{color:var(--accent);text-decoration:none}
+
+    /* running text bottom */
+    .marquee-bottom {position: fixed;bottom: 0;left: 0;width: 100%;overflow: hidden;white-space: nowrap;background: #2563eb;color: #fff;padding: 8px 0;z-index: 9999}
+    .marquee-bottom span {display: inline-block;padding-left: 100%;animation: marquee-bottom 15s linear infinite;font-weight: bold;font-size: 14px}
+    @keyframes marquee-bottom {0%{transform: translateX(0)}100%{transform: translateX(-100%)}}
+
+    /* small screens tweaks */
+    @media (max-width:640px){.brand img.logo{height:30px}.btn-chart{padding:8px 12px;margin-left:12px}}
   </style>
 </head>
 <body>
 <header>
   <div class="container row">
-    <div><strong>作業手順書</strong></div>
+    <div class="brand">
+      <!-- Put your logo file at ./assets/tokyo-seimitsu-hatsujo-logo.png -->
+      <img src="./assets/tokyo-seimitsu-hatsujo-logo.png" alt="東京精密発條 ロゴ" class="logo" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">
+      <!-- Fallback icon if image not found -->
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="30" fill="#2563eb22"/>
+        <path d="M12 34h40M12 30h40M20 18h24v6H20zM20 40h24v6H20z" stroke="#2563eb" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <circle cx="20" cy="32" r="3" fill="#2563eb"/>
+        <circle cx="44" cy="32" r="3" fill="#2563eb"/>
+      </svg>
+      <div class="brand-title">
+        <strong>品質管理生産技術</strong>
+        <small>東京精密発條株式会社</small>
+      </div>
+    </div>
     <nav>
       <a href="./index.html">ホーム</a>
       <a href="./forms.html">出荷検査成績書</a>
       <a href="./sagyoutejunsho.html"><strong>作業手順書</strong></a>
+      <a class="btn-chart" href="./charts.html" aria-label="チャートページを開く">チャート</a>
     </nav>
   </div>
 </header>
@@ -44,7 +81,7 @@
 </main>
 
 <script>
-// Ganti data di bawah sesuai struktur file kamu
+// ======== Data (edit to match your structure) ========
 const data = [
   { name:"出荷検査手順書", docs:[
     {title:"検査手順書MB-XX", url:"https://online.fliphtml5.com/fjppt/mhky/"},
@@ -59,6 +96,7 @@ const data = [
   ]},
 ];
 
+// ======== Render ========
 const wrap = document.getElementById('folders');
 data.forEach(folder=>{
   const card = document.createElement('div');
@@ -71,47 +109,17 @@ data.forEach(folder=>{
   folder.docs.forEach(d=>{
     const row = document.createElement('div');
     row.className = 'doc';
-    row.innerHTML = `<span>📄 ${d.title}</span><a href="${d.url}" target="_blank">開く</a>`;
+    row.innerHTML = `<span>📄 ${d.title}</span><a href="${d.url}" target="_blank" rel="noopener noreferrer">開く</a>`;
     docs.appendChild(row);
   });
   card.addEventListener('click', ()=> card.classList.toggle('open'));
   wrap.appendChild(card);
 });
 </script>
-<!-- Teks berjalan bawah halaman -->
+
+<!-- Running text bottom -->
 <div class="marquee-bottom">
   <span>⚙️ 品質管理生産技術ポータルへようこそ ｜ 本日も安全第一でお願いします ｜ 水分補給して下さいお願い致します</span>
 </div>
-
-<style>
-.marquee-bottom {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  background: #2563eb;   /* warna background bar */
-  color: #fff;
-  padding: 8px 0;
-  z-index: 9999;         /* pastikan selalu di atas konten lain */
-}
-.marquee-bottom span {
-  display: inline-block;
-  padding-left: 100%;
-  animation: marquee-bottom 15s linear infinite;
-  font-weight: bold;
-  font-size: 14px;
-}
-@keyframes marquee-bottom {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
-}
-</style>
-
 </body>
 </html>
-
-
-
-
