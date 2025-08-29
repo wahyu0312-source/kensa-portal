@@ -79,7 +79,7 @@
 <main>
   <section class="card" style="margin-bottom:16px">
     <div class="card-title">
-      <h2 style="margin:0">出荷検査 — グラフ（数量は「済」のみ）</h2>
+      <h2 style="margin:0">出荷検査 — グラフ</h2>
       <div class="filterbar">
         <label class="small">Top 顧客:</label>
         <select id="selTop" class="btn">
@@ -121,17 +121,17 @@
         <button class="btn" id="btnPDF">Export PDF</button>
       </div>
     </div>
-    <div class="small" id="chartNote">顧客別（年／月／Quarter）・月別（顧客）の数量合計（済のみ）</div>
+    <div class="small" id="chartNote">顧客別（年／月／Quarter）・月別（顧客）の数量合計</div>
   </section>
 
   <section class="card" id="chartsSection">
     <div class="chart-grid">
       <!-- Top-N customers for selected YEAR+QUARTER/MONTH -->
-      <div class="chart-box"><canvas id="chartTopCust" aria-label="出荷検査 顧客別（期間｜済）"></canvas></div>
+      <div class="chart-box"><canvas id="chartTopCust" aria-label="出荷検査 顧客別"></canvas></div>
       <!-- Monthly breakdown for selected customer in selected YEAR (respect quarter if chosen) -->
-      <div class="chart-box"><canvas id="chartByMonth" aria-label="出荷検査 月別（済）"></canvas></div>
+      <div class="chart-box"><canvas id="chartByMonth" aria-label="出荷検査"></canvas></div>
       <!-- Top-N customers for selected YEAR (yearly aggregation) -->
-      <div class="chart-box wide"><canvas id="chartTopCustYear" aria-label="出荷検査 顧客別（年｜済）"></canvas></div>
+      <div class="chart-box wide"><canvas id="chartTopCustYear" aria-label="出荷検査 顧客別（年間）"></canvas></div>
     </div>
   </section>
 </main>
@@ -314,17 +314,32 @@
     addParetoIfNeeded(cfg1, agg.byTopCust.data, isPareto);
     charts.topCust ? (charts.topCust.destroy(), charts.topCust=new Chart(ctx1,cfg1)) : charts.topCust=new Chart(ctx1,cfg1);
 
-    // Monthly (customer, year; respect quarter)
+    // Monthly (customer, year; respect quarter)  *** FIX: tampilkan qty di atas batang ***
     const ctx2=document.getElementById('chartByMonth').getContext('2d');
+    const maxY = Math.max(1, ...agg.byMonth.data);
     const cfg2={
       type:'bar',
       data:{ labels: agg.byMonth.labels, datasets:[{ label:`数量（済）`, data:agg.byMonth.data }] },
       options:{
         maintainAspectRatio:false,
-        plugins:{ legend:{display:false},
-          title:{display:true,text:`出荷検査（月別｜済｜${yearPick}年｜${custPick}${quarterPick!=='ALL'?'｜'+quarterPick:''}）`},
-          datalabels:{ anchor:'end', align:'end', rotation:-90, formatter:(v)=>v, clip:true } },
-        scales:{ y:{ beginAtZero:true, ticks:{ callback:intTick } }, x:{ ticks:{ autoSkip:false, maxRotation:0 } } }
+        plugins:{
+          legend:{ display:false },
+          title:{ display:true, text:`出荷検査（月別｜済｜${yearPick}年｜${custPick}${quarterPick!=='ALL'?'｜'+quarterPick:''}）` },
+          datalabels:{
+            display:(ctx)=> (ctx.dataset.data[ctx.dataIndex] > 0),
+            anchor:'end',
+            align:'top',
+            offset:4,
+            rotation:0,
+            clamp:true,
+            clip:false,
+            formatter:(v)=>v
+          }
+        },
+        scales:{
+          y:{ beginAtZero:true, suggestedMax: maxY * 1.15, ticks:{ callback:intTick } },
+          x:{ ticks:{ autoSkip:false, maxRotation:0 } }
+        }
       }
     };
     charts.month ? (charts.month.data=cfg2.data, charts.month.options=cfg2.options, charts.month.update())
