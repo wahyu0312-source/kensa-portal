@@ -45,11 +45,16 @@
   tr.row-urgent td{background:var(--urgent-row)!important;color:#b91c1c;font-weight:600}
   td.cell-urgent{background:var(--urgent-cell)!important;color:#fff!important;font-weight:800!important;border-radius:8px}
 
-  .flag-urgent{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;background:#dc2626;color:#fff;font-weight:800;font-size:12px;margin-right:12px}
+  .flag-urgent{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;background:#dc2626;color:#fff;font-weight:800;font-size:12px;margin-right:8px}
   .flag-urgent::before{content:"⚠";}
-  .badge-done,.badge-todo{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;color:#fff;font-weight:800;font-size:13px;margin-right:12px}
-  .badge-done{background:#0ea5e9}
-  .badge-todo{background:#94a3b8}
+
+  /* Status badges */
+  .tag{display:inline-flex;align-items:center;padding:2px 10px;border-radius:999px;font-weight:800;font-size:12px;color:#fff;margin-right:8px}
+  .tag-done{background:#0ea5e9}      /* 済 (検査済み/完了) */
+  .tag-assem{background:#f59e0b}     /* 組立中 */
+  .tag-assem-done{background:#10b981}/* 組立完了 */
+  .tag-inspect{background:#8b5cf6}   /* 検査中 */
+  .tag-not{background:#94a3b8}       /* 未組立 */
 
   .chip{display:inline-flex;align-items:center;gap:8px;background:#f1f5f9;border:1px solid var(--border);padding:6px 10px;border-radius:999px}
   .chip strong{font-size:12px;color:#0f172a}
@@ -165,7 +170,7 @@
   const CSV_URL  =`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
   const S = s => String(s ?? '').trim();
 
-  // ===== Utils =====
+  // ===== CSV parser =====
   function parseCSV(t){
     const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
     let m, row=[]; t=t.replace(/\r\n?/g,"\n");
@@ -178,6 +183,7 @@
     return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
   }
 
+  // ===== Header indexer =====
   function indexByName(header){
     const map={}; header.forEach((h,i)=>map[S(h)]=i);
     const find=names=>{for(const n of names){if(n in map) return map[n];} return null;};
@@ -197,34 +203,17 @@
       to:find(["送り先","納品先","送付先"]),
       note:find(["注番","注文番号","備考","注文","Order","注釈"]),
       status_done:find(["製品状況","製品状態","納品状況"]) ?? findFuzzy(/(製品|納品).*(状況|状態)/),
+      status_flag:find(["Status","ステータス","状態","至急"]) ?? findFuzzy(/status|至急/i),
+      // QC columns tidak dipakai lagi untuk badge, tapi tetap kita index bila perlu di masa depan:
       qc_check:  find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFuzzy(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
       qc_label:  find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"])            ?? findFuzzy(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
       qc_result: find(["検査成績表","成績表","InspectionReport"])   ?? findFuzzy(/(検査|inspection).*(成績|report)/i),
       qc_pack:   find(["梱包","Packing","包装"])                    ?? findFuzzy(/(梱包|packing|包装)/i),
-      status_flag:find(["Status","ステータス","状態","至急"]) ?? findFuzzy(/status|至急/i),
     };
   }
   const valAt = (row, idx) => (idx==null ? "" : (row[idx] ?? ""));
-  function isDoneValue(v){ const t=S(v).toLowerCase(); return !!t && (/(済|完了|ok|done)/.test(t)); }
-  function isClearValue(v){ const t=S(v).toLowerCase(); return !!t && /(^|\s)clear(\s|$)/.test(t); }
-  function isRowDoneByStatus(v){ return isDoneValue(v); }
-  function isRowDoneByQC(row, idx){
-    const vals=[];
-    if(idx.qc_check!=null)  vals.push(valAt(row, idx.qc_check));
-    if(idx.qc_label!=null)  vals.push(valAt(row, idx.qc_label));
-    if(idx.qc_result!=null) vals.push(valAt(row, idx.qc_result));
-    if(idx.qc_pack!=null)   vals.push(valAt(row, idx.qc_pack));
-    if(vals.length===0) return false;
-    return vals.every(isDoneValue);
-  }
-  function isRowNotYet(row, idx){
-    if(idx.status_done!=null && isClearValue(valAt(row, idx.status_done))) return true;
-    const checks=[idx.qc_check,idx.qc_label,idx.qc_result,idx.qc_pack].filter(i=>i!=null);
-    if(!checks.length) return false;
-    return checks.some(i=>isClearValue(valAt(row,i)));
-  }
-  function isUrgent(v){ const t=S(v).toLowerCase(); return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true"; }
 
+  // ===== Date helpers =====
   function parseJPDate(str){
     const s=String(str??"").trim();
     const mJP=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
@@ -236,12 +225,32 @@
   }
   function sameYMD(a,b){ if(!a||!b) return false; return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
   function toInputDate(d){ const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`; }
+  function isUrgent(v){ const t=S(v).toLowerCase(); return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true"; }
 
-  // ===== State =====
-  let aborter=null, isLoading=false;
-  let cached = { header:[], rows:[], idx:null };
+  // ===== 製品状況 → Badge (only) =====
+  function getStatusFromValue(val){
+    const raw = S(val);
+    const t   = raw.replace(/\s/g,'').toLowerCase();
 
-  // ===== Rendering helper =====
+    // kosong / 未 / clear → 未組立
+    if(!t || /(未|clear)/.test(t)) return {label:'未組立', cls:'tag-not'};
+
+    // 検査済み / 済 / 完了 / ok / done → 済
+    if(/(検査済み|済|完了|ok|done)/.test(t)) return {label:'済', cls:'tag-done'};
+
+    // 明示の状態
+    if(/(組立完了)/.test(raw))            return {label:'組立完了', cls:'tag-assem-done'};
+    if(/(検査中|検中)/.test(raw))         return {label:'検査中',   cls:'tag-inspect'};
+    if(/(組立中|組中)/.test(raw))         return {label:'組立中',   cls:'tag-assem'};
+
+    // 保険（ざっくりキーワード）
+    if(/検/.test(raw))                    return {label:'検査中',   cls:'tag-inspect'};
+    if(/組/.test(raw))                    return {label:'組立中',   cls:'tag-assem'};
+
+    return null; // 不明 -> バッジなし
+  }
+
+  // ===== Rendering =====
   function renderTable(header, idx, rows, tbodyEl, headEl){
     headEl.innerHTML = header.map(h=>`<th>${h}</th>`).join('');
     tbodyEl.innerHTML = '';
@@ -249,33 +258,27 @@
     rows.forEach(r=>{
       const rowUrg  = idx.status_flag!=null ? isUrgent(valAt(r, idx.status_flag)) : false;
 
-      let rowDone=false;
-      if(idx.status_done!=null) rowDone = isRowDoneByStatus(valAt(r, idx.status_done));
-      else                      rowDone = isRowDoneByQC(r, idx);
+      const tds = header.map((_,i)=>`<td>${S(r[i])}</td>`);
 
-      const rowNotYet = !rowDone && isRowNotYet(r, idx);
+      // Kolom tanggal (atau kolom pertama jika tidak ada)
+      const dateCol = (idx.date!=null ? idx.date : 0);
+      const d = idx.date!=null ? parseJPDate(valAt(r, idx.date)) : null;
+      const dateText = d ? toInputDate(d) : S(r[dateCol] ?? '');
 
-      const tds = header.map((_,i)=>{
-        const v=S(r[i]);
-        const isStatusCol = (idx.status_done!=null && i===idx.status_done);
-        const cls = rowUrg && isStatusCol ? 'cell-urgent' : '';
-        return `<td class="${cls}">${v}</td>`;
-      });
+      const urgentFlag = rowUrg ? `<span class="flag-urgent">至急</span>` : '';
+      const statusObj = (idx.status_done!=null) ? getStatusFromValue(valAt(r, idx.status_done)) : null;
+      const badge = statusObj ? `<span class="tag ${statusObj.cls}">${statusObj.label}</span>` : '';
 
-      if(tds.length){
-        const d = idx.date!=null ? parseJPDate(valAt(r, idx.date)) : null;
-        const dateText = d ? toInputDate(d) : (S(r[0] ?? ''));
-        if(rowUrg)        tds[0] = `<td><span class="flag-urgent">至急</span>${dateText}</td>`;
-        else if(rowDone)  tds[0] = `<td><span class="badge-done">済</span>${dateText}</td>`;
-        else if(rowNotYet)tds[0] = `<td><span class="badge-todo">未</span>${dateText}</td>`;
-        else              tds[0] = `<td>${dateText}</td>`;
-      }
+      tds[dateCol] = `<td>${urgentFlag}${badge}${dateText}</td>`;
 
       tbodyEl.insertAdjacentHTML('beforeend', `<tr class="${rowUrg?'row-urgent':''}">${tds.join('')}</tr>`);
     });
   }
 
   // ===== Main loader =====
+  let aborter=null, isLoading=false;
+  let cached = { header:[], rows:[], idx:null };
+
   async function load(){
     try{
       if(isLoading){ if(aborter) aborter.abort(); }
@@ -286,13 +289,12 @@
       if(aborter) aborter.abort();
       aborter=new AbortController();
 
-      const url = CSV_URL + "&_ts=" + Date.now();
+      const url = CSV_URL + "&_ts=" + Date.now(); // cache-bust
       const res=await fetch(url,{signal:aborter.signal,cache:'no-store'});
       if(!res.ok) throw new Error("HTTP "+res.status);
       const text=await res.text();
       const data=parseCSV(text);
-
-      if(!data.length){ throw new Error("CSV empty"); }
+      if(!data.length) throw new Error("CSV empty");
 
       const header=data[0], rowsRaw=data.slice(1);
       const idx=indexByName(header);
@@ -319,10 +321,10 @@
       // Render 今日 section
       renderTodaySection();
 
-      // Render main (no filter at first)
+      // Render main
       applyFilter(null);
 
-      // Hint & timestamp
+      // Info
       const cols = [];
       if(idx.qty!=null) cols.push('数量:'+header[idx.qty]);
       if(idx.cust!=null) cols.push('顧客:'+header[idx.cust]);
@@ -420,4 +422,3 @@
 </script>
 </body>
 </html>
-
