@@ -159,7 +159,7 @@
         <input id="chkPareto" type="checkbox"> Pareto
       </label>
 
-      <!-- NEW: orientation for ALL charts -->
+      <!-- NEW: orientation selector (all charts) -->
       <label class="small">向き:</label>
       <select id="selOrient" class="btn" title="すべてのグラフの向き">
         <option value="h" selected>Horizontal</option>
@@ -336,32 +336,35 @@
     return lastAgg;
   }
 
-  // ===== Pareto helpers =====
-  function addParetoIfNeeded(cfg, dataArr, enablePareto, isHorizontal){
-    if(!enablePareto) return;
-    const total=dataArr.reduce((n,v)=>n+v,0);
+  // ===== Pareto helpers (works v/h) =====
+  function addParetoIfNeeded(cfg, labels, values, enable, isHorizontal){
+    if(!enable) return;
+    const total=values.reduce((n,v)=>n+v,0);
     let cum=0;
-    const cumPct=dataArr.map(v=>{ cum+=v; return total? +(cum/total*100).toFixed(1):0; });
-    const paretoColor=isDark()?'rgba(251,191,36,.95)':'rgba(234,179,8,.95)'; // amber soft
+    const pct=values.map(v=>{cum+=v; return total? +(cum/total*100).toFixed(1):0;});
+    const amb=isDark()?'rgba(251,191,36,.95)':'rgba(234,179,8,.95)';
 
-    const lineDs={
-      type:'line', label:'累積％', data:cumPct, tension:.2, pointRadius:3,
-      borderColor:paretoColor, backgroundColor:'transparent',
-      pointBackgroundColor:paretoColor, pointBorderColor:paretoColor,
-      datalabels:{ anchor:'end', align:'top', formatter:(v)=>v+'%' }
+    const ds={
+      type:'line', label:'累積％', tension:.2, pointRadius:3,
+      borderColor:amb, backgroundColor:'transparent',
+      pointBackgroundColor:amb, pointBorderColor:amb,
+      datalabels:{ anchor:'end', align:'top', formatter:(v)=> (typeof v==='object' ? v.x : v)+'%' }
     };
-    cfg.data.datasets.push(
-      isHorizontal ? Object.assign(lineDs, { xAxisID:'x1' }) : Object.assign(lineDs, { yAxisID:'y1' })
-    );
 
     cfg.options.scales = cfg.options.scales || {};
     if(isHorizontal){
+      // For horizontal, use secondary X axis and provide {x, y} points
+      ds.data = labels.map((lab,i)=>({x:pct[i], y:lab}));
       cfg.options.scales.x1 = { beginAtZero:true, max:100, position:'top',
         grid:{ drawOnChartArea:false }, ticks:{ callback:(v)=>v+'%' } };
     }else{
+      // For vertical, use secondary Y axis and simple array
+      ds.data = pct;
+      ds.yAxisID='y1';
       cfg.options.scales.y1 = { beginAtZero:true, max:100, position:'right',
         grid:{ drawOnChartArea:false }, ticks:{ callback:(v)=>v+'%' } };
     }
+    cfg.data.datasets.push(ds);
   }
 
   // ===== Render =====
@@ -384,7 +387,7 @@
 
     const theme=getTheme();
 
-    // ---------- Chart 1: 顧客別（期間） ----------
+    // Chart 1: 顧客別（期間）
     const ctx1=document.getElementById('chartTopCust').getContext('2d');
     const colors1=softPalette(agg.byTopCust.data.length, isDark()?0.7:0.8);
     const max1=Math.max(1,...agg.byTopCust.data);
@@ -392,7 +395,7 @@
       type:'bar',
       data:{ labels:agg.byTopCust.labels,
         datasets:[{ label:'数量（済）', data:agg.byTopCust.data,
-          backgroundColor:colors1, borderColor:colors1.map(c=>c.replace(/,([^)]+)\)$/,',1)')), borderWidth:1,
+          backgroundColor:colors1, borderColor:colors1, borderWidth:1,
           maxBarThickness:26, categoryPercentage:.7, barPercentage:.9 }]},
       options:{
         indexAxis: isHorizontal ? 'y':'x',
@@ -411,10 +414,10 @@
       }
     };
     if(charts.topCust) charts.topCust.destroy();
-    addParetoIfNeeded(cfg1, agg.byTopCust.data, isPareto, isHorizontal);
+    addParetoIfNeeded(cfg1, agg.byTopCust.labels, agg.byTopCust.data, isPareto, isHorizontal);
     charts.topCust=new Chart(ctx1,cfg1);
 
-    // ---------- Chart 2: 月別（顧客） ----------
+    // Chart 2: 月別（顧客）
     const ctx2=document.getElementById('chartByMonth').getContext('2d');
     const max2=Math.max(1,...agg.byMonth.data);
     const colors2=softPalette(agg.byMonth.data.length, isDark()?0.7:0.8);
@@ -422,7 +425,7 @@
       type:'bar',
       data:{ labels:agg.byMonth.labels,
         datasets:[{ label:'数量（済）', data:agg.byMonth.data,
-          backgroundColor:colors2, borderColor:colors2.map(c=>c.replace(/,([^)]+)\)$/,',1)')), borderWidth:1,
+          backgroundColor:colors2, borderColor:colors2, borderWidth:1,
           maxBarThickness:36, categoryPercentage:.8, barPercentage:.9 }]},
       options:{
         indexAxis: isHorizontal ? 'y':'x',
@@ -450,7 +453,7 @@
     if(charts.month) charts.month.destroy();
     charts.month=new Chart(ctx2,cfg2);
 
-    // ---------- Chart 3: 顧客別（年 合計） ----------
+    // Chart 3: 顧客別（年 合計）
     const ctx3=document.getElementById('chartTopCustYear').getContext('2d');
     const max3=Math.max(1,...agg.byTopCustYear.data);
     const colors3=softPalette(agg.byTopCustYear.data.length, isDark()?0.7:0.8);
@@ -458,7 +461,7 @@
       type:'bar',
       data:{ labels:agg.byTopCustYear.labels,
         datasets:[{ label:'数量（済）', data:agg.byTopCustYear.data,
-          backgroundColor:colors3, borderColor:colors3.map(c=>c.replace(/,([^)]+)\)$/,',1)')), borderWidth:1,
+          backgroundColor:colors3, borderColor:colors3, borderWidth:1,
           maxBarThickness:26, categoryPercentage:.7, barPercentage:.9 }]},
       options:{
         indexAxis: isHorizontal ? 'y':'x',
@@ -477,10 +480,10 @@
       }
     };
     if(charts.topCustYear) charts.topCustYear.destroy();
-    addParetoIfNeeded(cfg3, agg.byTopCustYear.data, isPareto, isHorizontal);
+    addParetoIfNeeded(cfg3, agg.byTopCustYear.labels, agg.byTopCustYear.data, isPareto, isHorizontal);
     charts.topCustYear=new Chart(ctx3,cfg3);
 
-    // Note
+    // note
     document.getElementById('chartNote').textContent = `期間: ${periodLabel} ／ 顧客: ${custPick} ／ 集計は「済」のみ`;
     lastAgg=agg;
   }
@@ -547,4 +550,67 @@
     XLSX.utils.book_append_sheet(wb, ws1, `顧客別(期間)`);
     const ws2=XLSX.utils.aoa_to_sheet([["月","数量（済）"], ...lastAgg.byMonth.labels.map((k,i)=>[k,lastAgg.byMonth.data[i]])]);
     XLSX.utils.book_append_sheet(wb, ws2, `月別(${lastAgg.custPick})`);
-    const ws3=XLSX.utils
+    const ws3=XLSX.utils.aoa_to_sheet([["顧客名","数量（済）"], ...lastAgg.byTopCustYear.labels.map((n,i)=>[n,lastAgg.byTopCustYear.data[i]])]);
+    XLSX.utils.book_append_sheet(wb, ws3, `顧客別(年)`);
+    XLSX.writeFile(wb, "出荷検査_グラフ集計(済).xlsx");
+  }
+
+  async function exportPDF(){
+    const { jsPDF } = window.jspdf;
+    const pdf=new jsPDF({orientation:"landscape", unit:"pt", format:"a4"});
+    const items=[
+      {el:document.getElementById('chartTopCust'), title:'顧客別（期間｜済）'},
+      {el:document.getElementById('chartByMonth'), title:'月別（顧客｜済）'},
+      {el:document.getElementById('chartTopCustYear'), title:'顧客別（年｜済）'},
+    ];
+    for(let i=0;i<items.length;i++){
+      if(i>0) pdf.addPage();
+      const png=items[i].el.toDataURL('image/png',1.0);
+      const pageW=pdf.internal.pageSize.getWidth();
+      const pageH=pdf.internal.pageSize.getHeight();
+      const margin=36;
+      const w=pageW-margin*2, h=pageH-margin*2-24;
+      pdf.setFontSize(14); pdf.text(items[i].title, margin, margin);
+      pdf.addImage(png,'PNG', margin, margin+12, w, h, undefined, 'FAST');
+    }
+    pdf.save('出荷検査_グラフ(PDF).pdf');
+  }
+
+  let timer=null, intervalMs=60000;
+  function startAutoRefresh(ms){
+    intervalMs=ms; clearInterval(timer);
+    timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs);
+    document.getElementById('intervalInfo').textContent=`Interval: ${Math.round(intervalMs/1000)}s`;
+    const liveBtn=document.getElementById('btnLive');
+    if(intervalMs<=5000){ liveBtn.classList.add('active'); liveBtn.textContent='Live: On'; }
+    else{ liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off'; }
+  }
+
+  document.getElementById('btnRefresh').addEventListener('click', load);
+  document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
+
+  ['selTop','selYear','selQuarter','selMonth','selCust','chkPareto','selOrient'].forEach(id=>{
+    document.getElementById(id).addEventListener('change', render);
+  });
+  document.getElementById('btnExcelCharts').addEventListener('click', exportChartsExcel);
+  document.getElementById('btnPDF').addEventListener('click', exportPDF);
+  document.getElementById('btnReset').addEventListener('click', ()=>{
+    document.getElementById('selTop').value="10";
+    const ySel=document.getElementById('selYear'); if(ySel.options.length) ySel.value=ySel.options[ySel.options.length-1].value;
+    document.getElementById('selQuarter').value="ALL";
+    document.getElementById('selMonth').value="ALL";
+    const cSel=document.getElementById('selCust'); if(cSel.options.length) cSel.value=cSel.options[0].value;
+    document.getElementById('selOrient').value="h";
+    document.getElementById('chkPareto').checked=false;
+    render();
+  });
+  document.getElementById('chkDark').addEventListener('change',(e)=>{
+    document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light');
+    render();
+  });
+
+  window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
+</script>
+</body>
+</html>
