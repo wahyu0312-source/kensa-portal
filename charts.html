@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="ja" data-theme="light">
 <head>
 <meta charset="utf-8">
@@ -253,7 +253,23 @@
   const ymKey=(d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   const intTick=(v)=>Number.isInteger(v)?v:'';
 
-  // ===== Theme utilities =====
+  // ===== Theme utilities (SOFT COLORS) =====
+  const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+
+  const PALETTE_LIGHT = ['#93c5fd','#a5b4fc','#fda4af','#fdba74','#86efac','#67e8f9','#f5d0fe','#c4b5fd','#fecaca','#fde68a','#bbf7d0','#bae6fd'];
+  const PALETTE_DARK  = ['#60a5fa','#818cf8','#fca5a5','#fbbf24','#4ade80','#22d3ee','#f0abfc','#a78bfa','#f87171','#fde047','#86efac','#93c5fd'];
+
+  function hexToRgba(hex, a=0.8){
+    const h=hex.replace('#',''); const b=parseInt(h,16);
+    const r=(b>>16)&255, g=(b>>8)&255, bl=b&255;
+    return `rgba(${r},${g},${bl},${a})`;
+  }
+  function softPalette(n, alpha=0.8){
+    const base = isDark() ? PALETTE_DARK : PALETTE_LIGHT;
+    const out=[]; for(let i=0;i<n;i++){ out.push(hexToRgba(base[i % base.length], alpha)); }
+    return out;
+  }
+
   function getTheme(){
     const st = getComputedStyle(document.documentElement);
     return {
@@ -267,6 +283,18 @@
     Chart.defaults.color = c.ink;
     Chart.defaults.borderColor = c.grid;
     Chart.defaults.font.family = 'system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif';
+    Chart.defaults.plugins = Chart.defaults.plugins || {};
+    Chart.defaults.plugins.legend = Chart.defaults.plugins.legend || {};
+    Chart.defaults.plugins.legend.labels = Chart.defaults.plugins.legend.labels || {};
+    Chart.defaults.plugins.legend.labels.color = c.ink;
+    Chart.defaults.plugins.title = Chart.defaults.plugins.title || {};
+    Chart.defaults.plugins.title.color = c.ink;
+    Chart.defaults.plugins.tooltip = Chart.defaults.plugins.tooltip || {};
+    Chart.defaults.plugins.tooltip.backgroundColor = isDark() ? 'rgba(15,23,42,.95)' : 'rgba(255,255,255,.95)';
+    Chart.defaults.plugins.tooltip.titleColor = isDark() ? '#e5e7eb' : '#0f172a';
+    Chart.defaults.plugins.tooltip.bodyColor  = isDark() ? '#e5e7eb' : '#0f172a';
+    Chart.defaults.plugins.tooltip.borderColor = c.grid;
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
   }
 
   // ===== State =====
@@ -311,7 +339,8 @@
     };
 
     const byTopCust     = toTop(mapTopCust);
-    const byTopCustYear = toTop(mapTopCustYear);
+    theTopYear = toTop(mapTopCustYear);
+    const byTopCustYear = theTopYear;
 
     const monthsIdx = (monthList ?? [...Array(12)].map((_,i)=>i+1));
     const monthsKeys= monthsIdx.map(m=>`${yearPick}-${String(m).padStart(2,'0')}`);
@@ -327,11 +356,15 @@
     const total = dataArr.reduce((n,v)=>n+v,0);
     let cum=0;
     const cumPct = dataArr.map(v=>{ cum+=v; return total? +(cum/total*100).toFixed(1) : 0; });
+    const paretoColor = isDark() ? 'rgba(251,191,36,.95)' : 'rgba(234,179,8,.95)'; // amber soft
     cfg.data.datasets.push({
       type:'line', label:'累積％', data:cumPct, yAxisID:'y1', tension:.2, pointRadius:3,
+      borderColor: paretoColor, backgroundColor:'transparent',
+      pointBackgroundColor: paretoColor, pointBorderColor: paretoColor,
       datalabels:{ anchor:'end', align:'top', formatter:(v)=>v+'%' }
     });
-    cfg.options.scales.y1 = { beginAtZero:true, max:100, position:'right', grid:{ drawOnChartArea:false }, ticks:{ callback:(v)=>v+'%' } };
+    cfg.options.scales.y1 = { beginAtZero:true, max:100, position:'right',
+      grid:{ drawOnChartArea:false }, ticks:{ callback:(v)=>v+'%' } };
   }
 
   // ===== Render =====
@@ -355,9 +388,20 @@
 
     // Top-N customers (period)
     const ctx1=document.getElementById('chartTopCust').getContext('2d');
+    const colors1 = softPalette(agg.byTopCust.data.length, isDark()?0.7:0.8);
     const cfg1={
       type:'bar',
-      data:{ labels: agg.byTopCust.labels, datasets:[{ label:'数量（済）', data:agg.byTopCust.data, maxBarThickness:26, categoryPercentage:.7, barPercentage:.9 }] },
+      data:{
+        labels: agg.byTopCust.labels,
+        datasets:[{
+          label:'数量（済）',
+          data:agg.byTopCust.data,
+          backgroundColor: colors1,
+          borderColor: colors1.map(c=>c.replace(/,([^)]+)\)$/,',1)')), // same color, full alpha
+          borderWidth:1,
+          maxBarThickness:26, categoryPercentage:.7, barPercentage:.9
+        }]
+      },
       options:{
         indexAxis:'y', maintainAspectRatio:false,
         layout:{padding:{top:6,right:8,left:4,bottom:0}},
@@ -371,12 +415,23 @@
     addParetoIfNeeded(cfg1, agg.byTopCust.data, isPareto);
     charts.topCust ? (charts.topCust.destroy(), charts.topCust=new Chart(ctx1,cfg1)) : charts.topCust=new Chart(ctx1,cfg1);
 
-    // Monthly (customer, year; respect quarter) — qty labels rapi di atas batang
+    // Monthly (customer, year; respect quarter)
     const ctx2=document.getElementById('chartByMonth').getContext('2d');
     const maxY = Math.max(1, ...agg.byMonth.data);
+    const colors2 = softPalette(agg.byMonth.data.length, isDark()?0.7:0.8);
     const cfg2={
       type:'bar',
-      data:{ labels: agg.byMonth.labels, datasets:[{ label:`数量（済）`, data:agg.byMonth.data, maxBarThickness:36, categoryPercentage:.8, barPercentage:.9 }] },
+      data:{
+        labels: agg.byMonth.labels,
+        datasets:[{
+          label:`数量（済）`,
+          data:agg.byMonth.data,
+          backgroundColor: colors2,
+          borderColor: colors2.map(c=>c.replace(/,([^)]+)\)$/,',1)')),
+          borderWidth:1,
+          maxBarThickness:36, categoryPercentage:.8, barPercentage:.9
+        }]
+      },
       options:{
         maintainAspectRatio:false,
         layout:{padding:{top:6,right:8,left:4,bottom:0}},
@@ -401,9 +456,20 @@
 
     // Top-N customers (year)
     const ctx3=document.getElementById('chartTopCustYear').getContext('2d');
+    const colors3 = softPalette(agg.byTopCustYear.data.length, isDark()?0.7:0.8);
     const cfg3={
       type:'bar',
-      data:{ labels: agg.byTopCustYear.labels, datasets:[{ label:'数量（済）', data:agg.byTopCustYear.data, maxBarThickness:26, categoryPercentage:.7, barPercentage:.9 }] },
+      data:{
+        labels: agg.byTopCustYear.labels,
+        datasets:[{
+          label:'数量（済）',
+          data:agg.byTopCustYear.data,
+          backgroundColor: colors3,
+          borderColor: colors3.map(c=>c.replace(/,([^)]+)\)$/,',1)')),
+          borderWidth:1,
+          maxBarThickness:26, categoryPercentage:.7, barPercentage:.9
+        }]
+      },
       options:{
         indexAxis:'y', maintainAspectRatio:false,
         layout:{padding:{top:6,right:8,left:4,bottom:0}},
