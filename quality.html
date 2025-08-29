@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="ja" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>品質情報</title>
+
+  <!-- Chart.js & PapaParse -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <style>
+    :root{
+      --bg1:#eef2ff; --bg2:#f8fafc; --card:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
+      --accent:#2563eb; --danger:#b91c1c; --shadow:0 30px 60px rgba(15,23,42,.08); --radius:22px
+    }
+    [data-theme="dark"]{
+      --bg1:#0b1220; --bg2:#0b1220; --card:#0f172a; --ink:#e5e7eb; --muted:#94a3b8; --border:#1f2937; --accent:#60a5fa; --shadow:none;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;color:var(--ink);background:linear-gradient(120deg,var(--bg1),var(--bg2));font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif}
+    header{position:sticky;top:0;background:#ffffffcc;backdrop-filter:blur(8px);border-bottom:1px solid var(--border);z-index:10}
+    .container{max-width:1200px;margin:0 auto;padding:14px 18px}
+    nav a{margin-right:14px;color:var(--ink);text-decoration:none;font-weight:600}
+    nav a.active{color:var(--accent)}
+    h1{font-size:22px;margin:12px 0 4px}
+    .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+    .row{display:grid;grid-template-columns:1fr;gap:14px}
+    @media(min-width:900px){.row{grid-template-columns:1fr 1fr}}
+    .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+    .controls label{font-size:12px;color:var(--muted)}
+    .controls select,.controls input,.controls button{
+      padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:#fff;font-size:14px
+    }
+    .controls button{cursor:pointer}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
+    .warn{background:#fff7ed;border-color:#fed7aa}
+    .grid-2{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:1100px){.grid-2{grid-template-columns:1.2fr .8fr}}
+    footer{color:var(--muted);font-size:12px;margin:28px 0}
+    .mapping{display:none;margin-top:10px;gap:8px}
+    .mapping.visible{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <a href="./index.html">ホーム</a>
+        <a href="./form.html">出荷検査成績書</a>
+        <a href="./procedure.html">出荷検査作業手順書</a>
+        <a href="./chart.html">出荷検査（グラフ）</a>
+        <a class="active" href="./quality.html">品質情報</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1>品質情報 <span class="badge" id="dataRange"></span></h1>
+    <div class="sub">GoogleスプレッドシートのCSVを読み込み、月次トレンドとParetoを表示します。</div>
+
+    <div class="card warn" id="autoDetectNote" style="display:none">
+      列の自動判定に失敗しました。必要な列（<b>日付</b> / <b>顧客</b> / <b>不良カテゴリ</b> / <b>数量</b>）を下で指定してください。
+      <div class="mapping" id="mappingUI">
+        <div><label class="muted">日付列</label><br><select id="mapDate"></select></div>
+        <div><label class="muted">顧客列</label><br><select id="mapCustomer"></select></div>
+        <div><label class="muted">不良カテゴリ列</label><br><select id="mapDefect"></select></div>
+        <div><label class="muted">数量列（任意）</label><br><select id="mapQty"></select></div>
+        <div style="grid-column:1/-1"><button id="applyMapping">適用</button> <span class="muted">（設定はブラウザに保存されます）</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="controls">
+        <label>顧客：</label>
+        <select id="customerSelect"><option value="__ALL__">全て</option></select>
+
+        <label>期間：</label>
+        <input type="month" id="fromMonth">〜<input type="month" id="toMonth">
+
+        <label>表示：</label>
+        <select id="topN">
+          <option value="8">Pareto上位8</option>
+          <option value="10" selected>Pareto上位10</option>
+          <option value="12">Pareto上位12</option>
+          <option value="20">Pareto上位20</option>
+        </select>
+
+        <label>向き：</label>
+        <select id="orientation">
+          <option value="vertical" selected>縦</option>
+          <option value="horizontal">横</option>
+        </select>
+
+        <button id="reloadBtn">再読み込み</button>
+        <button id="resetBtn">リセット</button>
+        <button id="exportCsvBtn">CSV出力（絞り込み後）</button>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <h3 style="margin:0 0 8px">月次トレンド（不良・件数/数量）</h3>
+          <canvas id="trendChart" height="180"></canvas>
+        </div>
+        <div>
+          <h3 style="margin:0 0 8px">Pareto（不良カテゴリ）</h3>
+          <canvas id="paretoChart" height="180"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <footer>Design by Wahyu · データは公開CSVから自動取得</footer>
+  </main>
+
+  <script>
+    // ====== 設定 ======
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRcfdkrzU5qYVnkGAMeVP9884E7pv5ZFlgobtY7Eb9mlbvmnXFL5v_nY_oA-sAgVJhSYKCgOk_wlO6W/pub?gid=864633681&single=true&output=csv";
+
+    // カラム名自動検出の候補
+    const COL_HINTS = {
+      date:  [/日付|日時|検査日|出荷日|date|created/i],
+      customer:[/顧客|得意先|客先|customer|client|取引先/i],
+      defect: [/不良|不具合|欠陥|現象|原因|カテゴリ|項目/i],
+      qty:    [/数量|個数|台数|件数|qty|count|数量\(件\)/i]
+    };
+
+    // ====== ユーティリティ ======
+    const jpMonth = (d)=> `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}`;
+    const parseDate = (v)=>{
+      if(v instanceof Date) return v;
+      if(typeof v !== "string") return null;
+      let s = v.trim();
+      if(!s) return null;
+      s = s.replace(/\./g, "/").replace(/年|\/|\-/g, (m)=> m === "年" ? "/" : m);
+      // 対応: YYYY/MM/DD, YYYY-M-D, M/D/YYYY など
+      let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+      if(m) return new Date(+m[1], m[2]-1, +m[3]);
+      m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if(m) return new Date(+m[3], m[1]-1, +m[2]);
+      // Excel serial? 1900基準の簡易対応
+      if(/^\d{4,6}$/.test(s)){
+        const base = new Date(Date.UTC(1899,11,30));
+        const dt = new Date(base.getTime() + (+s)*86400000);
+        return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+      }
+      return new Date(s);
+    };
+    const toCSV = (rows)=>{
+      if(!rows.length) return "";
+      const headers = Object.keys(rows[0]);
+      const esc = v => `"${String(v??"").replace(/"/g,'""')}"`;
+      return [headers.join(","), ...rows.map(r=>headers.map(h=>esc(r[h])).join(","))].join("\n");
+    };
+
+    // ====== 状態 ======
+    let RAW = [], HEADERS = [];
+    let MAP = JSON.parse(localStorage.getItem("quality_colmap")||"null");
+
+    // ====== 画面要素 ======
+    const els = {
+      customer: document.getElementById("customerSelect"),
+      from:     document.getElementById("fromMonth"),
+      to:       document.getElementById("toMonth"),
+      topN:     document.getElementById("topN"),
+      orient:   document.getElementById("orientation"),
+      reload:   document.getElementById("reloadBtn"),
+      reset:    document.getElementById("resetBtn"),
+      export:   document.getElementById("exportCsvBtn"),
+      range:    document.getElementById("dataRange"),
+      note:     document.getElementById("autoDetectNote"),
+      mappingUI:document.getElementById("mappingUI"),
+      mapDate:  document.getElementById("mapDate"),
+      mapCust:  document.getElementById("mapCustomer"),
+      mapDef:   document.getElementById("mapDefect"),
+      mapQty:   document.getElementById("mapQty"),
+      apply:    document.getElementById("applyMapping"),
+      trend:    document.getElementById("trendChart"),
+      pareto:   document.getElementById("paretoChart"),
+    };
+
+    // ====== グラフ用 ======
+    let trendChart, paretoChart;
+
+    function destroyCharts(){
+      if(trendChart){ trendChart.destroy(); trendChart = null; }
+      if(paretoChart){ paretoChart.destroy(); paretoChart = null; }
+    }
+
+    function autoDetectMap(headers){
+      const findBy = (regexArr)=> headers.find(h=>regexArr.some(r=>r.test(h))) || null;
+      const map = {
+        date: findBy(COL_HINTS.date),
+        customer: findBy(COL_HINTS.customer),
+        defect: findBy(COL_HINTS.defect),
+        qty: findBy(COL_HINTS.qty)
+      };
+      const ok = !!(map.date && map.customer && map.defect);
+      return {map, ok};
+    }
+
+    function applyMappingUI(headers){
+      [els.mapDate, els.mapCust, els.mapDef, els.mapQty].forEach(sel=>{
+        sel.innerHTML = `<option value="">（なし）</option>` + headers.map(h=>`<option>${h}</option>`).join("");
+      });
+      if(MAP){
+        if(MAP.date) els.mapDate.value = MAP.date;
+        if(MAP.customer) els.mapCust.value = MAP.customer;
+        if(MAP.defect) els.mapDef.value = MAP.defect;
+        if(MAP.qty) els.mapQty.value = MAP.qty;
+      }
+      els.apply.onclick = ()=>{
+        MAP = {
+          date: els.mapDate.value || null,
+          customer: els.mapCust.value || null,
+          defect: els.mapDef.value || null,
+          qty: els.mapQty.value || null,
+        };
+        localStorage.setItem("quality_colmap", JSON.stringify(MAP));
+        drawAll();
+      };
+    }
+
+    function loadCSV(){
+      return fetch(CSV_URL, {cache:"no-store"})
+        .then(r=>r.text())
+        .then(text=>new Promise((res)=>{
+          Papa.parse(text,{
+            header:true,
+            dynamicTyping:true,
+            skipEmptyLines:true,
+            complete: (out)=> res(out)
+          });
+        }));
+    }
+
+    function initFilters(rows, map){
+      // 顧客候補
+      const customers = Array.from(new Set(rows.map(r=> String(r[map.customer]??"").trim()).filter(Boolean))).sort();
+      els.customer.innerHTML = `<option value="__ALL__">全て</option>` + customers.map(c=>`<option>${c}</option>`).join("");
+
+      // 期間（初期：最小〜最大）
+      const dates = rows.map(r=>parseDate(r[map.date])).filter(d=>d && !isNaN(d));
+      if(dates.length){
+        const min = dates.reduce((a,b)=> a<b? a:b);
+        const max = dates.reduce((a,b)=> a>b? a:b);
+        const m2val = (d)=> `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+        els.from.value = m2val(new Date(min.getFullYear(), min.getMonth(), 1));
+        els.to.value   = m2val(new Date(max.getFullYear(), max.getMonth(), 1));
+        els.range.textContent = `${jpMonth(min)} 〜 ${jpMonth(max)}`;
+      }
+    }
+
+    function getFiltered(rows, map){
+      const cust = els.customer.value;
+      const from = els.from.value ? new Date(els.from.value+"-01") : null;
+      const to   = els.to.value ? new Date(els.to.value+"-01") : null;
+      const end  = to ? new Date(to.getFullYear(), to.getMonth()+1, 0) : null;
+
+      return rows.filter(r=>{
+        const d = parseDate(r[map.date]);
+        if(!d || isNaN(d)) return false;
+        if(from && d < from) return false;
+        if(end && d > end) return false;
+        if(cust!=="__ALL__" && String(r[map.customer]??"").trim()!==cust) return false;
+        return true;
+      });
+    }
+
+    function monthTrend(rows, map){
+      // 集計：YYYY/MM -> 件数（qtyがあれば合計、なければ件数）
+      const useQty = !!map.qty;
+      const by = new Map();
+      for(const r of rows){
+        const d = parseDate(r[map.date]); if(!d || isNaN(d)) continue;
+        const key = jpMonth(d);
+        const val = useQty ? Number(r[map.qty]||0) : 1;
+        by.set(key, (by.get(key)||0) + (isFinite(val)? val: 0));
+      }
+      const labels = Array.from(by.keys()).sort();
+      const values = labels.map(k=>by.get(k));
+      return {labels, values};
+    }
+
+    function paretoData(rows, map, topN=10){
+      const useQty = !!map.qty;
+      const by = new Map();
+      for(const r of rows){
+        const cat = String(r[map.defect]??"").trim() || "（未分類）";
+        const val = useQty ? Number(r[map.qty]||0) : 1;
+        by.set(cat, (by.get(cat)||0) + (isFinite(val)? val: 0));
+      }
+      let arr = Array.from(by.entries()).sort((a,b)=>b[1]-a[1]);
+      const total = arr.reduce((s, [,v])=>s+v, 0);
+      if(arr.length > topN){
+        const top = arr.slice(0, topN);
+        const rest = arr.slice(topN).reduce((s, [,v])=>s+v, 0);
+        arr = [...top, ["その他", rest]];
+      }
+      const labels = arr.map(([k])=>k);
+      const values = arr.map(([,v])=>v);
+      // 累積%
+      const cum = [];
+      let acc = 0;
+      for(const v of values){
+        acc += v; cum.push(total? Math.round((acc/total)*1000)/10 : 0);
+      }
+      return {labels, values, cum, total};
+    }
+
+    function drawAll(){
+      destroyCharts();
+
+      // マッピング判定
+      let map = MAP;
+      if(!map){
+        const {map:det, ok} = autoDetectMap(HEADERS);
+        if(ok){ MAP = map = det; localStorage.setItem("quality_colmap", JSON.stringify(MAP)); }
+      }
+
+      // マッピングUI
+      const ok = map && map.date && map.customer && map.defect;
+      els.note.style.display = ok ? "none" : "block";
+      els.mappingUI.classList.toggle("visible", !ok);
+      if(!ok){ applyMappingUI(HEADERS); return; }
+
+      // フィルタ適用
+      const rows = getFiltered(RAW, map);
+
+      // トレンド
+      const t = monthTrend(rows, map);
+      const ctx1 = els.trend.getContext("2d");
+      trendChart = new Chart(ctx1, {
+        type: "line",
+        data: {
+          labels: t.labels,
+          datasets: [{
+            label: "月次合計",
+            data: t.values,
+            tension:.3,
+            borderWidth:2,
+            pointRadius:3,
+            fill:false
+          }]
+        },
+        options: {
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{ legend:{display:true}, tooltip:{mode:"index", intersect:false} },
+          scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
+        }
+      });
+
+      // Pareto
+      const pN = +els.topN.value || 10;
+      const p = paretoData(rows, map, pN);
+      const horizontal = els.orient.value === "horizontal";
+      const ctx2 = els.pareto.getContext("2d");
+      const barScaleId = "y";
+      const lineScaleId = horizontal ? "x1" : "y1";
+      const indexAxis = horizontal ? "y" : "x";
+
+      paretoChart = new Chart(ctx2, {
+        type: "bar",
+        data: {
+          labels: p.labels,
+          datasets: [
+            { type:"bar", label:"件数/数量", data: p.values, borderWidth:1 },
+            { type:"line", label:"累積%", data: p.cum, yAxisID: lineScaleId, xAxisID: lineScaleId, borderWidth:2, pointRadius:3 }
+          ]
+        },
+        options: {
+          indexAxis,
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{ legend:{display:true}, tooltip:{mode:"index", intersect:false} },
+          scales: horizontal ? {
+            y: { beginAtZero:true, ticks:{ autoSkip:false } },
+            x: { beginAtZero:true, ticks:{ precision:0 } },
+            x1:{ position:"top", min:0, max:100, ticks:{ callback:v=>v+"%" } }
+          }:{
+            x: { ticks:{ autoSkip:false } },
+            y: { beginAtZero:true, ticks:{ precision:0 } },
+            y1:{ position:"right", min:0, max:100, ticks:{ callback:v=>v+"%" } }
+          }
+        }
+      });
+    }
+
+    // ====== 初期化 ======
+    async function bootstrap(){
+      try{
+        const out = await loadCSV();
+        RAW = out.data;
+        HEADERS = out.meta.fields || Object.keys(RAW[0]||{});
+        // 自動検出とUI初期化
+        const det = autoDetectMap(HEADERS);
+        if(!MAP) MAP = det.map;
+        applyMappingUI(HEADERS);
+        initFilters(RAW, MAP);
+        drawAll();
+      }catch(err){
+        console.error(err);
+        alert("CSVの読み込みに失敗しました。URLまたは公開設定を確認してください。");
+      }
+    }
+
+    // ====== イベント ======
+    ["change","input"].forEach(ev=>{
+      els.customer.addEventListener(ev, drawAll);
+      els.from.addEventListener(ev, drawAll);
+      els.to.addEventListener(ev, drawAll);
+      els.topN.addEventListener(ev, drawAll);
+      els.orient.addEventListener(ev, drawAll);
+    });
+    els.reload.onclick = bootstrap;
+    els.reset.onclick = ()=>{
+      localStorage.removeItem("quality_colmap");
+      MAP = null; bootstrap();
+    };
+    els.export.onclick = ()=>{
+      // 現在の絞り込みでCSV書き出し
+      if(!MAP){ alert("列マッピング未設定です。"); return; }
+      const filtered = getFiltered(RAW, MAP);
+      const csv = toCSV(filtered);
+      const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+      const a = document.createElement("a");
+      const ymd = new Date().toISOString().slice(0,10);
+      a.href = URL.createObjectURL(blob);
+      a.download = `品質情報_${ymd}.csv`;
+      a.click();
+    };
+
+    // kick
+    bootstrap();
+  </script>
+</body>
+</html>
