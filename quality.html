@@ -80,16 +80,23 @@
         <label>期間：</label>
         <input type="month" id="fromMonth">〜<input type="month" id="toMonth">
 
-        <label>表示：</label>
+        <label>Pareto上位：</label>
         <select id="topN">
-          <option value="8">Pareto上位8</option>
-          <option value="10" selected>Pareto上位10</option>
-          <option value="12">Pareto上位12</option>
-          <option value="20">Pareto上位20</option>
+          <option value="8">8</option>
+          <option value="10" selected>10</option>
+          <option value="12">12</option>
+          <option value="20">20</option>
         </select>
 
-        <label>向き：</label>
-        <select id="orientation">
+        <label>表示（トレンド）：</label>
+        <select id="trendMode" title="Trend chart display">
+          <option value="line-v" selected>折れ線（縦）</option>
+          <option value="bar-v">棒（縦）</option>
+          <option value="bar-h">棒（横）</option>
+        </select>
+
+        <label>表示（Pareto）：</label>
+        <select id="paretoOrientation" title="Pareto orientation">
           <option value="vertical" selected>縦</option>
           <option value="horizontal">横</option>
         </select>
@@ -134,12 +141,10 @@
       let s = v.trim();
       if(!s) return null;
       s = s.replace(/\./g, "/").replace(/年|\/|\-/g, (m)=> m === "年" ? "/" : m);
-      // 対応: YYYY/MM/DD, YYYY-M-D, M/D/YYYY など
       let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
       if(m) return new Date(+m[1], m[2]-1, +m[3]);
       m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
       if(m) return new Date(+m[3], m[1]-1, +m[2]);
-      // Excel serial? 1900基準の簡易対応
       if(/^\d{4,6}$/.test(s)){
         const base = new Date(Date.UTC(1899,11,30));
         const dt = new Date(base.getTime() + (+s)*86400000);
@@ -164,7 +169,8 @@
       from:     document.getElementById("fromMonth"),
       to:       document.getElementById("toMonth"),
       topN:     document.getElementById("topN"),
-      orient:   document.getElementById("orientation"),
+      trendMode:document.getElementById("trendMode"),
+      paretoOri:document.getElementById("paretoOrientation"),
       reload:   document.getElementById("reloadBtn"),
       reset:    document.getElementById("resetBtn"),
       export:   document.getElementById("exportCsvBtn"),
@@ -236,11 +242,9 @@
     }
 
     function initFilters(rows, map){
-      // 顧客候補
       const customers = Array.from(new Set(rows.map(r=> String(r[map.customer]??"").trim()).filter(Boolean))).sort();
       els.customer.innerHTML = `<option value="__ALL__">全て</option>` + customers.map(c=>`<option>${c}</option>`).join("");
 
-      // 期間（初期：最小〜最大）
       const dates = rows.map(r=>parseDate(r[map.date])).filter(d=>d && !isNaN(d));
       if(dates.length){
         const min = dates.reduce((a,b)=> a<b? a:b);
@@ -269,7 +273,6 @@
     }
 
     function monthTrend(rows, map){
-      // 集計：YYYY/MM -> 件数（qtyがあれば合計、なければ件数）
       const useQty = !!map.qty;
       const by = new Map();
       for(const r of rows){
@@ -300,7 +303,6 @@
       }
       const labels = arr.map(([k])=>k);
       const values = arr.map(([,v])=>v);
-      // 累積%
       const cum = [];
       let acc = 0;
       for(const v of values){
@@ -328,11 +330,30 @@
       // フィルタ適用
       const rows = getFiltered(RAW, map);
 
-      // トレンド
+      // ---- トレンド ----
       const t = monthTrend(rows, map);
-      const ctx1 = els.trend.getContext("2d");
-      trendChart = new Chart(ctx1, {
-        type: "line",
+      const mode = els.trendMode.value; // line-v | bar-v | bar-h
+      const trendType = mode.startsWith("line") ? "line" : "bar";
+      const trendIndexAxis = mode==="bar-h" ? "y" : "x"; // only used when bar
+
+      const trendOpts = {
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{ legend:{display:true}, tooltip:{mode:"index", intersect:false} },
+        scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
+      };
+      if(trendType === "bar"){
+        trendOpts.indexAxis = trendIndexAxis;
+        if(trendIndexAxis==="y"){
+          trendOpts.scales = {
+            y:{ beginAtZero:true, ticks:{ autoSkip:false } },
+            x:{ beginAtZero:true, ticks:{ precision:0 } }
+          };
+        }
+      }
+
+      trendChart = new Chart(els.trend.getContext("2d"), {
+        type: trendType,
         data: {
           labels: t.labels,
           datasets: [{
@@ -344,24 +365,33 @@
             fill:false
           }]
         },
-        options: {
-          responsive:true,
-          maintainAspectRatio:false,
-          plugins:{ legend:{display:true}, tooltip:{mode:"index", intersect:false} },
-          scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
-        }
+        options: trendOpts
       });
 
-      // Pareto
+      // ---- Pareto ----
       const pN = +els.topN.value || 10;
       const p = paretoData(rows, map, pN);
-      const horizontal = els.orient.value === "horizontal";
-      const ctx2 = els.pareto.getContext("2d");
-      const barScaleId = "y";
+      const horizontal = els.paretoOri.value === "horizontal";
       const lineScaleId = horizontal ? "x1" : "y1";
       const indexAxis = horizontal ? "y" : "x";
 
-      paretoChart = new Chart(ctx2, {
+      const paretoOpts = {
+        indexAxis,
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{ legend:{display:true}, tooltip:{mode:"index", intersect:false} },
+        scales: horizontal ? {
+          y: { beginAtZero:true, ticks:{ autoSkip:false } },
+          x: { beginAtZero:true, ticks:{ precision:0 } },
+          x1:{ position:"top", min:0, max:100, ticks:{ callback:v=>v+"%" } }
+        } : {
+          x: { ticks:{ autoSkip:false } },
+          y: { beginAtZero:true, ticks:{ precision:0 } },
+          y1:{ position:"right", min:0, max:100, ticks:{ callback:v=>v+"%" } }
+        }
+      };
+
+      paretoChart = new Chart(els.pareto.getContext("2d"), {
         type: "bar",
         data: {
           labels: p.labels,
@@ -370,21 +400,7 @@
             { type:"line", label:"累積%", data: p.cum, yAxisID: lineScaleId, xAxisID: lineScaleId, borderWidth:2, pointRadius:3 }
           ]
         },
-        options: {
-          indexAxis,
-          responsive:true,
-          maintainAspectRatio:false,
-          plugins:{ legend:{display:true}, tooltip:{mode:"index", intersect:false} },
-          scales: horizontal ? {
-            y: { beginAtZero:true, ticks:{ autoSkip:false } },
-            x: { beginAtZero:true, ticks:{ precision:0 } },
-            x1:{ position:"top", min:0, max:100, ticks:{ callback:v=>v+"%" } }
-          }:{
-            x: { ticks:{ autoSkip:false } },
-            y: { beginAtZero:true, ticks:{ precision:0 } },
-            y1:{ position:"right", min:0, max:100, ticks:{ callback:v=>v+"%" } }
-          }
-        }
+        options: paretoOpts
       });
     }
 
@@ -394,7 +410,6 @@
         const out = await loadCSV();
         RAW = out.data;
         HEADERS = out.meta.fields || Object.keys(RAW[0]||{});
-        // 自動検出とUI初期化
         const det = autoDetectMap(HEADERS);
         if(!MAP) MAP = det.map;
         applyMappingUI(HEADERS);
@@ -412,7 +427,8 @@
       els.from.addEventListener(ev, drawAll);
       els.to.addEventListener(ev, drawAll);
       els.topN.addEventListener(ev, drawAll);
-      els.orient.addEventListener(ev, drawAll);
+      els.trendMode.addEventListener(ev, drawAll);
+      els.paretoOri.addEventListener(ev, drawAll);
     });
     els.reload.onclick = bootstrap;
     els.reset.onclick = ()=>{
@@ -420,7 +436,6 @@
       MAP = null; bootstrap();
     };
     els.export.onclick = ()=>{
-      // 現在の絞り込みでCSV書き出し
       if(!MAP){ alert("列マッピング未設定です。"); return; }
       const filtered = getFiltered(RAW, MAP);
       const csv = toCSV(filtered);
