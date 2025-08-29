@@ -18,7 +18,7 @@
       radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
       radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
       linear-gradient(120deg,var(--bg1),var(--bg2));
-    padding-bottom:64px; /* ruang ekstra utk marquee+footer */
+    padding-bottom:64px;
   }
   header{position:sticky;top:0;z-index:10;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
   .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
@@ -50,7 +50,7 @@
 
   /* Status badges */
   .tag{display:inline-flex;align-items:center;padding:2px 10px;border-radius:999px;font-weight:800;font-size:12px;color:#fff;margin-right:8px}
-  .tag-done{background:#0ea5e9}      /* 済 (検査済み/完了) */
+  .tag-done{background:#0ea5e9}      /* 済 (検査済み/完了/OK/done) */
   .tag-assem{background:#f59e0b}     /* 組立中 */
   .tag-assem-done{background:#10b981}/* 組立完了 */
   .tag-inspect{background:#8b5cf6}   /* 検査中 */
@@ -63,14 +63,10 @@
   #urgent-banner{background:#b91c1c;color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:14px;font-weight:bold;text-align:center;animation:blink 1s infinite}
   @keyframes blink{0%,50%,100%{background:#b91c1c}25%,75%{background:#ef4444}}
 
-  /* Export bar */
   .export-bar{margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-
-  /* Filter bar */
   .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 0}
   .filterbar input[type="date"]{padding:8px 10px;border:1px solid var(--border);border-radius:10px}
 
-  /* Responsive */
   @media (max-width: 1024px){ table{min-width:unset} }
   @media (max-width: 768px){
     .row{flex-direction:column;align-items:flex-start}
@@ -80,7 +76,6 @@
     .export-bar{justify-content:flex-start}
   }
 
-  /* Marquee + footer */
   .marquee{position:fixed;left:0;right:0;bottom:20px;background:var(--accent);color:#fff;font-weight:bold;padding:6px 0;white-space:nowrap;overflow:hidden;z-index:20}
   .marquee span{display:inline-block;padding-left:100%;animation:marquee 25s linear infinite}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
@@ -154,11 +149,10 @@
   </section>
 </main>
 
-<!-- Marquee + Footer -->
 <div class="marquee"><span>品質管理生産技術システム - 最新の出荷状況を表示しています</span></div>
 <div class="footer">Design by Wahyu</div>
 
-<!-- Libraries (Export) -->
+<!-- Export libs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -204,7 +198,7 @@
       note:find(["注番","注文番号","備考","注文","Order","注釈"]),
       status_done:find(["製品状況","製品状態","納品状況"]) ?? findFuzzy(/(製品|納品).*(状況|状態)/),
       status_flag:find(["Status","ステータス","状態","至急"]) ?? findFuzzy(/status|至急/i),
-      // QC columns tidak dipakai lagi untuk badge, tapi tetap kita index bila perlu di masa depan:
+      // QC columns (tidak dipakai untuk badge, tapi tetap kita index jika dibutuhkan)
       qc_check:  find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFuzzy(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
       qc_label:  find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"])            ?? findFuzzy(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
       qc_result: find(["検査成績表","成績表","InspectionReport"])   ?? findFuzzy(/(検査|inspection).*(成績|report)/i),
@@ -221,13 +215,13 @@
     const parts=s.replaceAll('-','/').split('/');
     if(parts.length===3) return new Date(parts[0], parts[1]-1, parts[2]);
     const d=new Date(s);
-    return isNaN(d)?null:d; // invalid -> null
+    return isNaN(d)?null:d;
   }
   function sameYMD(a,b){ if(!a||!b) return false; return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
   function toInputDate(d){ const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`; }
   function isUrgent(v){ const t=S(v).toLowerCase(); return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true"; }
 
-  // ===== 製品状況 → Badge (only) =====
+  // ===== 製品状況 → Badge =====
   function getStatusFromValue(val){
     const raw = S(val);
     const t   = raw.replace(/\s/g,'').toLowerCase();
@@ -238,16 +232,39 @@
     // 検査済み / 済 / 完了 / ok / done → 済
     if(/(検査済み|済|完了|ok|done)/.test(t)) return {label:'済', cls:'tag-done'};
 
-    // 明示の状態
+    // 明示状態
     if(/(組立完了)/.test(raw))            return {label:'組立完了', cls:'tag-assem-done'};
     if(/(検査中|検中)/.test(raw))         return {label:'検査中',   cls:'tag-inspect'};
     if(/(組立中|組中)/.test(raw))         return {label:'組立中',   cls:'tag-assem'};
 
-    // 保険（ざっくりキーワード）
+    // fallback keyword
     if(/検/.test(raw))                    return {label:'検査中',   cls:'tag-inspect'};
     if(/組/.test(raw))                    return {label:'組立中',   cls:'tag-assem'};
 
-    return null; // 不明 -> バッジなし
+    return null; // tak dikenal
+  }
+
+  // ===== Comparator (Urgent → Status → Date desc) =====
+  function makeComparator(idx){
+    const rank = s => ({ '検査中':1, '組立中':2, '未組立':3, '組立完了':4, '済':5 }[s] ?? 99);
+    return (a,b)=>{
+      // Urgent first
+      const au=idx.status_flag!=null && isUrgent(valAt(a, idx.status_flag));
+      const bu=idx.status_flag!=null && isUrgent(valAt(b, idx.status_flag));
+      if(au!==bu) return au?-1:1;
+
+      // By 製品状況 rank
+      const sa = idx.status_done!=null ? (getStatusFromValue(valAt(a, idx.status_done))?.label) : null;
+      const sb = idx.status_done!=null ? (getStatusFromValue(valAt(b, idx.status_done))?.label) : null;
+      if(rank(sa)!==rank(sb)) return rank(sa)-rank(sb);
+
+      // Newer date first
+      const da=idx.date!=null ? parseJPDate(valAt(a, idx.date)) : null;
+      const db=idx.date!=null ? parseJPDate(valAt(b, idx.date)) : null;
+      const ta = da ? da.getTime() : -Infinity;
+      const tb = db ? db.getTime() : -Infinity;
+      return tb - ta;
+    };
   }
 
   // ===== Rendering =====
@@ -277,7 +294,7 @@
 
   // ===== Main loader =====
   let aborter=null, isLoading=false;
-  let cached = { header:[], rows:[], idx:null };
+  let cached = { header:[], rows:[], idx:null, cmp:null };
 
   async function load(){
     try{
@@ -289,7 +306,7 @@
       if(aborter) aborter.abort();
       aborter=new AbortController();
 
-      const url = CSV_URL + "&_ts=" + Date.now(); // cache-bust
+      const url = CSV_URL + "&_ts=" + Date.now();
       const res=await fetch(url,{signal:aborter.signal,cache:'no-store'});
       if(!res.ok) throw new Error("HTTP "+res.status);
       const text=await res.text();
@@ -298,30 +315,21 @@
 
       const header=data[0], rowsRaw=data.slice(1);
       const idx=indexByName(header);
+      const cmp = makeComparator(idx);
 
-      // Sort: Urgent first, then 出荷日 desc
-      const rows=[...rowsRaw].sort((a,b)=>{
-        const au=idx.status_flag!=null ? isUrgent(valAt(a, idx.status_flag)) : false;
-        const bu=idx.status_flag!=null ? isUrgent(valAt(b, idx.status_flag)) : false;
-        if(au!==bu) return au?-1:1;
-        const da=idx.date!=null ? parseJPDate(valAt(a, idx.date)) : null;
-        const db=idx.date!=null ? parseJPDate(valAt(b, idx.date)) : null;
-        const ta = da ? da.getTime() : -Infinity;
-        const tb = db ? db.getTime() : -Infinity;
-        return tb - ta;
-      });
+      const rows=[...rowsRaw].sort(cmp); // Urgent→Status→Date
 
-      cached = { header, rows, idx };
+      cached = { header, rows, idx, cmp };
 
       // Urgent banner
       const urgentCount = rows.reduce((n,r)=> n + (idx.status_flag!=null && isUrgent(valAt(r, idx.status_flag)) ? 1 : 0), 0);
       document.getElementById('urgent-banner').textContent =
         urgentCount>0 ? `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。` : '現在、至急案件はありません。';
 
-      // Render 今日 section
+      // 今日 section
       renderTodaySection();
 
-      // Render main
+      // Main table
       applyFilter(null);
 
       // Info
@@ -333,7 +341,7 @@
         `データ元: ${TAB_NAME}（${rows.length} 行）｜${cols.join(' ｜ ')} ｜ Urgent列: ${idx.status_flag!=null ? header[idx.status_flag] : '—'}`;
       document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
 
-      // Prefill date input ke hari ini
+      // Prefill filter ke hari ini
       document.getElementById('filterDate').value = toInputDate(new Date());
 
       btn.textContent=old; btn.disabled=false; isLoading=false;
@@ -346,14 +354,16 @@
   }
 
   function renderTodaySection(){
-    const { header, rows, idx } = cached;
+    const { header, rows, idx, cmp } = cached;
     if(idx.date==null){ document.getElementById('todaySection').style.display='none'; return; }
 
     const today = new Date();
-    const todayRows = rows.filter(r => {
-      const d = parseJPDate(valAt(r, idx.date));
-      return d && sameYMD(d, today);
-    });
+    const todayRows = rows
+      .filter(r => {
+        const d = parseJPDate(valAt(r, idx.date));
+        return d && sameYMD(d, today);
+      })
+      .sort(cmp); // gunakan urutan yang sama
 
     const visible = todayRows.length>0;
     document.getElementById('todaySection').style.display = visible ? '' : 'none';
@@ -365,7 +375,7 @@
 
   // ===== Filter handling =====
   function applyFilter(dateStr){
-    const { header, rows, idx } = cached;
+    const { header, rows, idx, cmp } = cached;
     let view = rows;
 
     if(idx.date!=null && dateStr){
@@ -373,7 +383,7 @@
       view = rows.filter(r => {
         const d = parseJPDate(valAt(r, idx.date));
         return d && sameYMD(d, target);
-      });
+      }).sort(cmp);
     }
 
     renderTable(header, idx, view, document.getElementById('shipBody'), document.getElementById('shipHead'));
