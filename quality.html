@@ -2,6 +2,9 @@
 <html lang="ja" data-theme="light">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>品質情報</title>
 
@@ -61,7 +64,7 @@
   </header>
 
   <main class="container">
-    <h1>品質情報 <span class="badge" id="dataRange"></span></h1>
+    <h1>品質情報 <span class="badge" id="verBadge">v-part-panels-3</span> <span class="badge" id="dataRange"></span></h1>
     <div class="sub">CSV（公開）: <b>月</b>で期間選択、<b>部位</b>（SG/CV/WB/SC）で絞り込み。上：総合トレンド&総合Pareto、下：<b>部位別</b> Pareto（選択月）。</div>
 
     <div id="err" class="err"></div>
@@ -148,14 +151,22 @@
 
   <script>
     // ==== SOURCE ====
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQonny5Rq7uIRcB2AagV1P1vlFSXzS8r88z4_FTPMSFj9aFeNNK_QLMQquHmZ2Fzo1VKJTRg_z6HNJG/pub?gid=864633681&single=true&output=csv";
+    const CSV_URL_BASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQonny5Rq7uIRcB2AagV1P1vlFSXzS8r88z4_FTPMSFj9aFeNNK_QLMQquHmZ2Fzo1VKJTRg_z6HNJG/pub?gid=864633681&single=true&output=csv";
 
-    // ==== PARTS ====
+    // ==== PARTS (kolom eksplisit + sinonim) ====
     const PARTS = [
-      { key:"SG", label:"シャトルガード", code:"SG" },
-      { key:"CV", label:"コンベヤー",     code:"CV" },
-      { key:"WB", label:"ウィンベンド",   code:"WB" },
-      { key:"SC", label:"スクリューカバー", code:"SC" },
+      { key:"SG", label:"シャトルガード", code:"SG", candidates:[
+        "シャトルガード（SG）","シャトルガード (SG)","シャトルガード","SG","ｼｬﾄﾙｶﾞｰﾄﾞ（SG）"
+      ]},
+      { key:"CV", label:"コンベヤー",     code:"CV", candidates:[
+        "コンベヤー（CV）","コンベヤー (CV)","コンベヤー","CV","ｺﾝﾍﾞﾔｰ（CV）"
+      ]},
+      { key:"WB", label:"ウィンベンド",   code:"WB", candidates:[
+        "ウィンベンド（WB）","ウィンベンド (WB)","ウィンベンド","WB"
+      ]},
+      { key:"SC", label:"スクリューカバー", code:"SC", candidates:[
+        "スクリューカバー（SC）","スクリューカバー (SC)","スクリューカバー","SC"
+      ]},
     ];
     const COL_CATEGORY = "発行実績";
     const COL_MONTH    = "月";
@@ -174,22 +185,29 @@
 
     let RAW=[], HEADERS=[], PART_COLS={}, charts={}, trendChart=null, paretoChart=null;
 
-    // cari nama kolom untuk masing-masing bagian
-    function findPartColumns(headers){
+    // mapping kolom parts secara eksplisit
+    function mapPartColumns(headers){
       const map = {};
-      headers.forEach(h=>{
-        const H = nrm(h);
-        for(const p of PARTS){
-          const L = nrm(p.label);
-          if(H.includes(L) || (H.includes('(') && H.includes(`(${p.code})`))){ map[p.key] = h; }
+      headers = headers.map(h=>String(h));
+      for(const p of PARTS){
+        let found = null;
+        for(const cand of p.candidates){
+          found = headers.find(h => nrm(h) === nrm(cand));
+          if(found) break;
         }
-      });
+        if(!found){
+          // toleransi: nama mengandung label + kode
+          found = headers.find(h => nrm(h).includes(nrm(p.label)) && nrm(h).includes(`(${p.code})`));
+        }
+        if(found) map[p.key] = found;
+      }
       return map;
     }
 
     async function loadCSV(){
       try{
-        const res = await fetch(CSV_URL, {cache:"no-store"});
+        const url = CSV_URL_BASE + "&_t=" + Date.now(); // cache buster
+        const res = await fetch(url, {cache:"no-store"});
         if(!res.ok) throw new Error("HTTP "+res.status);
         const text = await res.text();
         const out = await new Promise(resolve=>{
@@ -276,10 +294,7 @@
       return {labels, values, cum, total};
     }
 
-    function buildParetoForPart(rows, partKey, topN){
-      const keys = [partKey];
-      return buildPareto(rows, keys, topN);
-    }
+    function buildParetoForPart(rows, partKey, topN){ return buildPareto(rows, [partKey], topN); }
 
     function destroyCharts(){
       if(trendChart){trendChart.destroy();trendChart=null;}
@@ -287,11 +302,9 @@
       for(const k in charts){ charts[k].destroy(); delete charts[k]; }
     }
 
-    // ==== draw ====
     function drawAll(){
       destroyCharts();
-      const keysExist = Object.keys(PART_COLS).length>0;
-      if(!RAW.length || !keysExist){
+      if(!RAW.length || !Object.keys(PART_COLS).length){
         setErr("部位列（SG/CV/WB/SC）が見つかりません。ヘッダー名をご確認ください。");
         showEmpty("trendEmpty", true); showEmpty("paretoEmpty", true);
         ["SG","CV","WB","SC"].forEach(k=>showEmpty("empty"+k, true));
@@ -302,13 +315,12 @@
 
       const topN = +$("topN").value || 10;
 
-      // TREND (1..12) — sum of selected parts
+      // TREND
       const t = buildTrend(RAW);
       const mode = $("trendMode").value;
       const trendType = mode.startsWith("line") ? "line" : "bar";
       const indexAxis = mode==="bar-h" ? "y" : "x";
       showEmpty("trendEmpty", t.values.every(v=>v===0));
-
       trendChart = new Chart($("trendChart").getContext("2d"), {
         type: trendType,
         data: { labels: t.labels, datasets: [{ label:"件数", data: t.values, tension:.3, borderWidth:2, pointRadius:3, fill:false }] },
@@ -323,22 +335,19 @@
         }
       });
 
-      // PARETO (selected month, sum of selected parts)
+      // PARETO (total)
       const monthRows = rowsForMonth(RAW);
       const pAll = buildPareto(monthRows, selectedKeys(), topN);
       const horizontal = $("paretoOri").value === "horizontal";
       const lineAxis = horizontal ? "x1" : "y1";
       showEmpty("paretoEmpty", pAll.total===0);
-
       paretoChart = new Chart($("paretoChart").getContext("2d"), {
         type: "bar",
-        data: {
-          labels: pAll.labels,
+        data: { labels: pAll.labels,
           datasets: [
             { type:"bar", label:"件数", data: pAll.values, borderWidth:1 },
             { type:"line", label:"累積%", data: pAll.cum, yAxisID: lineAxis, xAxisID: lineAxis, borderWidth:2, pointRadius:3 }
-          ]
-        },
+          ]},
         options: {
           responsive:true, maintainAspectRatio:false,
           plugins:{ legend:{display:true}, tooltip:{mode:"index", intersect:false} },
@@ -366,12 +375,11 @@
         $("claimsBody").innerHTML = `<tr><td colspan="3" class="muted">データなし</td></tr>`;
       }
 
-      // === 部位別パネル ===
+      // 部位別
       const checked = new Set(selectedKeys());
       const renderPart = (key)=>{
         const panel = document.getElementById("panel"+key);
-        if(!checked.has(key)){ panel.style.display="none"; return; }
-        if(!PART_COLS[key]){ panel.style.display="none"; return; }
+        if(!checked.has(key) || !PART_COLS[key]){ panel.style.display="none"; return; }
         panel.style.display="block";
 
         const p = buildParetoForPart(monthRows, key, topN);
@@ -405,7 +413,6 @@
           }
         });
       };
-
       ["SG","CV","WB","SC"].forEach(renderPart);
     }
 
@@ -417,11 +424,13 @@
       if(!HEADERS.includes(COL_CATEGORY) || !HEADERS.includes(COL_MONTH)){
         setErr("ヘッダーに「発行実績」または「月」が見つかりません。"); return;
       }
-      PART_COLS = findPartColumns(HEADERS);
+      PART_COLS = mapPartColumns(HEADERS);
+
+      // log mapping supaya bisa dicek cepat di Console
+      console.log("Mapped columns:", PART_COLS, "All headers:", HEADERS);
 
       buildMonthSelect(RAW);
       buildPartChecks();
-
       drawAll();
     }
 
