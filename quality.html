@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>品質情報</title>
 
-  <!-- Chart.js & PapaParse -->
+  <!-- libs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
@@ -13,9 +13,6 @@
     :root{
       --bg1:#eef2ff; --bg2:#f8fafc; --card:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
       --accent:#2563eb; --shadow:0 30px 60px rgba(15,23,42,.08); --radius:22px
-    }
-    [data-theme="dark"]{
-      --bg1:#0b1220; --bg2:#0b1220; --card:#0f172a; --ink:#e5e7eb; --muted:#94a3b8; --border:#1f2937; --accent:#60a5fa;
     }
     *{box-sizing:border-box}
     body{margin:0;color:var(--ink);background:linear-gradient(120deg,var(--bg1),var(--bg2));font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif}
@@ -30,11 +27,10 @@
     @media(min-width:1100px){.grid-2{grid-template-columns:1.2fr .8fr}}
     .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
     .controls label{font-size:12px;color:var(--muted)}
-    .controls select,.controls input,.controls button{
-      padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:#fff;font-size:14px
+    .controls select,.controls button{
+      padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:#fff;font-size:14px;cursor:pointer
     }
-    .controls button{cursor:pointer}
-    .checks{display:flex;gap:10px;flex-wrap:wrap}
+    .checks{display:flex;gap:12px;flex-wrap:wrap}
     .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
     .err{background:#fff1f2;border:1px solid #fecaca;color:#991b1b;padding:10px;border-radius:12px;margin-bottom:10px;display:none}
     .chart-wrap{position:relative;height:360px}
@@ -60,7 +56,7 @@
 
   <main class="container">
     <h1>品質情報 <span class="badge" id="dataRange"></span></h1>
-    <div class="sub">CSV（公開）から自動読込。月（<b>月</b>）と部位（<b>シャトルガード/コンベヤー/ウィンベンド/スクリューカバー</b>）で絞り込み、カテゴリ（<b>発行実績</b>）でPareto表示。</div>
+    <div class="sub">CSV（公開）から自動読込。<b>月</b>で期間選択、<b>部位</b>（SG/CV/WB/SC）で絞り込み。<b>発行実績</b>でPareto。</div>
 
     <div id="err" class="err"></div>
 
@@ -115,43 +111,46 @@
   </main>
 
   <script>
-    // ==== CONFIG (CSV baru) ====
+    // ==== SOURCE ====
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQonny5Rq7uIRcB2AagV1P1vlFSXzS8r88z4_FTPMSFj9aFeNNK_QLMQquHmZ2Fzo1VKJTRg_z6HNJG/pub?gid=864633681&single=true&output=csv";
-    const PARTS = ["シャトルガード","コンベヤー","ウィンベンド","スクリューカバー"];
-    const COL_CATEGORY = "発行実績"; // claim category
-    const COL_MONTH = "月";         // 1..12
 
-    // kolom "部位" tidak disebut namanya -> deteksi otomatis yang paling banyak memuat token PARTS
-    function guessPartColumn(headers, rows){
-      let best = {col:null, score:-1};
-      headers.forEach(h=>{
-        let s = 0;
-        for(const r of rows){
-          const v = String(r[h] ?? "");
-          for(const p of PARTS){ if(v.includes(p)) { s++; break; } }
-        }
-        if(s > best.score) best = {col:h, score:s};
-      });
-      return best.col; // bisa null
-    }
+    // ==== PARTS (header fleksibel: () / （） / spasi) ====
+    const PARTS = [
+      { key:"SG", label:"シャトルガード", code:"SG" },
+      { key:"CV", label:"コンベヤー",     code:"CV" },
+      { key:"WB", label:"ウィンベンド",   code:"WB" },
+      { key:"SC", label:"スクリューカバー", code:"SC" },
+    ];
+    const COL_CATEGORY = "発行実績";
+    const COL_MONTH    = "月";
 
-    // ==== utils ====
     const $ = id => document.getElementById(id);
+    const uniq = a => Array.from(new Set(a));
     function setErr(msg){ const e=$("err"); if(!msg){e.style.display="none"; e.textContent="";} else {e.style.display="block"; e.textContent=msg;} }
-    function uniq(arr){ return Array.from(new Set(arr)); }
+    function showEmpty(id, show){ $(id).style.display = show ? "flex" : "none"; }
     function toCSV(rows){
       if(!rows.length) return "";
       const headers = Object.keys(rows[0]);
       const esc = v => `"${String(v??"").replace(/"/g,'""')}"`;
       return [headers.join(","), ...rows.map(r=>headers.map(h=>esc(r[h])).join(","))].join("\n");
     }
-    function showEmpty(id, show){ $(id).style.display = show ? "flex" : "none"; }
+    function nrm(s){ return String(s??"").trim().replace(/[（）\s]/g, m => ({'（':'(', '）':')'}[m] || '') ); }
 
-    // ==== state ====
-    let RAW=[], HEADERS=[], PART_COL=null;
-    let trendChart=null, paretoChart=null;
+    let RAW=[], HEADERS=[], PART_COLS={}, trendChart=null, paretoChart=null;
 
-    // ==== load CSV ====
+    // cari nama kolom untuk masing-masing bagian
+    function findPartColumns(headers){
+      const map = {};
+      headers.forEach(h=>{
+        const H = nrm(h);
+        for(const p of PARTS){
+          const L = nrm(p.label);
+          if(H.includes(L) || /\([A-Z]{2}\)$/.test(H) && H.includes(p.code)){ map[p.key] = h; }
+        }
+      });
+      return map;
+    }
+
     async function loadCSV(){
       try{
         const res = await fetch(CSV_URL, {cache:"no-store"});
@@ -162,19 +161,16 @@
         });
         return out;
       }catch(e){
-        console.error(e);
-        setErr("CSVの読み込みに失敗しました。公開設定/URLをご確認ください。");
+        console.error(e); setErr("CSVの読み込みに失敗しました。公開設定/URLをご確認ください。");
         return {data:[], meta:{fields:[]}};
       }
     }
 
-    // ==== filters UI ====
     function buildMonthSelect(rows){
       const months = uniq(rows.map(r=> Number(r[COL_MONTH]) ).filter(n=>Number.isFinite(n) && n>=1 && n<=12)).sort((a,b)=>a-b);
       const sel = $("monthSel");
       sel.innerHTML = months.map(m=>`<option value="${m}">${m}月</option>`).join("");
-      // default -> 6月 kalau ada; kalau tidak, pakai terakhir
-      const def = months.includes(6) ? 6 : (months[months.length-1]||"");
+      const def = months.includes(6) ? 6 : (months[0] || "");
       sel.value = def;
       $("dataRange").textContent = months.length ? `${months[0]}〜${months[months.length-1]}月` : "";
     }
@@ -182,53 +178,62 @@
     function buildPartChecks(){
       const wrap = $("partChecks");
       wrap.innerHTML = PARTS.map(p=>{
-        const id = "p_"+p;
+        const id = "p_"+p.key;
+        const defaultOn = (p.key==="SG" || p.key==="CV"); // default SG+CV
         return `<label style="display:inline-flex;align-items:center;gap:6px">
-          <input type="checkbox" id="${id}" data-part="${p}" checked>
-          <span>${p}</span>
+          <input type="checkbox" id="${id}" data-key="${p.key}" ${defaultOn?'checked':''}>
+          <span>${p.label}（${p.code}）</span>
         </label>`;
       }).join("");
     }
-
-    function selectedParts(){
+    function selectedKeys(){
       return Array.from($("partChecks").querySelectorAll("input[type=checkbox]"))
-        .filter(cb=>cb.checked).map(cb=>cb.getAttribute("data-part"));
+        .filter(cb=>cb.checked).map(cb=>cb.getAttribute("data-key"));
+    }
+    function sumParts(row, keys){
+      let s=0;
+      for(const k of keys){
+        const col = PART_COLS[k];
+        const v = Number(row[col] ?? 0);
+        s += (Number.isFinite(v) ? v : 0);
+      }
+      return s;
     }
 
-    // ==== filter data ====
-    function filterByUI(rows){
-      const month = Number($("monthSel").value);
-      const parts = selectedParts();
-      return rows.filter(r=>{
-        const m = Number(r[COL_MONTH]);
-        const partStr = String(r[PART_COL] ?? "");
-        const okMonth = Number.isFinite(m) && m===month;
-        const okPart = parts.length ? parts.some(p => partStr.includes(p)) : true;
-        return okMonth && okPart;
-      });
-    }
-
-    // all-year trend for selected parts
+    // ==== aggregations ====
     function buildTrend(rows){
-      const parts = selectedParts();
+      const keys = selectedKeys();
       const byMonth = new Array(12).fill(0);
       rows.forEach(r=>{
-        const partStr = String(r[PART_COL] ?? "");
-        if(parts.length && !parts.some(p=>partStr.includes(p))) return;
         const m = Number(r[COL_MONTH]);
-        if(Number.isFinite(m) && m>=1 && m<=12) byMonth[m-1] += 1;
+        if(Number.isFinite(m) && m>=1 && m<=12){
+          const add = sumParts(r, keys);
+          byMonth[m-1] += add;
+        }
       });
       const labels = Array.from({length:12}, (_,i)=>`${i+1}月`);
       return {labels, values: byMonth};
     }
 
+    function filteredRowsByUI(rows){
+      const month = Number($("monthSel").value);
+      const keys = selectedKeys();
+      return rows.filter(r=>{
+        const m = Number(r[COL_MONTH]);
+        if(!(Number.isFinite(m) && m===month)) return false;
+        return sumParts(r, keys) > 0;
+      });
+    }
+
     function buildPareto(rows){
+      const keys = selectedKeys();
       const by = new Map();
       for(const r of rows){
         const cat = String(r[COL_CATEGORY] ?? "").trim() || "（未分類）";
-        by.set(cat, (by.get(cat)||0) + 1);
+        const val = sumParts(r, keys);
+        if(val>0) by.set(cat, (by.get(cat)||0) + val);
       }
-      let arr = Array.from(by.entries()).sort((a,b)=>b[1]-a[1]);
+      const arr = Array.from(by.entries()).sort((a,b)=>b[1]-a[1]);
       const total = arr.reduce((s,[,v])=>s+v,0);
       const labels = arr.map(([k])=>k);
       const values = arr.map(([,v])=>v);
@@ -239,18 +244,17 @@
 
     function destroyCharts(){ if(trendChart){trendChart.destroy();trendChart=null;} if(paretoChart){paretoChart.destroy();paretoChart=null;} }
 
-    // ==== draw ====
     function drawAll(){
       destroyCharts();
-      if(!RAW.length || !PART_COL){
-        setErr("必要な列（発行実績 / 月 / 部位）が見つかりません。ヘッダー名をご確認ください。");
+      if(!RAW.length || !PART_COLS.SG && !PART_COLS.CV && !PART_COLS.WB && !PART_COLS.SC){
+        setErr("部位列（SG/CV/WB/SC）が見つかりません。ヘッダー名をご確認ください。");
         showEmpty("trendEmpty", true); showEmpty("paretoEmpty", true);
         $("claimsBody").innerHTML = `<tr><td colspan="3" style="color:#64748b">データなし</td></tr>`;
         return;
       }
       setErr("");
 
-      // Trend (1..12)
+      // TREND (1..12)
       const t = buildTrend(RAW);
       const mode = $("trendMode").value;
       const trendType = mode.startsWith("line") ? "line" : "bar";
@@ -271,9 +275,9 @@
         }
       });
 
-      // Pareto (selected month)
-      const filtered = filterByUI(RAW);
-      const p = buildPareto(filtered);
+      // PARETO (selected month)
+      const fr = filteredRowsByUI(RAW);
+      const p = buildPareto(fr);
       const horizontal = $("paretoOri").value === "horizontal";
       const lineAxis = horizontal ? "x1" : "y1";
       showEmpty("paretoEmpty", p.total===0);
@@ -306,38 +310,33 @@
       // 明細
       if(p.total>0){
         $("claimsBody").innerHTML = p.labels.map((k,i)=>{
-          const v = p.values[i]; const pct = p.cum[i] - (i? p.cum[i-1]:0);
-          return `<tr><td>${k||"（未分類）"}</td><td>${v}</td><td>${(Math.round(v/p.total*1000)/10)}%</td></tr>`;
+          const v = p.values[i];
+          const pct = Math.round(v/p.total*1000)/10;
+          return `<tr><td>${k||"（未分類）"}</td><td>${v}</td><td>${pct}%</td></tr>`;
         }).join("");
       }else{
         $("claimsBody").innerHTML = `<tr><td colspan="3" style="color:#64748b">データなし</td></tr>`;
       }
     }
 
-    // ==== bootstrap ====
     async function bootstrap(){
       const out = await loadCSV();
       RAW = out.data || [];
       HEADERS = out.meta?.fields || Object.keys(RAW[0]||{});
 
-      // Validasi kolom wajib
+      // validasi kolom wajib
       if(!HEADERS.includes(COL_CATEGORY) || !HEADERS.includes(COL_MONTH)){
-        setErr("ヘッダーに「発行実績」または「月」が見つかりません。");
-        return;
+        setErr("ヘッダーに「発行実績」または「月」が見つかりません。"); return;
       }
+      PART_COLS = findPartColumns(HEADERS);
 
-      PART_COL = guessPartColumn(HEADERS, RAW);
-      if(!PART_COL){ setErr("部位列（シャトルガード等を含む列）が見つかりません。"); }
-
-      // UI
       buildMonthSelect(RAW);
       buildPartChecks();
 
-      // default: 6月 jika ada (sudah di-set di buildMonthSelect)
       drawAll();
     }
 
-    // ==== events ====
+    // events
     ["change","input"].forEach(ev=>{
       $("monthSel").addEventListener(ev, drawAll);
       $("trendMode").addEventListener(ev, drawAll);
@@ -346,10 +345,15 @@
     $("partChecks").addEventListener("change", drawAll);
     $("reloadBtn").addEventListener("click", bootstrap);
     $("exportBtn").addEventListener("click", ()=>{
-      const data = filterByUI(RAW);
-      if(!data.length){ alert("出力対象データがありません。"); return; }
-      const csv = toCSV(data);
-      const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+      const rows = filteredRowsByUI(RAW);
+      if(!rows.length){ alert("出力対象データがありません。"); return; }
+      // export ringkas: 月, 発行実績, kolom parts yang dipilih
+      const keys = selectedKeys();
+      const cols = [COL_MONTH, COL_CATEGORY, ...keys.map(k=>PART_COLS[k]).filter(Boolean)];
+      const out = rows.map(r=>{
+        const o={}; cols.forEach(c=>o[c]=r[c]); return o;
+      });
+      const blob = new Blob([toCSV(out)], {type:"text/csv;charset=utf-8"});
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       a.download = `品質情報_${$("monthSel").value}月.csv`;
