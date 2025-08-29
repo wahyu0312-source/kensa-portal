@@ -26,10 +26,11 @@
   nav a{margin-left:20px;color:var(--accent);font-weight:700;text-decoration:none}
   nav a:hover{text-decoration:underline}
   .controls{display:flex;gap:8px;align-items:center}
-  .btn{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
+  .btn{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
   .btn[disabled]{opacity:.6;cursor:wait}
   .btn.active{border-color:#93c5fd;background:#f0f9ff}
   .small{font-size:12px;color:var(--muted)}
+  .muted{color:var(--muted)}
 
   main{max-width:1200px;margin:28px auto;padding:0 20px}
   .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;overflow:auto}
@@ -94,6 +95,7 @@
       <a href="./forms.html">出荷検査成績書</a>
       <a href="./sagyoutejunsho.html">出荷検査作業手順書</a>
       <a href="./charts.html">出荷検査（グラフ）</a>
+      <a href="./quality.html">品質情報</a><!-- ⬅️ menu baru -->
     </nav>
     <div class="controls">
       <button id="btnRefresh" class="btn" type="button">Refresh now</button>
@@ -130,15 +132,16 @@
       <div class="filterbar">
         <label class="subtle">出荷日フィルタ：</label>
         <input type="date" id="filterDate">
-        <button class="btn" id="btnToday">本日出荷のみ</button>
-        <button class="btn" id="btnClear">Clear</button>
+        <button class="btn" id="btnToday" type="button">本日出荷のみ</button>
+        <button class="btn" id="btnClear" type="button">Clear</button>
         <a class="btn" href="./charts.html" title="Grafik terpisah">グラフ開く</a>
+        <a class="btn" href="./quality.html" title="品質ダッシュボード">品質情報</a><!-- ⬅️ tombol baru -->
       </div>
     </div>
 
     <div class="export-bar">
-      <button class="btn" id="btnExcel">Export Excel</button>
-      <button class="btn" id="btnPDF">Export PDF</button>
+      <button class="btn" id="btnExcel" type="button">Export Excel</button>
+      <button class="btn" id="btnPDF" type="button">Export PDF</button>
     </div>
 
     <table id="shipTable">
@@ -198,7 +201,7 @@
       note:find(["注番","注文番号","備考","注文","Order","注釈"]),
       status_done:find(["製品状況","製品状態","納品状況"]) ?? findFuzzy(/(製品|納品).*(状況|状態)/),
       status_flag:find(["Status","ステータス","状態","至急"]) ?? findFuzzy(/status|至急/i),
-      // QC columns (tidak dipakai untuk badge, tapi tetap kita index jika dibutuhkan)
+      // QC columns (optional)
       qc_check:  find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFuzzy(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
       qc_label:  find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"])            ?? findFuzzy(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
       qc_result: find(["検査成績表","成績表","InspectionReport"])   ?? findFuzzy(/(検査|inspection).*(成績|report)/i),
