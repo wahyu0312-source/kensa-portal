@@ -55,12 +55,10 @@
 
     footer{text-align:center;color:var(--muted);padding:20px}
 
-    /* Running text bottom */
     .marquee-bottom {position: fixed;bottom: 0;left: 0;width: 100%;overflow: hidden;white-space: nowrap;background: #2563eb;color: #fff;padding: 8px 0;z-index: 9999}
     .marquee-bottom span {display: inline-block;padding-left: 100%;animation: marquee-bottom 15s linear infinite;font-weight: bold;font-size: 14px}
     @keyframes marquee-bottom {0%{transform: translateX(0)}100%{transform: translateX(-100%)}}
 
-    /* Small screens */
     @media (max-width: 640px){
       .brand img.logo{height:30px}
       nav{gap:10px}
@@ -122,9 +120,22 @@
 <footer>&copy; <span id="year"></span> wahyu</footer>
 
 <script>
-  // --------- Constants & Demo Data ----------
+  // ---------- Helpers ----------
+  function getJSON(key, fallback){
+    try {
+      const val = localStorage.getItem(key);
+      if (val === null || val === '') return fallback;
+      return JSON.parse(val);
+    } catch (e){
+      // bersihkan jika rusak
+      localStorage.removeItem(key);
+      return fallback;
+    }
+  }
+
+  // ---------- Constants & Data ----------
   document.getElementById('year').textContent = new Date().getFullYear();
-  const PASSWORD = "kensa2025";
+  const PASSWORD = "kensa2025"; // ganti jika perlu
 
   const DATA = [
     {customer:"オークマ株式会社",folders:[
@@ -141,14 +152,14 @@
     {customer:"中村留株式会社",folders:[
       {name:"WYプロテクター",links:[
         {label:"3596-70",desc:"WY-150V X3 プロテクター",url:"https://wahyu0312-source.github.io/359670X3150V/"}
-      ]}, // ← koma penting
+      ]},
       {name:"NTY3プロテクター",links:[
         {label:"3555-71",desc:"NTY3-100V X2 プロテクター",url:"https://wahyu0312-source.github.io/3555-71tomei/"}
       ]}
     ]}
   ];
 
-  // --------- Elements ----------
+  // ---------- Elements ----------
   const elLock = document.getElementById('lock');
   const elFolders = document.getElementById('folders');
   const elSearchWrap = document.getElementById('searchWrap');
@@ -161,12 +172,12 @@
   const btnToggle = document.getElementById('btnToggle');
   const btnUnlock = document.getElementById('btnUnlock');
 
-  // --------- State ----------
+  // ---------- State ----------
   let lastQuery = "";
   let openCustomers = new Set();
 
-  // --------- Init ----------
-  document.addEventListener('DOMContentLoaded', () => {
+  // ---------- Init ----------
+  (function init(){
     // Enter handlers
     elPwd.addEventListener('keydown', e => { if (e.key === "Enter") unlock(); });
     elQ.addEventListener('keydown',  e => { if (e.key === "Enter") search(); });
@@ -191,10 +202,10 @@
       elMsg.style.color = ok ? 'var(--ok)' : 'var(--ng)';
     });
 
-    // Restore state
+    // Restore state (aman dari data rusak)
     const unlocked = localStorage.getItem('kensa_unlocked') === '1';
     const savedQuery = localStorage.getItem('kensa_query') || "";
-    const savedOpen = JSON.parse(localStorage.getItem('kensa_open') || "[]");
+    const savedOpen = getJSON('kensa_open', []);
 
     if (unlocked) {
       elLock.classList.add('hidden');
@@ -206,9 +217,12 @@
       openCustomers = new Set(savedOpen);
       render(DATA);
     }
-  });
 
-  // --------- Actions ----------
+    // Info di console untuk debugging
+    console.info('Kensa portal loaded. If the buttons don’t work, clear site data: localStorage keys kensa_*.');
+  })();
+
+  // ---------- Actions ----------
   function unlock(){
     const v = elPwd.value;
     if (v !== PASSWORD) { elMsg.textContent = '× 違います'; elMsg.style.color = 'var(--ng)'; return; }
@@ -313,7 +327,6 @@
   }
 </script>
 
-<!-- Teks berjalan bawah halaman -->
 <div class="marquee-bottom">
   <span>⚙️ 品質管理生産技術ポータルへようこそ ｜ 本日も安全第一でお願いします ｜ 水分補給して下さいお願い致します</span>
 </div>
