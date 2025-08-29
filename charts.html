@@ -6,14 +6,19 @@
 <title>出荷検査（グラフ）</title>
 <style>
   :root{
-    --bg1:#eef2ff; --bg2:#f8fafc; --card:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
-    --accent:#2563eb; --shadow:0 30px 60px rgba(15,23,42,.08); --radius:22px
+    --bg1:#eef2ff; --bg2:#f8fafc;
+    --card:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
+    --accent:#2563eb; --shadow:0 30px 60px rgba(15,23,42,.08); --radius:20px;
+    --grid:#e5e7eb;
   }
   [data-theme="dark"]{
-    --bg1:#0b1220; --bg2:#0b1220; --card:#0f172a; --ink:#e5e7eb; --muted:#94a3b8; --border:#1f2937;
-    --accent:#60a5fa; --shadow:none;
+    --bg1:#0b1220; --bg2:#0b1220;
+    --card:#0f172a; --ink:#e5e7eb; --muted:#94a3b8; --border:#1f2937;
+    --accent:#60a5fa; --shadow:none; --grid:#223044;
   }
+
   *{box-sizing:border-box}
+  html,body{height:100%}
   body{
     margin:0;color:var(--ink);
     font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
@@ -23,11 +28,13 @@
       linear-gradient(120deg,var(--bg1),var(--bg2));
     padding-bottom:64px;
   }
+
+  /* Header */
   header{position:sticky;top:0;z-index:10;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
   [data-theme="dark"] header{background:#0f172acc}
   .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
   .row{display:flex;justify-content:space-between;align-items:center;gap:16px}
-  nav a{margin-left:20px;color:var(--accent);font-weight:700;text-decoration:none}
+  nav a{margin-left:18px;color:var(--accent);font-weight:700;text-decoration:none}
   nav a:hover{text-decoration:underline}
   .controls{display:flex;gap:8px;align-items:center}
   .btn{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--ink);cursor:pointer}
@@ -35,21 +42,54 @@
   .btn.active{border-color:#93c5fd;background:#f0f9ff}
   [data-theme="dark"] .btn.active{background:#0b3b6f66}
   .small{font-size:12px;color:var(--muted)}
-  main{max-width:1200px;margin:28px auto;padding:0 20px}
+
+  /* Main & cards */
+  main{max-width:1200px;margin:26px auto;padding:0 20px}
   .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
-  .card-title{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px}
+  .card-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 10px}
+  .title-nowrap{white-space:nowrap}
+  @media (max-width:640px){ .title-nowrap{white-space:normal} }
+
   .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  select.btn{appearance:none;padding-right:26px;background-image:linear-gradient(45deg,transparent 50%,#64748b 50%),linear-gradient(135deg,#64748b 50%,transparent 50%);background-position:calc(100% - 18px) calc(1em - 2px),calc(100% - 13px) calc(1em - 2px);background-size:5px 5px;background-repeat:no-repeat}
+  select.btn{appearance:none;padding-right:26px;background-image:
+    linear-gradient(45deg,transparent 50%,#64748b 50%),
+    linear-gradient(135deg,#64748b 50%,transparent 50%);
+    background-position:calc(100% - 18px) calc(1em - 2px),calc(100% - 13px) calc(1em - 2px);
+    background-size:5px 5px;background-repeat:no-repeat
+  }
+
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .toolbar .spacer{flex:1 1 auto}
+
+  /* Charts grid */
   .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .chart-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;min-height:360px;display:flex;align-items:center;justify-content:center}
+  .chart-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;min-height:380px;display:flex;align-items:center;justify-content:center}
   .chart-box.wide{grid-column:1/-1}
-  .chart-box canvas{width:100%!important;height:320px!important}
-  @media (max-width:768px){.row{flex-direction:column;align-items:flex-start}.chart-grid{grid-template-columns:1fr}}
+  .chart-box canvas{width:100%!important;height:330px!important}
+  @media (max-width:900px){.chart-grid{grid-template-columns:1fr}}
+  @media (max-width:768px){.row{flex-direction:column;align-items:flex-start}}
+
+  /* Info & footer */
   .marquee{position:fixed;left:0;right:0;bottom:20px;background:var(--accent);color:#fff;font-weight:bold;padding:6px 0;white-space:nowrap;overflow:hidden;z-index:20}
   .marquee span{display:inline-block;padding-left:100%;animation:marquee 25s linear infinite}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
   .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:var(--muted);background:#f1f5f9;padding:4px 0;z-index:21}
   [data-theme="dark"] .footer{background:#0b1220}
+
+  /* Loading overlay */
+  #loading{
+    position:fixed;inset:64px 0 64px 0;display:none;place-items:center;pointer-events:none;
+    background:linear-gradient(0deg,transparent,transparent 60%,#00000005 60%,#00000005 100%);
+  }
+  #loading .pulse{
+    width:120px;height:8px;border-radius:999px;background:var(--border);
+    overflow:hidden;position:relative
+  }
+  #loading .pulse::after{
+    content:"";position:absolute;inset:0;background:var(--accent);transform:translateX(-100%);
+    animation:pulse 1.3s infinite
+  }
+  @keyframes pulse{50%{transform:translateX(0)} 100%{transform:translateX(100%)}}
 </style>
 </head>
 <body>
@@ -79,63 +119,66 @@
 <main>
   <section class="card" style="margin-bottom:16px">
     <div class="card-title">
-      <h2 style="margin:0">出荷検査 — グラフ</h2>
-      <div class="filterbar">
-        <label class="small">Top 顧客:</label>
-        <select id="selTop" class="btn">
-          <option value="5">5</option>
-          <option value="10" selected>10</option>
-          <option value="15">15</option>
-          <option value="30">30</option>
-        </select>
-
-        <label class="small">対象 年:</label>
-        <select id="selYear" class="btn"></select>
-
-        <label class="small">Quarter:</label>
-        <select id="selQuarter" class="btn">
-          <option value="ALL" selected>All</option>
-          <option value="Q1">Q1</option>
-          <option value="Q2">Q2</option>
-          <option value="Q3">Q3</option>
-          <option value="Q4">Q4</option>
-        </select>
-
-        <label class="small">月:</label>
-        <select id="selMonth" class="btn">
-          <option value="ALL" selected>All</option>
-          <option value="01">1</option><option value="02">2</option><option value="03">3</option>
-          <option value="04">4</option><option value="05">5</option><option value="06">6</option>
-          <option value="07">7</option><option value="08">8</option><option value="09">9</option>
-          <option value="10">10</option><option value="11">11</option><option value="12">12</option>
-        </select>
-
-        <label class="small">顧客:</label>
-        <select id="selCust" class="btn"></select>
-
-        <label class="small" style="display:flex;align-items:center;gap:6px">
-          <input id="chkPareto" type="checkbox"> Pareto
-        </label>
-
+      <h2 class="title-nowrap" style="margin:0">出荷検査 — グラフ</h2>
+      <div class="toolbar">
+        <div class="spacer"></div>
         <button class="btn" id="btnExcelCharts">Export Excel</button>
         <button class="btn" id="btnPDF">Export PDF</button>
       </div>
     </div>
-    <div class="small" id="chartNote">顧客別（年／月／Quarter）・月別（顧客）の数量合計</div>
+
+    <div class="filterbar" aria-label="フィルター">
+      <label class="small">Top 顧客:</label>
+      <select id="selTop" class="btn">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+      </select>
+
+      <label class="small">対象 年:</label>
+      <select id="selYear" class="btn"></select>
+
+      <label class="small">Quarter:</label>
+      <select id="selQuarter" class="btn">
+        <option value="ALL" selected>All</option>
+        <option value="Q1">Q1</option>
+        <option value="Q2">Q2</option>
+        <option value="Q3">Q3</option>
+        <option value="Q4">Q4</option>
+      </select>
+
+      <label class="small">月:</label>
+      <select id="selMonth" class="btn" title="Quarter dipilih → opsi bulan nonaktif">
+        <option value="ALL" selected>All</option>
+        <option value="01">1</option><option value="02">2</option><option value="03">3</option>
+        <option value="04">4</option><option value="05">5</option><option value="06">6</option>
+        <option value="07">7</option><option value="08">8</option><option value="09">9</option>
+        <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+      </select>
+
+      <label class="small">顧客:</label>
+      <select id="selCust" class="btn"></select>
+
+      <label class="small" style="display:flex;align-items:center;gap:6px">
+        <input id="chkPareto" type="checkbox"> Pareto
+      </label>
+      <button class="btn" id="btnReset" type="button" title="Reset ke default">Reset</button>
+    </div>
+
+    <div class="small" id="chartNote" style="margin-top:6px">顧客別（年／月／Quarter）・月別（顧客）の数量合計）</div>
   </section>
 
-  <section class="card" id="chartsSection">
+  <section class="card" id="chartsSection" aria-label="チャート">
     <div class="chart-grid">
-      <!-- Top-N customers for selected YEAR+QUARTER/MONTH -->
-      <div class="chart-box"><canvas id="chartTopCust" aria-label="出荷検査 顧客別"></canvas></div>
-      <!-- Monthly breakdown for selected customer in selected YEAR (respect quarter if chosen) -->
-      <div class="chart-box"><canvas id="chartByMonth" aria-label="出荷検査"></canvas></div>
-      <!-- Top-N customers for selected YEAR (yearly aggregation) -->
-      <div class="chart-box wide"><canvas id="chartTopCustYear" aria-label="出荷検査 顧客別（年間）"></canvas></div>
+      <div class="chart-box"><canvas id="chartTopCust" aria-label="出荷検査 顧客別（期間｜済）"></canvas></div>
+      <div class="chart-box"><canvas id="chartByMonth" aria-label="出荷検査 月別（済）"></canvas></div>
+      <div class="chart-box wide"><canvas id="chartTopCustYear" aria-label="出荷検査 顧客別（年｜済）"></canvas></div>
     </div>
   </section>
 </main>
 
+<div id="loading"><div class="pulse" aria-hidden="true"></div></div>
 <div class="marquee"><span>出荷検査（グラフ） - 最新データで自動更新</span></div>
 <div class="footer">Design by Wahyu</div>
 
@@ -210,20 +253,33 @@
   const ymKey=(d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   const intTick=(v)=>Number.isInteger(v)?v:'';
 
+  // ===== Theme utilities =====
+  function getTheme(){
+    const st = getComputedStyle(document.documentElement);
+    return {
+      ink:   st.getPropertyValue('--ink').trim() || '#0f172a',
+      muted: st.getPropertyValue('--muted').trim() || '#64748b',
+      grid:  st.getPropertyValue('--grid').trim() || '#e5e7eb'
+    };
+  }
+  function applyChartDefaults(){
+    const c = getTheme();
+    Chart.defaults.color = c.ink;
+    Chart.defaults.borderColor = c.grid;
+    Chart.defaults.font.family = 'system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif';
+  }
+
   // ===== State =====
   let aborter=null, isLoading=false;
   let cached={ header:[], rows:[], idx:null };
   let charts={ topCust:null, month:null, topCustYear:null };
-  let yearsAvailable=[], customersAvailable=[];
   let lastAgg=null;
 
   // ===== Aggregate (済のみ) =====
   function aggregate({rows, idx, topN, yearPick, quarterPick, monthPick, custPick}){
     const hasQty = idx.qty!=null;
-    const monthList = quarterPick==='ALL' ? null : QUARTERS[quarterPick]; // null berarti semua bulan
-    const mapTopCust=new Map();     // for selected period (year + quarter/month)
-    const mapTopCustYear=new Map(); // yearly aggregation
-    const mapMonth=new Map();       // 12 (atau 3) months for chosen customer
+    const monthList = quarterPick==='ALL' ? null : QUARTERS[quarterPick];
+    const mapTopCust=new Map(), mapTopCustYear=new Map(), mapMonth=new Map();
 
     for(const r of rows){
       if(!isDoneRow(r, idx)) continue;
@@ -232,20 +288,16 @@
       const d = idx.date!=null ? parseJPDate(valAt(r, idx.date)) : null;
       if(!d) continue;
 
-      const y = d.getFullYear();
-      const m = d.getMonth()+1;
+      const y = d.getFullYear(), m = d.getMonth()+1;
 
-      // ---- Top-N customers for selected period
       if(String(y)===String(yearPick)){
         const inQuarter = monthList ? monthList.includes(m) : true;
         const inMonth   = (monthPick==='ALL' ? true : (m===parseInt(monthPick,10)));
         if(inQuarter && inMonth){
           mapTopCust.set(cust, (mapTopCust.get(cust)||0)+qty);
         }
-        // yearly aggregation (ignores month/quarter)
         mapTopCustYear.set(cust, (mapTopCustYear.get(cust)||0)+qty);
 
-        // monthly breakdown for chosen customer (respect quarter if chosen)
         if(cust===custPick && (!monthList || monthList.includes(m))){
           const k=ymKey(d);
           mapMonth.set(k, (mapMonth.get(k)||0)+qty);
@@ -255,13 +307,12 @@
 
     const toTop = (mp) => {
       const arr=[...mp.entries()].sort((a,b)=>b[1]-a[1]).slice(0, topN);
-      return { labels:arr.map(([k])=>k), data:arr.map(([,v])=>v), hasQty };
+      return { labels:arr.map(([k])=>k), data:arr.map(([,v])=>v) };
     };
 
     const byTopCust     = toTop(mapTopCust);
     const byTopCustYear = toTop(mapTopCustYear);
 
-    // months to display
     const monthsIdx = (monthList ?? [...Array(12)].map((_,i)=>i+1));
     const monthsKeys= monthsIdx.map(m=>`${yearPick}-${String(m).padStart(2,'0')}`);
     const byMonth   = { labels: monthsIdx.map(m=>String(m)), data: monthsKeys.map(k=>mapMonth.get(k)||0) };
@@ -285,6 +336,8 @@
 
   // ===== Render =====
   function render(){
+    applyChartDefaults();
+
     const topN=+document.getElementById('selTop').value || 10;
     const yearPick=document.getElementById('selYear').value;
     const quarterPick=document.getElementById('selQuarter').value;
@@ -298,47 +351,48 @@
     const agg=aggregate({rows:cached.rows, idx:cached.idx, topN, yearPick, quarterPick, monthPick, custPick});
     const periodLabel = quarterPick!=='ALL' ? `${yearPick}年 ${quarterPick}` : (monthPick==='ALL'? `${yearPick}年 全月` : `${yearPick}年 ${parseInt(monthPick,10)}月`);
 
+    const theme = getTheme();
+
     // Top-N customers (period)
     const ctx1=document.getElementById('chartTopCust').getContext('2d');
     const cfg1={
       type:'bar',
-      data:{ labels: agg.byTopCust.labels, datasets:[{ label:'数量（済）', data:agg.byTopCust.data }] },
+      data:{ labels: agg.byTopCust.labels, datasets:[{ label:'数量（済）', data:agg.byTopCust.data, maxBarThickness:26, categoryPercentage:.7, barPercentage:.9 }] },
       options:{
         indexAxis:'y', maintainAspectRatio:false,
+        layout:{padding:{top:6,right:8,left:4,bottom:0}},
         plugins:{ legend:{display:false},
           title:{display:true,text:`出荷検査（顧客別｜済｜${periodLabel}）`},
-          datalabels:{ anchor:'end', align:'right', formatter:(v)=>v } },
-        scales:{ x:{ beginAtZero:true, ticks:{ callback:intTick } } }
+          datalabels:{ anchor:'end', align:'right', formatter:(v)=>v, color:theme.ink } },
+        scales:{ x:{ beginAtZero:true, ticks:{ callback:intTick }, grid:{color:theme.grid} },
+                 y:{ grid:{display:false} } }
       }
     };
     addParetoIfNeeded(cfg1, agg.byTopCust.data, isPareto);
     charts.topCust ? (charts.topCust.destroy(), charts.topCust=new Chart(ctx1,cfg1)) : charts.topCust=new Chart(ctx1,cfg1);
 
-    // Monthly (customer, year; respect quarter)  *** FIX: tampilkan qty di atas batang ***
+    // Monthly (customer, year; respect quarter) — qty labels rapi di atas batang
     const ctx2=document.getElementById('chartByMonth').getContext('2d');
     const maxY = Math.max(1, ...agg.byMonth.data);
     const cfg2={
       type:'bar',
-      data:{ labels: agg.byMonth.labels, datasets:[{ label:`数量（済）`, data:agg.byMonth.data }] },
+      data:{ labels: agg.byMonth.labels, datasets:[{ label:`数量（済）`, data:agg.byMonth.data, maxBarThickness:36, categoryPercentage:.8, barPercentage:.9 }] },
       options:{
         maintainAspectRatio:false,
+        layout:{padding:{top:6,right:8,left:4,bottom:0}},
         plugins:{
           legend:{ display:false },
           title:{ display:true, text:`出荷検査（月別｜済｜${yearPick}年｜${custPick}${quarterPick!=='ALL'?'｜'+quarterPick:''}）` },
           datalabels:{
             display:(ctx)=> (ctx.dataset.data[ctx.dataIndex] > 0),
-            anchor:'end',
-            align:'top',
-            offset:4,
-            rotation:0,
-            clamp:true,
-            clip:false,
-            formatter:(v)=>v
-          }
+            anchor:'end', align:'top', offset:4, rotation:0, clamp:true, clip:false,
+            formatter:(v)=>v, color:theme.ink
+          },
+          tooltip:{ callbacks:{ label:(ctx)=> `数量: ${ctx.parsed.y}` } }
         },
         scales:{
-          y:{ beginAtZero:true, suggestedMax: maxY * 1.15, ticks:{ callback:intTick } },
-          x:{ ticks:{ autoSkip:false, maxRotation:0 } }
+          y:{ beginAtZero:true, suggestedMax: maxY * 1.15, ticks:{ callback:intTick }, grid:{color:theme.grid} },
+          x:{ ticks:{ autoSkip:false, maxRotation:0 }, grid:{display:false} }
         }
       }
     };
@@ -349,13 +403,15 @@
     const ctx3=document.getElementById('chartTopCustYear').getContext('2d');
     const cfg3={
       type:'bar',
-      data:{ labels: agg.byTopCustYear.labels, datasets:[{ label:'数量（済）', data:agg.byTopCustYear.data }] },
+      data:{ labels: agg.byTopCustYear.labels, datasets:[{ label:'数量（済）', data:agg.byTopCustYear.data, maxBarThickness:26, categoryPercentage:.7, barPercentage:.9 }] },
       options:{
         indexAxis:'y', maintainAspectRatio:false,
+        layout:{padding:{top:6,right:8,left:4,bottom:0}},
         plugins:{ legend:{display:false},
           title:{display:true,text:`出荷検査（顧客別｜済｜${yearPick}年 合計）`},
-          datalabels:{ anchor:'end', align:'right', formatter:(v)=>v } },
-        scales:{ x:{ beginAtZero:true, ticks:{ callback:intTick } } }
+          datalabels:{ anchor:'end', align:'right', formatter:(v)=>v, color:theme.ink } },
+        scales:{ x:{ beginAtZero:true, ticks:{ callback:intTick }, grid:{color:theme.grid} },
+                 y:{ grid:{display:false} } }
       }
     };
     addParetoIfNeeded(cfg3, agg.byTopCustYear.data, isPareto);
@@ -371,6 +427,7 @@
     try{
       if(isLoading){ aborter?.abort(); }
       isLoading=true;
+      document.getElementById('loading').style.display='grid';
       const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
       btn.textContent='Loading...'; btn.disabled=true;
 
@@ -397,12 +454,12 @@
           custTotals.set(c, (custTotals.get(c)||0)+q);
         }
       }
-      yearsAvailable=[...yearSet].sort();
+      const years=[...yearSet].sort();
       const customers=[...custTotals.entries()].sort((a,b)=>b[1]-a[1]).map(([c])=>c);
 
       const selYear=document.getElementById('selYear');
-      selYear.innerHTML = yearsAvailable.map(y=>`<option value="${y}">${y}</option>`).join('');
-      selYear.value = yearsAvailable.at(-1) || new Date().getFullYear();
+      selYear.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join('');
+      selYear.value = years.at(-1) || new Date().getFullYear();
 
       const selCust=document.getElementById('selCust');
       selCust.innerHTML = customers.map(c=>`<option value="${c}">${c}</option>`).join('');
@@ -411,9 +468,11 @@
       render();
 
       btn.textContent=old; btn.disabled=false; isLoading=false;
+      document.getElementById('loading').style.display='none';
     }catch(e){
       console.error(e);
       const btn=document.getElementById('btnRefresh'); btn.textContent='Refresh now'; btn.disabled=false; isLoading=false;
+      document.getElementById('loading').style.display='none';
       document.getElementById('chartNote').textContent='読み込みに失敗しました。シート名/公開設定/列名をご確認ください。';
     }
   }
@@ -434,20 +493,19 @@
   async function exportPDF(){
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({orientation:"landscape", unit:"pt", format:"a4"});
-    const charts = [
+    const items = [
       {el:document.getElementById('chartTopCust'), title:'顧客別（期間｜済）'},
       {el:document.getElementById('chartByMonth'), title:'月別（顧客｜済）'},
       {el:document.getElementById('chartTopCustYear'), title:'顧客別（年｜済）'},
     ];
-    for(let i=0;i<charts.length;i++){
+    for(let i=0;i<items.length;i++){
       if(i>0) pdf.addPage();
-      const canvas = charts[i].el;
-      const png = canvas.toDataURL('image/png',1.0);
+      const png = items[i].el.toDataURL('image/png',1.0);
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
       const margin=36;
       const w = pageW - margin*2, h = pageH - margin*2 - 24;
-      pdf.setFontSize(14); pdf.text(charts[i].title, margin, margin);
+      pdf.setFontSize(14); pdf.text(items[i].title, margin, margin);
       pdf.addImage(png, 'PNG', margin, margin+12, w, h, undefined, 'FAST');
     }
     pdf.save('出荷検査_グラフ(PDF).pdf');
@@ -474,6 +532,15 @@
   });
   document.getElementById('btnExcelCharts').addEventListener('click', exportChartsExcel);
   document.getElementById('btnPDF').addEventListener('click', exportPDF);
+  document.getElementById('btnReset').addEventListener('click', ()=>{
+    document.getElementById('selTop').value = "10";
+    const ySel = document.getElementById('selYear'); if(ySel.options.length) ySel.value = ySel.options[ySel.options.length-1].value;
+    document.getElementById('selQuarter').value = "ALL";
+    document.getElementById('selMonth').value = "ALL";
+    const cSel = document.getElementById('selCust'); if(cSel.options.length) cSel.value = cSel.options[0].value;
+    document.getElementById('chkPareto').checked = false;
+    render();
+  });
   document.getElementById('chkDark').addEventListener('change',(e)=>{
     document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light');
     render();
