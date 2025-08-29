@@ -9,7 +9,7 @@
     --bg1:#eef2ff; --bg2:#f8fafc;
     --card:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
     --accent:#2563eb; --shadow:0 30px 60px rgba(15,23,42,.08); --radius:20px;
-    --grid:#e5e7eb;
+    --grid:#e5e7eb; --ticker-h:28px;
   }
   [data-theme="dark"]{
     --bg1:#0b1220; --bg2:#0b1220;
@@ -27,7 +27,9 @@
       radial-gradient(900px 500px at 110% 0%, #bae6fd33 0%, transparent 55%),
       linear-gradient(120deg,var(--bg1),var(--bg2));
     padding-bottom:64px;
+    transition:padding-bottom .2s ease;
   }
+  body.has-ticker{ padding-bottom: calc(64px + var(--ticker-h) + 12px); }
 
   header{position:sticky;top:0;z-index:10;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
   [data-theme="dark"] header{background:#0f172acc}
@@ -66,25 +68,25 @@
   @media (max-width:900px){.chart-grid{grid-template-columns:1fr}}
   @media (max-width:768px){.row{flex-direction:column;align-items:flex-start}}
 
-  .marquee{position:fixed;left:0;right:0;bottom:20px;background:var(--accent);color:#fff;font-weight:bold;padding:6px 0;white-space:nowrap;overflow:hidden;z-index:20}
-  .marquee span{display:inline-block;padding-left:100%;animation:marquee 25s linear infinite}
+  /* Ticker */
+  .marquee{
+    position:fixed; left:0; right:0; bottom:20px; z-index:20;
+    width:max(280px,70%); margin:0 auto; height:var(--ticker-h); line-height:var(--ticker-h);
+    background:var(--accent); color:#fff; font-weight:600; border-radius:8px;
+    white-space:nowrap; overflow:hidden; box-shadow:0 6px 20px #0002;
+    transition:transform .25s ease, opacity .2s ease;
+  }
+  .marquee span{display:inline-block; padding:0 16px 0 100%; animation:marquee 25s linear infinite}
+  .marquee:hover span{animation-play-state:paused}
+  .marquee.hidden{transform:translateY(140%); opacity:0; pointer-events:none}
+  .marquee .close{
+    position:absolute; right:8px; top:0; bottom:0; margin:auto; height:22px; width:22px;
+    border:none; border-radius:6px; background:#ffffff33; color:#fff; cursor:pointer; line-height:22px;
+  }
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+
   .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:var(--muted);background:#f1f5f9;padding:4px 0;z-index:21}
   [data-theme="dark"] .footer{background:#0b1220}
-
-  #loading{
-    position:fixed;inset:64px 0 64px 0;display:none;place-items:center;pointer-events:none;
-    background:linear-gradient(0deg,transparent,transparent 60%,#00000005 60%,#00000005 100%);
-  }
-  #loading .pulse{
-    width:120px;height:8px;border-radius:999px;background:var(--border);
-    overflow:hidden;position:relative
-  }
-  #loading .pulse::after{
-    content:"";position:absolute;inset:0;background:var(--accent);transform:translateX(-100%);
-    animation:pulse 1.3s infinite
-  }
-  @keyframes pulse{50%{transform:translateX(0)} 100%{transform:translateX(100%)}}
 </style>
 </head>
 <body>
@@ -105,6 +107,9 @@
       <button id="btnLive" class="btn" type="button">Live: Off</button>
       <label class="small" style="display:flex;align-items:center;gap:6px">
         <input id="chkDark" type="checkbox"> Dark
+      </label>
+      <label class="small" style="display:flex;align-items:center;gap:6px">
+        <input id="chkTicker" type="checkbox"> Ticker
       </label>
       <span id="intervalInfo" class="small">Interval: 60s</span>
     </div>
@@ -159,7 +164,6 @@
         <input id="chkPareto" type="checkbox"> Pareto
       </label>
 
-      <!-- NEW: orientation selector (all charts) -->
       <label class="small">向き:</label>
       <select id="selOrient" class="btn" title="すべてのグラフの向き">
         <option value="h" selected>Horizontal</option>
@@ -181,8 +185,12 @@
   </section>
 </main>
 
-<div id="loading"><div class="pulse" aria-hidden="true"></div></div>
-<div class="marquee"><span>出荷検査（グラフ） - 最新データで自動更新</span></div>
+<!-- Ticker -->
+<div id="ticker" class="marquee hidden" role="status" aria-live="polite">
+  <span>出荷検査（グラフ） - 最新データで自動更新</span>
+  <button id="btnCloseTicker" class="close" title="Hide">×</button>
+</div>
+
 <div class="footer">Design by Wahyu</div>
 
 <!-- Libraries -->
@@ -230,6 +238,8 @@
   }
   const valAt = (row, idx) => (idx==null ? "" : (row[idx] ?? ""));
   const parseQty = (v)=>{ const t=S(v).replace(/,/g,''); const n=parseFloat(t); return isNaN(n)?0:n; };
+  const ymKey=(d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  const intTick=(v)=>Number.isInteger(v)?v:'';
   function isDoneValue(v){ const t=S(v).toLowerCase(); return !!t && (/(済|完了|ok|done)/.test(t)); }
   function isRowDoneByQC(row, idx){
     const vals=[];
@@ -253,8 +263,6 @@
     const d=new Date(s);
     return isNaN(d)?null:d;
   }
-  const ymKey=(d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-  const intTick=(v)=>Number.isInteger(v)?v:'';
 
   // ===== Theme & palette =====
   const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
@@ -262,9 +270,8 @@
   const PALETTE_DARK  = ['#60a5fa','#818cf8','#fca5a5','#fbbf24','#4ade80','#22d3ee','#f0abfc','#a78bfa','#f87171','#fde047','#86efac','#93c5fd'];
   const hexToRgba=(hex,a=0.8)=>{const h=hex.replace('#','');const b=parseInt(h,16);return`rgba(${(b>>16)&255},${(b>>8)&255},${b&255},${a})`};
   function softPalette(n, alpha=0.8){ const base=isDark()?PALETTE_DARK:PALETTE_LIGHT; return Array.from({length:n},(_,i)=>hexToRgba(base[i%base.length],alpha)); }
-
   function getTheme(){
-    const st = getComputedStyle(document.documentElement);
+    const st=getComputedStyle(document.documentElement);
     return { ink:st.getPropertyValue('--ink').trim()||'#0f172a', muted:st.getPropertyValue('--muted').trim()||'#64748b', grid:st.getPropertyValue('--grid').trim()||'#e5e7eb' };
   }
   function applyChartDefaults(){
@@ -336,31 +343,28 @@
     return lastAgg;
   }
 
-  // ===== Pareto helpers (works v/h) =====
+  // ===== Pareto helpers (supports H/V) =====
   function addParetoIfNeeded(cfg, labels, values, enable, isHorizontal){
     if(!enable) return;
     const total=values.reduce((n,v)=>n+v,0);
     let cum=0;
     const pct=values.map(v=>{cum+=v; return total? +(cum/total*100).toFixed(1):0;});
-    const amb=isDark()?'rgba(251,191,36,.95)':'rgba(234,179,8,.95)';
+    const amber=isDark()?'rgba(251,191,36,.95)':'rgba(234,179,8,.95)';
 
     const ds={
       type:'line', label:'累積％', tension:.2, pointRadius:3,
-      borderColor:amb, backgroundColor:'transparent',
-      pointBackgroundColor:amb, pointBorderColor:amb,
-      datalabels:{ anchor:'end', align:'top', formatter:(v)=> (typeof v==='object' ? v.x : v)+'%' }
+      borderColor:amber, backgroundColor:'transparent',
+      pointBackgroundColor:amber, pointBorderColor:amber,
+      datalabels:{ anchor:'end', align:'top', formatter:(v)=> (typeof v==='object'? v.x:v)+'%' }
     };
 
     cfg.options.scales = cfg.options.scales || {};
     if(isHorizontal){
-      // For horizontal, use secondary X axis and provide {x, y} points
       ds.data = labels.map((lab,i)=>({x:pct[i], y:lab}));
       cfg.options.scales.x1 = { beginAtZero:true, max:100, position:'top',
         grid:{ drawOnChartArea:false }, ticks:{ callback:(v)=>v+'%' } };
     }else{
-      // For vertical, use secondary Y axis and simple array
-      ds.data = pct;
-      ds.yAxisID='y1';
+      ds.data = pct; ds.yAxisID='y1';
       cfg.options.scales.y1 = { beginAtZero:true, max:100, position:'right',
         grid:{ drawOnChartArea:false }, ticks:{ callback:(v)=>v+'%' } };
     }
@@ -379,7 +383,6 @@
     const isPareto=document.getElementById('chkPareto').checked;
     const isHorizontal=document.getElementById('selOrient').value==='h';
 
-    // disable month if quarter selected
     document.getElementById('selMonth').disabled = (quarterPick!=='ALL');
 
     const agg=aggregate({rows:cached.rows, idx:cached.idx, topN, yearPick, quarterPick, monthPick, custPick});
@@ -483,7 +486,6 @@
     addParetoIfNeeded(cfg3, agg.byTopCustYear.labels, agg.byTopCustYear.data, isPareto, isHorizontal);
     charts.topCustYear=new Chart(ctx3,cfg3);
 
-    // note
     document.getElementById('chartNote').textContent = `期間: ${periodLabel} ／ 顧客: ${custPick} ／ 集計は「済」のみ`;
     lastAgg=agg;
   }
@@ -493,7 +495,7 @@
     try{
       if(isLoading){ aborter?.abort(); }
       isLoading=true;
-      document.getElementById('loading').style.display='grid';
+      document.getElementById('loading')?.style && (document.getElementById('loading').style.display='grid');
       const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
       btn.textContent='Loading...'; btn.disabled=true;
 
@@ -533,11 +535,11 @@
       render();
 
       btn.textContent=old; btn.disabled=false; isLoading=false;
-      document.getElementById('loading').style.display='none';
+      document.getElementById('loading')?.style && (document.getElementById('loading').style.display='none');
     }catch(e){
       console.error(e);
       const btn=document.getElementById('btnRefresh'); btn.textContent='Refresh now'; btn.disabled=false; isLoading=false;
-      document.getElementById('loading').style.display='none';
+      document.getElementById('loading')?.style && (document.getElementById('loading').style.display='none');
       document.getElementById('chartNote').textContent='読み込みに失敗しました。シート名/公開設定/列名をご確認ください。';
     }
   }
@@ -586,6 +588,16 @@
     else{ liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off'; }
   }
 
+  // Ticker controls
+  function setTickerVisible(on){
+    const el=document.getElementById('ticker');
+    el.classList.toggle('hidden', !on);
+    document.body.classList.toggle('has-ticker', on);
+    document.getElementById('chkTicker').checked=!!on;
+    localStorage.setItem('tickerOn', on ? '1':'0');
+  }
+
+  // Events
   document.getElementById('btnRefresh').addEventListener('click', load);
   document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
   document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
@@ -609,8 +621,15 @@
     document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light');
     render();
   });
+  document.getElementById('chkTicker').addEventListener('change',(e)=> setTickerVisible(e.target.checked));
+  document.getElementById('btnCloseTicker').addEventListener('click', ()=> setTickerVisible(false));
 
-  window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
+  // Init
+  window.addEventListener('DOMContentLoaded', ()=>{
+    const savedTicker = localStorage.getItem('tickerOn') === '1';
+    setTickerVisible(savedTicker);
+    load(); startAutoRefresh(60000);
+  });
 </script>
 </body>
 </html>
