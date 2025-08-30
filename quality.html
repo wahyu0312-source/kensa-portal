@@ -8,7 +8,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>品質情報（部位別・年間）</title>
 
-  <!-- libs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
@@ -28,9 +27,9 @@
     .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
     .grid-2{display:grid;grid-template-columns:1fr;gap:16px}
     @media(min-width:1100px){.grid-2{grid-template-columns:1.1fr .9fr}}
-    .grid-4{display:grid;grid-template-columns:1fr;gap:16px}
-    @media(min-width:1200px){.grid-4{grid-template-columns:1fr 1fr}}
-    @media(min-width:1500px){.grid-4{grid-template-columns:repeat(4,1fr)}}
+    .grid-5{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:1200px){.grid-5{grid-template-columns:1fr 1fr}}
+    @media(min-width:1600px){.grid-5{grid-template-columns:repeat(5,1fr)}}
     .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
     .controls label{font-size:12px;color:var(--muted)}
     .controls select,.controls button{
@@ -38,7 +37,7 @@
     }
     .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
     .err{background:#fff1f2;border:1px solid #fecaca;color:#991b1b;padding:10px;border-radius:12px;margin-bottom:10px;display:none}
-    .chart-wrap{position:relative;height:330px}
+    .chart-wrap{position:relative;height:320px}
     .small-chart .chart-wrap{height:260px}
     .nodata{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#64748b;font-weight:600}
     table{width:100%;border-collapse:separate;border-spacing:0}
@@ -51,323 +50,303 @@
   </style>
 </head>
 <body>
-  <header>
-    <div class="container">
-      <nav>
-        <a href="./index.html">ホーム</a>
-        <a href="./forms.html">出荷検査成績書</a>
-        <a href="./sagyoutejunsho.html">出荷検査作業手順書</a>
-        <a href="./charts.html">出荷検査（グラフ）</a>
-        <a class="active" href="./quality.html">品質情報</a>
-      </nav>
-    </div>
-  </header>
+<header>
+  <div class="container">
+    <nav>
+      <a href="./index.html">ホーム</a>
+      <a href="./forms.html">出荷検査成績書</a>
+      <a href="./sagyoutejunsho.html">出荷検査作業手順書</a>
+      <a href="./charts.html">出荷検査（グラフ）</a>
+      <a class="active" href="./quality.html">品質情報</a>
+    </nav>
+  </div>
+</header>
 
-  <main class="container">
-    <h1>品質情報（部位別・年間） <span class="badge" id="ver">v-year-split-1</span> <span class="badge" id="range"></span></h1>
-    <div class="sub">ソース: 公開CSV。<b>1年（1〜12月）</b>で、部位ごとに <b>発行実績</b>（設計変更・社内クレーム 等）の件数を集計。下に部位別のグラフ＋表。</div>
+<main class="container">
+  <h1>品質情報（部位別・年間） <span class="badge">v=all-panels-2</span> <span class="badge" id="range"></span></h1>
+  <div class="sub">1年（1〜12月）で、<b>発行実績</b>を <b>ALL/SG/CV/WB/SC</b> それぞれに集計。重複表記（例: <code>・社内クレーム票</code>）は自動で統一します。</div>
 
-    <div id="err" class="err"></div>
+  <div id="err" class="err"></div>
 
-    <div class="card">
-      <div class="controls">
-        <label>月の範囲：</label>
-        <select id="mFrom"></select>〜<select id="mTo"></select>
+  <div class="card">
+    <div class="controls">
+      <label>月の範囲：</label>
+      <select id="mFrom"></select>〜<select id="mTo"></select>
 
-        <label>グラフ向き：</label>
-        <select id="orient">
-          <option value="vertical" selected>縦</option>
-          <option value="horizontal">横</option>
-        </select>
+      <label>グラフ向き：</label>
+      <select id="orient">
+        <option value="vertical" selected>縦</option>
+        <option value="horizontal">横</option>
+      </select>
 
-        <label>上位表示：</label>
-        <select id="topN">
-          <option value="0">すべて</option>
-          <option value="8">8</option>
-          <option value="10" selected>10</option>
-          <option value="15">15</option>
-          <option value="20">20</option>
-        </select>
+      <label>上位表示：</label>
+      <select id="topN">
+        <option value="0">すべて</option>
+        <option value="8">8</option>
+        <option value="10" selected>10</option>
+        <option value="15">15</option>
+        <option value="20">20</option>
+      </select>
 
-        <button id="reloadBtn">再読み込み</button>
-        <button id="exportPivotBtn">PivotをCSV出力</button>
-      </div>
-
-      <h3 class="panel-title">Pivot（発行実績 × 部位｜月: 指定範囲の合計）</h3>
-      <div class="card" style="padding:0">
-        <table id="pivot">
-          <thead>
-            <tr><th>発行実績</th><th>SG</th><th>CV</th><th>WB</th><th>SC</th><th>合計</th></tr>
-          </thead>
-          <tbody id="pivotBody"><tr><td colspan="6" class="muted">読み込み中…</td></tr></tbody>
-          <tfoot id="pivotFoot"></tfoot>
-        </table>
-      </div>
+      <button id="reloadBtn">再読み込み</button>
+      <button id="exportPivotBtn">PivotをCSV出力</button>
     </div>
 
-    <div class="card" style="margin-top:14px">
-      <h3 style="margin:0 0 8px">部位別可視化（指定月範囲の合計｜発行実績のPareto）</h3>
-      <div class="grid-4">
-        <div class="small-chart">
-          <h4 class="panel-title">シャトルガード（SG）</h4>
-          <div class="chart-wrap"><canvas id="chSG"></canvas><div id="emSG" class="nodata" style="display:none">データなし</div></div>
-          <table>
-            <thead><tr><th>発行実績</th><th>件数</th><th>構成比</th></tr></thead>
-            <tbody id="tbSG"><tr><td colspan="3" class="muted">データなし</td></tr></tbody>
-          </table>
-        </div>
-        <div class="small-chart">
-          <h4 class="panel-title">コンベヤー（CV）</h4>
-          <div class="chart-wrap"><canvas id="chCV"></canvas><div id="emCV" class="nodata" style="display:none">データなし</div></div>
-          <table>
-            <thead><tr><th>発行実績</th><th>件数</th><th>構成比</th></tr></thead>
-            <tbody id="tbCV"><tr><td colspan="3" class="muted">データなし</td></tr></tbody>
-          </table>
-        </div>
-        <div class="small-chart">
-          <h4 class="panel-title">ウィン(グ)ベンド（WB）</h4>
-          <div class="chart-wrap"><canvas id="chWB"></canvas><div id="emWB" class="nodata" style="display:none">データなし</div></div>
-          <table>
-            <thead><tr><th>発行実績</th><th>件数</th><th>構成比</th></tr></thead>
-            <tbody id="tbWB"><tr><td colspan="3" class="muted">データなし</td></tr></tbody>
-          </table>
-        </div>
-        <div class="small-chart">
-          <h4 class="panel-title">スクリューカバー（SC）</h4>
-          <div class="chart-wrap"><canvas id="chSC"></canvas><div id="emSC" class="nodata" style="display:none">データなし</div></div>
-          <table>
-            <thead><tr><th>発行実績</th><th>件数</th><th>構成比</th></tr></thead>
-            <tbody id="tbSC"><tr><td colspan="3" class="muted">データなし</td></tr></tbody>
-          </table>
-        </div>
+    <h3 class="panel-title">Pivot（発行実績 × 部位｜月: 指定範囲の合計）</h3>
+    <div class="card" style="padding:0">
+      <table id="pivot">
+        <thead>
+          <tr><th>発行実績</th><th>ALL</th><th>SG</th><th>CV</th><th>WB</th><th>SC</th></tr>
+        </thead>
+        <tbody id="pivotBody"><tr><td colspan="6" class="muted">読み込み中…</td></tr></tbody>
+        <tfoot id="pivotFoot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3 style="margin:0 0 8px">部位別可視化（指定月範囲の合計｜発行実績のPareto）</h3>
+    <div class="grid-5">
+      <div class="small-chart">
+        <h4 class="panel-title">総合（ALL）</h4>
+        <div class="chart-wrap"><canvas id="chALL"></canvas><div id="emALL" class="nodata" style="display:none">データなし</div></div>
+        <table><thead><tr><th>発行実績</th><th>件数</th><th>構成比</th></tr></thead><tbody id="tbALL"><tr><td colspan="3" class="muted">データなし</td></tr></tbody></table>
+      </div>
+      <div class="small-chart">
+        <h4 class="panel-title">シャトルガード（SG）</h4>
+        <div class="chart-wrap"><canvas id="chSG"></canvas><div id="emSG" class="nodata" style="display:none">データなし</div></div>
+        <table><thead><tr><th>発行実績</th><th>件数</th><th>構成比</th></tr></thead><tbody id="tbSG"><tr><td colspan="3" class="muted">データなし</td></tr></tbody></table>
+      </div>
+      <div class="small-chart">
+        <h4 class="panel-title">コンベヤー（CV）</h4>
+        <div class="chart-wrap"><canvas id="chCV"></canvas><div id="emCV" class="nodata" style="display:none">データなし</div></div>
+        <table><thead><tr><th>発行実績</th><th>件数</th><th>構成比</th></tr></thead><tbody id="tbCV"><tr><td colspan="3" class="muted">データなし</td></tr></tbody></table>
+      </div>
+      <div class="small-chart">
+        <h4 class="panel-title">ウィンベンド（WB）</h4>
+        <div class="chart-wrap"><canvas id="chWB"></canvas><div id="emWB" class="nodata" style="display:none">データなし</div></div>
+        <table><thead><tr><th>発行実績</th><th>件数</th><th>構成比</th></tr></thead><tbody id="tbWB"><tr><td colspan="3" class="muted">データなし</td></tr></tbody></table>
+      </div>
+      <div class="small-chart">
+        <h4 class="panel-title">スクリューカバー（SC）</h4>
+        <div class="chart-wrap"><canvas id="chSC"></canvas><div id="emSC" class="nodata" style="display:none">データなし</div></div>
+        <table><thead><tr><th>発行実績</th><th>件数</th><th>構成比</th></tr></thead><tbody id="tbSC"><tr><td colspan="3" class="muted">データなし</td></tr></tbody></table>
       </div>
     </div>
+  </div>
 
-    <footer>Design by Wahyu · データは公開CSVから自動取得</footer>
-  </main>
+  <footer>Design by Wahyu · データは公開CSVから自動取得</footer>
+</main>
 
-  <script>
-    // ===== SOURCE (CSV) =====
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQonny5Rq7uIRcB2AagV1P1vlFSXzS8r88z4_FTPMSFj9aFeNNK_QLMQquHmZ2Fzo1VKJTRg_z6HNJG/pub?gid=864633681&single=true&output=csv";
+<script>
+  // ==== SOURCE ====
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQonny5Rq7uIRcB2AagV1P1vlFSXzS8r88z4_FTPMSFj9aFeNNK_QLMQquHmZ2Fzo1VKJTRg_z6HNJG/pub?gid=864633681&single=true&output=csv";
 
-    // ===== Columns =====
-    const COL_MONTH = "月";
-    const COL_CAT   = "発行実績";
-    const PARTS = [
-      { key:"SG", label:"シャトルガード", candidates:["シャトルガード（SG）","シャトルガード (SG)","シャトルガード","SG","ｼｬﾄﾙｶﾞｰﾄﾞ（SG）"]},
-      { key:"CV", label:"コンベヤー",     candidates:["コンベヤー（CV）","コンベヤー (CV)","コンベヤー","CV","ｺﾝﾍﾞﾔｰ（CV）"]},
-      // シート表記「ウィンベンド」。ユーザー要望「ウィングベンド」も許容
-      { key:"WB", label:"ウィンベンド",   candidates:["ウィンベンド（WB）","ウィンベンド (WB)","ウィンベンド","ウィングベンド","WB"]},
-      { key:"SC", label:"スクリューカバー", candidates:["スクリューカバー（SC）","スクリューカバー (SC)","スクリューカバー","SC"]},
-    ];
+  // ==== Columns / mapping ====
+  const COL_MONTH = "月";
+  const COL_CAT   = "発行実績";
+  const PARTS = [
+    { key:"SG", label:"シャトルガード", candidates:["シャトルガード（SG）","シャトルガード (SG)","シャトルガード","SG","ｼｬﾄﾙｶﾞｰﾄﾞ（SG）"]},
+    { key:"CV", label:"コンベヤー",     candidates:["コンベヤー（CV）","コンベヤー (CV)","コンベヤー","CV","ｺﾝﾍﾞﾔｰ（CV）"]},
+    { key:"WB", label:"ウィンベンド",   candidates:["ウィンベンド（WB）","ウィンベンド (WB)","ウィンベンド","ウィングベンド","WB"]},
+    { key:"SC", label:"スクリューカバー", candidates:["スクリューカバー（SC）","スクリューカバー (SC)","スクリューカバー","SC"]},
+  ];
 
-    // ===== Utils =====
-    const $ = id => document.getElementById(id);
-    const nrm = s => String(s??"").trim().replace(/[（）\s]/g, m=>({'（':'(', '）':')'}[m]||''));
-    function setErr(msg){ const e=$("err"); if(!msg){e.style.display="none"; e.textContent="";} else {e.style.display="block"; e.textContent=msg;} }
-    function showEmpty(id, show){ $(id).style.display = show ? "flex" : "none"; }
-    const toCSV = (rows)=>{
-      if(!rows.length) return "";
-      const headers = Object.keys(rows[0]);
-      const esc = v => `"${String(v??"").replace(/"/g,'""')}"`;
-      return [headers.join(","), ...rows.map(r=>headers.map(h=>esc(r[h])).join(","))].join("\n");
-    };
+  // ==== Utils ====
+  const $ = id => document.getElementById(id);
+  const nrm = s => String(s??"").trim().replace(/[（）\s]/g, m=>({'（':'(', '）':')'}[m]||''));
+  function setErr(msg){ const e=$("err"); if(!msg){e.style.display="none"; e.textContent="";} else {e.style.display="block"; e.textContent=msg;} }
+  function showEmpty(id, show){ $(id).style.display = show ? "flex" : "none"; }
+  const toCSV = (rows)=>{
+    if(!rows.length) return "";
+    const headers = Object.keys(rows[0]);
+    const esc = v => `"${String(v??"").replace(/"/g,'""')}"`;
+    return [headers.join(","), ...rows.map(r=>headers.map(h=>esc(r[h])).join(","))].join("\n");
+  };
 
-    let RAW=[], HEADERS=[], PART_COLS={}, charts={};
+  // Normalisasi kategori: buang bullet/titik di depan & spasi (termasuk full-width)
+  function catNorm(s){
+    s = String(s??"");
+    s = s.replace(/^[\s　・･•●\.\-]+/,''); // hapus simbol di bagian depan
+    s = s.replace(/[\s　]+$/,'');          // trim belakang (termasuk spasi full-width)
+    return s;
+  }
 
-    // ===== Map part columns explicitly =====
-    function mapPartCols(headers){
-      const map={};
-      for(const p of PARTS){
-        let found=null;
-        for(const c of p.candidates){
-          found = headers.find(h => nrm(h)===nrm(c));
-          if(found) break;
-        }
-        if(!found){ found = headers.find(h => nrm(h).includes(nrm(p.label)) && nrm(h).includes("("+p.key+")")); }
-        if(found) map[p.key]=found;
+  let RAW=[], HEADERS=[], PART_COLS={}, charts={};
+
+  function mapPartCols(headers){
+    const map={};
+    for(const p of PARTS){
+      let found=null;
+      for(const c of p.candidates){
+        found = headers.find(h => nrm(h)===nrm(c));
+        if(found) break;
       }
-      return map;
+      if(!found){ found = headers.find(h => nrm(h).includes(nrm(p.label)) && nrm(h).includes("("+p.key+")")); }
+      if(found) map[p.key]=found;
     }
+    return map;
+  }
 
-    // ===== Load & normalize =====
-    async function loadCSV(){
-      try{
-        const res = await fetch(CSV_URL + "&_t=" + Date.now(), {cache:"no-store"});
-        if(!res.ok) throw new Error("HTTP "+res.status);
-        const text = await res.text();
-        const out = await new Promise(resolve=>{
-          Papa.parse(text, {header:true,dynamicTyping:true,skipEmptyLines:true,complete:r=>resolve(r)});
-        });
-        return out;
-      }catch(e){ console.error(e); setErr("CSVの読み込みに失敗しました。公開設定/URLをご確認ください。"); return {data:[],meta:{fields:[]}}; }
-    }
-
-    // forward-fill 月 & coerce numbers
-    function normalizeRows(rows){
-      const out = rows.map(r=>({...r}));
-      let lastMonth=null;
-      for(const r of out){
-        // 月
-        let m = r[COL_MONTH];
-        if(m==null || String(m).trim()===""){ r[COL_MONTH]=lastMonth; }
-        else{
-          const num=Number(String(m).replace(/[^\d]/g,''));
-          r[COL_MONTH]=Number.isFinite(num)?num:null;
-          lastMonth=r[COL_MONTH];
-        }
-        // parts -> number
-        for(const k in PART_COLS){
-          const col = PART_COLS[k];
-          const v = Number(String(r[col]??0).replace(/[, ]/g,''));
-          r[col] = Number.isFinite(v)?v:0;
-        }
-      }
-      return out;
-    }
-
-    // ===== Month UI =====
-    function buildMonthSelectors(rows){
-      const months = [...new Set(rows.map(r=>r[COL_MONTH]).filter(n=>Number.isFinite(n)).sort((a,b)=>a-b))];
-      const make = (sel, def)=> sel.innerHTML = months.map(m=>`<option value="${m}">${m}月</option>`).join(""), mFrom=$("mFrom"), mTo=$("mTo");
-      make(mFrom); make(mTo);
-      mFrom.value = months.includes(1)?1:months[0]||1;
-      mTo.value   = months.includes(12)?12:(months[months.length-1]||12);
-      $("range").textContent = months.length?`${months[0]}〜${months[months.length-1]}月`:"";
-    }
-    function selectedMonthRange(){
-      const a=Number($("mFrom").value||1), b=Number($("mTo").value||12);
-      return {from:Math.min(a,b), to:Math.max(a,b)};
-    }
-
-    // ===== Aggregations =====
-    function aggregate(rows){
-      const {from,to}=selectedMonthRange();
-      const inRange = rows.filter(r=>Number.isFinite(r[COL_MONTH]) && r[COL_MONTH]>=from && r[COL_MONTH]<=to);
-      // Pivot: cat -> {SG,CV,WB,SC,total}
-      const pivot = new Map();
-      function add(cat, key, val){
-        const obj = pivot.get(cat) || {SG:0,CV:0,WB:0,SC:0,total:0};
-        obj[key]+=val; obj.total+=val; pivot.set(cat,obj);
-      }
-      for(const r of inRange){
-        const cat = String(r[COL_CAT]??"").trim() || "（未分類）";
-        for(const k in PART_COLS){ add(cat, k, r[PART_COLS[k]]||0); }
-      }
-      // sort by total desc
-      const rowsArr = Array.from(pivot.entries()).sort((a,b)=>b[1].total-a[1].total);
-      const grand = rowsArr.reduce((acc,[,v])=>{
-        acc.SG+=v.SG; acc.CV+=v.CV; acc.WB+=v.WB; acc.SC+=v.SC; acc.total+=v.total; return acc;
-      },{SG:0,CV:0,WB:0,SC:0,total:0});
-      return {rowsArr, grand, inRange};
-    }
-
-    // ===== Render pivot =====
-    function renderPivot(ag){
-      const tb=$("pivotBody"), tf=$("pivotFoot");
-      if(!ag.rowsArr.length){ tb.innerHTML=`<tr><td colspan="6" class="muted">データなし</td></tr>`; tf.innerHTML=""; return; }
-      tb.innerHTML = ag.rowsArr.map(([cat,v])=>
-        `<tr><td>${cat}</td><td>${v.SG}</td><td>${v.CV}</td><td>${v.WB}</td><td>${v.SC}</td><td>${v.total}</td></tr>`
-      ).join("");
-      tf.innerHTML = `<tr><td>合計</td><td>${ag.grand.SG}</td><td>${ag.grand.CV}</td><td>${ag.grand.WB}</td><td>${ag.grand.SC}</td><td>${ag.grand.total}</td></tr>`;
-    }
-
-    // ===== Charts per part =====
-    function destroyCharts(){ for(const k in charts){ charts[k].destroy(); } charts={}; }
-    function drawPartPanel(partKey, ag, orientSelId, chartId, tableId, emptyId){
-      const idxAxis = ($(orientSelId).value==="horizontal") ? "y" : "x";
-      // build series for this part
-      let items = ag.rowsArr.map(([cat,v])=>({cat, val:v[partKey]})).filter(x=>x.val>0);
-      const total = items.reduce((s,x)=>s+x.val,0);
-      const topN = +$("topN").value;
-      if(topN>0 && items.length>topN){
-        const cut = items.slice(0, topN);
-        const others = items.slice(topN).reduce((s,x)=>s+x.val,0);
-        items = [...cut, {cat:"その他", val:others}];
-      }
-      if(!items.length){
-        showEmpty(emptyId, true);
-        $(tableId).innerHTML = `<tr><td colspan="3" class="muted">データなし</td></tr>`;
-        if(charts[partKey]){ charts[partKey].destroy(); delete charts[partKey]; }
-        return;
-      }
-      showEmpty(emptyId, false);
-
-      // table
-      $(tableId).innerHTML = items.map(it=>{
-        const pct = total? Math.round(it.val/total*1000)/10 : 0;
-        return `<tr><td>${it.cat}</td><td>${it.val}</td><td>${pct}%</td></tr>`;
-      }).join("");
-
-      // chart
-      const ctx = $(chartId).getContext("2d");
-      if(charts[partKey]) charts[partKey].destroy();
-      charts[partKey] = new Chart(ctx, {
-        type:"bar",
-        data:{ labels: items.map(i=>i.cat), datasets:[{ label:"件数", data:items.map(i=>i.val), borderWidth:1 }] },
-        options:{
-          responsive:true, maintainAspectRatio:false,
-          plugins:{ legend:{display:true}, tooltip:{mode:"index", intersect:false} },
-          indexAxis: idxAxis,
-          scales: idxAxis==="y" ? {
-            y:{ beginAtZero:true, ticks:{ autoSkip:false } }, x:{ beginAtZero:true, ticks:{ precision:0 } }
-          } : {
-            x:{ ticks:{ autoSkip:false } }, y:{ beginAtZero:true, ticks:{ precision:0 } }
-          }
-        }
+  async function loadCSV(){
+    try{
+      const res = await fetch(CSV_URL + "&_t=" + Date.now(), {cache:"no-store"});
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      const text = await res.text();
+      const out = await new Promise(resolve=>{
+        Papa.parse(text, {header:true,dynamicTyping:true,skipEmptyLines:true,complete:r=>resolve(r)});
       });
-    }
+      return out;
+    }catch(e){ console.error(e); setErr("CSVの読み込みに失敗しました。公開設定/URLをご確認ください。"); return {data:[],meta:{fields:[]}}; }
+  }
 
-    // ===== Export pivot =====
-    function exportPivotCSV(ag){
-      const rows = ag.rowsArr.map(([cat,v])=>({ "発行実績":cat, SG:v.SG, CV:v.CV, WB:v.WB, SC:v.SC, 合計:v.total }));
-      rows.push({ "発行実績":"合計", SG:ag.grand.SG, CV:ag.grand.CV, WB:ag.grand.WB, SC:ag.grand.SC, 合計:ag.grand.total });
-      const blob = new Blob([toCSV(rows)], {type:"text/csv;charset=utf-8"});
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      const r = selectedMonthRange();
-      a.download = `部位別_年間Pivot_${r.from}-${r.to}月.csv`;
-      a.click();
-    }
-
-    // ===== Main render =====
-    function drawAll(){
-      destroyCharts();
-      if(!RAW.length){ renderPivot({rowsArr:[],grand:{}}); ["SG","CV","WB","SC"].forEach(k=>showEmpty("em"+k,true)); return; }
-      const ag = aggregate(RAW);
-      renderPivot(ag);
-      drawPartPanel("SG", ag, "orient", "chSG", "tbSG", "emSG");
-      drawPartPanel("CV", ag, "orient", "chCV", "tbCV", "emCV");
-      drawPartPanel("WB", ag, "orient", "chWB", "tbWB", "emWB");
-      drawPartPanel("SC", ag, "orient", "chSC", "tbSC", "emSC");
-    }
-
-    // ===== Bootstrap =====
-    async function bootstrap(){
-      const out = await loadCSV();
-      RAW = out.data || [];
-      HEADERS = out.meta?.fields || Object.keys(RAW[0]||{});
-      if(!HEADERS.includes(COL_CAT) || !HEADERS.includes(COL_MONTH)){
-        setErr("ヘッダーに「発行実績」または「月」が見つかりません。"); return;
+  // forward-fill 月 & angka-kan kolom parts
+  function normalizeRows(rows){
+    const out = rows.map(r=>({...r}));
+    let lastMonth=null;
+    for(const r of out){
+      // 月
+      let m = r[COL_MONTH];
+      if(m==null || String(m).trim()===""){ r[COL_MONTH]=lastMonth; }
+      else{
+        const num=Number(String(m).replace(/[^\d]/g,''));
+        r[COL_MONTH]=Number.isFinite(num)?num:null;
+        lastMonth=r[COL_MONTH];
       }
-      PART_COLS = mapPartCols(HEADERS);
-      // safety: some part missing?
-      const miss = ["SG","CV","WB","SC"].filter(k=>!PART_COLS[k]);
-      if(miss.length){ console.warn("Missing part columns:", miss, "Headers:", HEADERS); }
-      RAW = normalizeRows(RAW);
-      buildMonthSelectors(RAW);
-      setErr("");
-      drawAll();
+      // parts
+      for(const k in PART_COLS){
+        const col = PART_COLS[k];
+        const v = Number(String(r[col]??0).replace(/[, ]/g,''));
+        r[col] = Number.isFinite(v)?v:0;
+      }
+      // kategori
+      r[COL_CAT] = catNorm(r[COL_CAT]);
     }
+    return out;
+  }
 
-    // events
-    ["mFrom","mTo","orient","topN"].forEach(id=>{
-      $(id).addEventListener("change", drawAll);
+  function buildMonthSelectors(rows){
+    const months = [...new Set(rows.map(r=>r[COL_MONTH]).filter(n=>Number.isFinite(n)).sort((a,b)=>a-b))];
+    const make = (sel)=> sel.innerHTML = months.map(m=>`<option value="${m}">${m}月</option>`).join("");
+    make($("mFrom")); make($("mTo"));
+    $("mFrom").value = months.includes(1)?1:months[0]||1;
+    $("mTo").value   = months.includes(12)?12:(months[months.length-1]||12);
+    $("range").textContent = months.length?`${months[0]}〜${months[months.length-1]}月`:"";
+  }
+  function monthRange(){ const a=+$("mFrom").value||1, b=+$("mTo").value||12; return {from:Math.min(a,b), to:Math.max(a,b)}; }
+
+  function aggregate(rows){
+    const {from,to}=monthRange();
+    const inRange = rows.filter(r=>Number.isFinite(r[COL_MONTH]) && r[COL_MONTH]>=from && r[COL_MONTH]<=to);
+    const partKeys=["SG","CV","WB","SC"];
+    const pivot = new Map(); // cat -> {ALL, SG, CV, WB, SC}
+    function add(cat,k,val){
+      const o = pivot.get(cat) || {ALL:0, SG:0, CV:0, WB:0, SC:0};
+      o[k]+=val; o.ALL+=val; pivot.set(cat,o);
+    }
+    for(const r of inRange){
+      const cat = String(r[COL_CAT]??"").trim() || "（未分類）";
+      for(const k of partKeys){ if(PART_COLS[k]) add(cat, k, r[PART_COLS[k]]||0); }
+    }
+    const rowsArr = Array.from(pivot.entries()).sort((a,b)=>b[1].ALL-a[1].ALL);
+    const grand = rowsArr.reduce((acc,[,v])=>{
+      acc.ALL+=v.ALL; acc.SG+=v.SG; acc.CV+=v.CV; acc.WB+=v.WB; acc.SC+=v.SC; return acc;
+    },{ALL:0,SG:0,CV:0,WB:0,SC:0});
+    return {rowsArr, grand};
+  }
+
+  function renderPivot(ag){
+    const tb=$("pivotBody"), tf=$("pivotFoot");
+    if(!ag.rowsArr.length){ tb.innerHTML=`<tr><td colspan="6" class="muted">データなし</td></tr>`; tf.innerHTML=""; return; }
+    tb.innerHTML = ag.rowsArr.map(([cat,v])=>
+      `<tr><td>${cat}</td><td>${v.ALL}</td><td>${v.SG}</td><td>${v.CV}</td><td>${v.WB}</td><td>${v.SC}</td></tr>`
+    ).join("");
+    tf.innerHTML = `<tr><td>合計</td><td>${ag.grand.ALL}</td><td>${ag.grand.SG}</td><td>${ag.grand.CV}</td><td>${ag.grand.WB}</td><td>${ag.grand.SC}</td></tr>`;
+  }
+
+  function destroyCharts(){ for(const k in charts){ charts[k].destroy(); } charts={}; }
+
+  function drawPanel(key, ag, chartId, tableId, emptyId){
+    // key: "ALL" | "SG" | "CV" | "WB" | "SC"
+    const idxAxis = ($("orient").value==="horizontal") ? "y" : "x";
+    let items = ag.rowsArr.map(([cat,v])=>({cat, val:v[key]})).filter(x=>x.val>0);
+    const total = items.reduce((s,x)=>s+x.val,0);
+    const topN = +$("topN").value;
+    if(topN>0 && items.length>topN){
+      const cut = items.slice(0, topN);
+      const others = items.slice(topN).reduce((s,x)=>s+x.val,0);
+      items = [...cut, {cat:"その他", val:others}];
+    }
+    if(!items.length){
+      showEmpty(emptyId, true);
+      $(tableId).innerHTML = `<tr><td colspan="3" class="muted">データなし</td></tr>`;
+      if(charts[key]){ charts[key].destroy(); delete charts[key]; }
+      return;
+    }
+    showEmpty(emptyId, false);
+    $(tableId).innerHTML = items.map(it=>{
+      const pct = total? Math.round(it.val/total*1000)/10 : 0;
+      return `<tr><td>${it.cat}</td><td>${it.val}</td><td>${pct}%</td></tr>`;
+    }).join("");
+
+    const ctx = $(chartId).getContext("2d");
+    if(charts[key]) charts[key].destroy();
+    charts[key] = new Chart(ctx, {
+      type:"bar",
+      data:{ labels: items.map(i=>i.cat), datasets:[{ label:"件数", data:items.map(i=>i.val), borderWidth:1 }] },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:true}, tooltip:{mode:"index", intersect:false} },
+        indexAxis: idxAxis,
+        scales: idxAxis==="y" ? {
+          y:{ beginAtZero:true, ticks:{ autoSkip:false } }, x:{ beginAtZero:true, ticks:{ precision:0 } }
+        } : {
+          x:{ ticks:{ autoSkip:false } }, y:{ beginAtZero:true, ticks:{ precision:0 } }
+        }
+      }
     });
-    $("reloadBtn").addEventListener("click", bootstrap);
-    $("exportPivotBtn").addEventListener("click", ()=> exportPivotCSV(aggregate(RAW)));
+  }
 
-    window.addEventListener("DOMContentLoaded", bootstrap);
-  </script>
+  function exportPivotCSV(ag){
+    const rows = ag.rowsArr.map(([cat,v])=>({ "発行実績":cat, ALL:v.ALL, SG:v.SG, CV:v.CV, WB:v.WB, SC:v.SC }));
+    rows.push({ "発行実績":"合計", ALL:ag.grand.ALL, SG:ag.grand.SG, CV:ag.grand.CV, WB:ag.grand.WB, SC:ag.grand.SC });
+    const blob = new Blob([toCSV(rows)], {type:"text/csv;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    const f=$("mFrom").value, t=$("mTo").value;
+    a.download = `部位別_年間Pivot_${f}-${t}月.csv`;
+    a.click();
+  }
+
+  function drawAll(){
+    destroyCharts();
+    if(!RAW.length){ renderPivot({rowsArr:[],grand:{}}); ["ALL","SG","CV","WB","SC"].forEach(k=>showEmpty("em"+k,true)); return; }
+    const ag = aggregate(RAW);
+    renderPivot(ag);
+    drawPanel("ALL", ag, "chALL", "tbALL", "emALL");
+    drawPanel("SG",  ag, "chSG",  "tbSG",  "emSG");
+    drawPanel("CV",  ag, "chCV",  "tbCV",  "emCV");
+    drawPanel("WB",  ag, "chWB",  "tbWB",  "emWB");
+    drawPanel("SC",  ag, "chSC",  "tbSC",  "emSC");
+  }
+
+  async function bootstrap(){
+    const out = await loadCSV();
+    RAW = out.data || [];
+    HEADERS = out.meta?.fields || Object.keys(RAW[0]||{});
+    if(!HEADERS.includes(COL_CAT) || !HEADERS.includes(COL_MONTH)){
+      setErr("ヘッダーに「発行実績」または「月」が見つかりません。"); return;
+    }
+    PART_COLS = mapPartCols(HEADERS);
+    RAW = normalizeRows(RAW);     // ← forward-fill 月 + angka + normalisasi kategori
+    buildMonthSelectors(RAW);
+    setErr(""); drawAll();
+  }
+
+  ["mFrom","mTo","orient","topN"].forEach(id=> $(id).addEventListener("change", drawAll));
+  $("reloadBtn").addEventListener("click", bootstrap);
+  $("exportPivotBtn").addEventListener("click", ()=> exportPivotCSV(aggregate(RAW)));
+  window.addEventListener("DOMContentLoaded", bootstrap);
+</script>
 </body>
 </html>
