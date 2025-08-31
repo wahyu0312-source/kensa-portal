@@ -22,6 +22,10 @@
     h1{margin:0;font-size:clamp(20px,4vw,28px);letter-spacing:.08em}
     .sub{font-size:12px;color:var(--muted)}
     .credit{font-size:12px;color:var(--muted)}
+    .right{display:flex;align-items:center;gap:10px}
+    .btn-home{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--ink);text-decoration:none;box-shadow:var(--shadow);font-size:13px}
+    .btn-home:hover{border-color:var(--accent)}
+    @media print{ .no-print{ display:none !important } }
 
     main{padding:18px 20px}
     .grid{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:14px}
@@ -56,7 +60,10 @@
           <h1>品質情報</h1>
           <div class="sub" id="subtitle">読み込み中…</div>
         </div>
-        <div class="credit">design by wahyu</div>
+        <div class="right">
+          <a class="btn-home no-print" href="https://wahyu0312-source.github.io/kensa-portal/" title="ホームへ">Home</a>
+          <span class="credit">design by wahyu</span>
+        </div>
       </div>
     </div>
   </header>
@@ -376,6 +383,90 @@
   }
 
   window.addEventListener('load', load);
+})();
+</script>
+<script id="quality-patch">
+// --- Patch: stronger CSV parsing & column detection + visible warning ---
+(() => {
+  const CSV_URL_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkHKcql0V0V2rD6VMmbCCib5djCj74e3beh3krOSplI7pWQvFDGK-54UOCh3sCGZHSxkjIK9gHxz7j/pub?gid=1162640324&single=true&output=csv';
+  const CSV_URL = CSV_URL_BASE + '&t=' + Date.now();
+  const el = (s)=> document.querySelector(s);
+  const isNumeric = (v)=> v!==null && v!=='' && !isNaN(Number((''+v).replace(/,/g,'')));
+  const tryParseDate = (v)=>{ if(v==null) return null; const t=(''+v).trim().replace(/年|\./g,'/').replace(/月/g,'/').replace(/日/g,''); const d=new Date(t); return isNaN(d)? null:d; };
+  const fmtYMD=(d)=> `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+
+  function findHeaderAndData(allRows){
+    let bestScore=-1, bestIdx=0;
+    for(let i=0;i<Math.min(10, allRows.length); i++){
+      const r=allRows[i];
+      const nonEmpty=r.filter(c=> (c||'').toString().trim()!=='').length;
+      const numeric=r.filter(c=> isNumeric(c)).length;
+      const bonus=/(日|年月日|顧客|客先|数量|部位|品名|不良|変更|クレーム)/.test(r.join(' '))?5:0;
+      const score=nonEmpty-numeric+bonus; if(score>bestScore){bestScore=score; bestIdx=i;}
+    }
+    return { header: allRows[bestIdx], rows: allRows.slice(bestIdx+1) };
+  }
+
+  function detectColumns(header, rows){
+    const H=header.map(h=> (h||'').toString());
+    const includesAny=(s,arr)=> arr.some(k=> s.includes(k));
+    // date
+    let dateIdx=-1, dateScore=-1;
+    for(let i=0;i<H.length;i++){ const h=H[i]; if(includesAny(h,['日','年月日','Date','DATE','date','出荷日','製造日','発行'])){ let s=0; for(const r of rows.slice(0,300)){ if(tryParseDate(r[i])) s++; } if(s>dateScore){dateScore=s; dateIdx=i;} } }
+    if(dateIdx<0){ for(let i=0;i<H.length;i++){ let s=0; for(const r of rows.slice(0,300)){ if(tryParseDate(r[i])) s++; } if(s>dateScore){dateScore=s; dateIdx=i;} } if(dateScore<5) dateIdx=null; }
+    // qty
+    let qtyIdx=-1, qtyScore=-1; for(let i=0;i<H.length;i++){ const h=H[i]; if(includesAny(h,['数量','数量(済)','数','台数','個数','Qty','QTY','済'])){ let s=0; for(const r of rows.slice(0,300)){ if(isNumeric(r[i])) s+= Number((''+r[i]).replace(/,/g,'')); } if(s>qtyScore){qtyScore=s; qtyIdx=i;} } }
+    if(qtyIdx<0){ for(let i=0;i<H.length;i++){ let s=0,c=0; for(const r of rows.slice(0,300)){ if(isNumeric(r[i])){ s+=Number((''+r[i]).replace(/,/g,'')); c++; } } if(c>15 && s>qtyScore){ qtyScore=s; qtyIdx=i; } } if(qtyScore<=0) qtyIdx=null; }
+    // customer
+    let custIdx=H.findIndex(h=> includesAny(h,['顧客','顧客名','客先','Customer','得意先'])); if(custIdx<0){ let best=-1, idx=-1; for(let i=0;i<H.length;i++){ const set=new Set(rows.slice(0,500).map(r=> (r[i]||'').toString().trim()).filter(Boolean)); if(set.size>best){ best=set.size; idx=i; } } custIdx=idx; }
+    // part
+    let partIdx=H.findIndex(h=> includesAny(h,['部位','品名','品目','機種','型式','製品名','ASSY'])); if(partIdx<0){ const distinct=H.map((_,i)=> new Set(rows.slice(0,500).map(r=> (r[i]||'').toString().trim()).filter(Boolean)).size); const sorted=distinct.map((v,i)=>[i,v]).sort((a,b)=> b[1]-a[1]); partIdx = sorted[1]?.[0] ?? null; }
+    // issue cols
+    const issueCols=[]; for(let i=0;i<H.length;i++){ const h=H[i]; const looks=includesAny(h,['クレーム','不良','不具合','変更','設計','是正','手直し','修正','社内']); let ratio=0; const sample=rows.slice(0,200); if(sample.length){ ratio = sample.reduce((a,r)=> a + (isNumeric(r[i])?1:0),0)/sample.length; } if(looks || (ratio>0.5 && /(件|回|数)$/.test(h))) issueCols.push(i); }
+    return {date:dateIdx, qty:qtyIdx, customer:custIdx, part:partIdx, issueCountCols:issueCols};
+  }
+
+  function groupByMonth(rows, dateIdx, qtyIdx){ const map=new Map(); for(const r of rows){ const d=tryParseDate(r[dateIdx]); if(!d) continue; const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; const val=(qtyIdx!=null && isNumeric(r[qtyIdx]))? Number((''+r[qtyIdx]).replace(/,/g,'')) : 1; map.set(key,(map.get(key)||0)+val); } const now=new Date(); const labels=[],data=[]; for(let i=11;i>=0;i--){ const dt=new Date(now.getFullYear(), now.getMonth()-i, 1); const k=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; labels.push(`${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}`); data.push(map.get(k)||0); } return {labels,data}; }
+  function topN(rows, idx, qtyIdx, n=10){ const m=new Map(); for(const r of rows){ const key=(r[idx]||'').toString().trim(); if(!key) continue; const val=(qtyIdx!=null && isNumeric(r[qtyIdx]))? Number((''+r[qtyIdx]).replace(/,/g,'')) : 1; m.set(key,(m.get(key)||0)+val); } return [...m.entries()].sort((a,b)=> b[1]-a[1]).slice(0,n); }
+  function sumNumericByCols(rows, colIdxs){ const sums=[]; for(const i of colIdxs){ let s=0; for(const r of rows){ if(isNumeric(r[i])) s+= Number((''+r[i]).replace(/,/g,'')); } sums.push([i,s]); } return sums.sort((a,b)=> b[1]-a[1]); }
+
+  function ensureLibs(){ return !!(window.Chart && window.ChartDataLabels && window.Papa); }
+
+  async function fetchCsv(){
+    // try Papa direct
+    try{ const results = await new Promise((resolve, reject)=>{ Papa.parse(CSV_URL, {download:true, header:false, skipEmptyLines:true, complete: resolve, error: reject}); }); if(results?.data?.length) return results.data; }catch(e){ console.warn('Papa.download failed', e); }
+    // fallback fetch
+    const res = await fetch(CSV_URL); const text = await res.text();
+    return await new Promise((resolve)=> Papa.parse(text, {header:false, skipEmptyLines:true, complete: r=> resolve(r.data)}));
+  }
+
+  async function run(){
+    if(!ensureLibs()){ console.error('Chart.js / Datalabels / Papa not ready'); return; }
+    try{
+      const data = await fetchCsv();
+      if(!data || !data.length){ throw new Error('CSV empty'); }
+      const {header, rows} = findHeaderAndData(data);
+      const cols = detectColumns(header, rows);
+      const subtitle = document.querySelector('#subtitle'); if(subtitle){ subtitle.textContent += ` / 取得: ${fmtYMD(new Date())}`; }
+
+      // Monthly
+      let charts=0;
+      if(cols.date!=null){ const m = groupByMonth(rows, cols.date, cols.qty); if(m.data.some(v=>v>0)){ document.querySelector('#card-monthly').hidden=false; new Chart(document.querySelector('#chartMonthly'), {type:'line', data:{labels:m.labels, datasets:[{data:m.data, fill:true, tension:.25}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, datalabels:{display:false}}, scales:{x:{grid:{display:false}}, y:{beginAtZero:true, grid:{color:'#eee'}}}}}); charts++; document.querySelector('#legend-monthly').innerHTML = `<span class="pill">集計対象: ${header[cols.date]||'日付'}${cols.qty!=null?` × ${header[cols.qty]}`:'（1件=1カウント）'}</span>`; }
+      }
+      const slots=[];
+      if(cols.customer!=null){ const d=topN(rows, cols.customer, cols.qty, 10); if(d.length){ slots.push(()=>{ document.querySelector('#card-customer').hidden=false; new Chart(document.querySelector('#chartCustomer'), {type:'bar', data:{labels:d.map(x=>x[0]), datasets:[{data:d.map(x=>x[1])}]}, options:{responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false}, datalabels:{anchor:'end', align:'end', formatter:v=> (v>=1000? v.toLocaleString(): v)}}}}); charts++; }); } }
+      if(cols.part!=null){ const d=topN(rows, cols.part, cols.qty, 10); if(d.length){ slots.push(()=>{ document.querySelector('#card-category').hidden=false; document.querySelector('#category-title').textContent = `${header[cols.part]} 別（TOP10）`; new Chart(document.querySelector('#chartCategory'), {type:'bar', data:{labels:d.map(x=>x[0]), datasets:[{data:d.map(x=>x[1])}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, datalabels:{anchor:'end', align:'end', formatter:v=> (v>=1000? v.toLocaleString(): v), rotation:-90}}, scales:{x:{grid:{display:false}}, y:{beginAtZero:true, grid:{color:'#eee'}}}}); charts++; }); } }
+      if(cols.issueCountCols?.length){ const s=sumNumericByCols(rows, cols.issueCountCols); if(s.length){ slots.push(()=>{ document.querySelector('#card-pareto').hidden=false; const top=s.slice(0,10); const labels=top.map(([i])=> header[i]); const values=top.map(([,v])=> v); const total=values.reduce((a,b)=>a+b,0)||1; const cum=values.reduce((arr,v,i)=>{ arr.push((v + (arr[i-1]||0))); return arr; },[]).map(v=> v/total*100); new Chart(document.querySelector('#chartPareto'), {type:'bar', data:{labels, datasets:[{label:'件数', data:values, yAxisID:'y'}, {label:'累積%', data:cum, type:'line', yAxisID:'y1', borderWidth:2, pointRadius:2}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}, datalabels:{formatter:(v,ctx)=> ctx.dataset.type==='line'? '': v, align:'end', anchor:'end', font:{size:10}}}, scales:{y:{beginAtZero:true, grid:{color:'#eee'}}, y1:{beginAtZero:true, max:100, position:'right', grid:{display:false}, ticks:{callback:v=>v+'%'}}, x:{grid:{display:false}}}}); charts++; }); } }
+      let used=0; for(const fn of slots){ if(used>=2) break; fn(); used++; }
+
+      const detect = [ cols.date!=null? `日付=「${header[cols.date]}」`:null, cols.qty!=null? `数量=「${header[cols.qty]}」`:null, cols.customer!=null? `顧客=「${header[cols.customer]}」`:null, cols.part!=null? `分類=「${header[cols.part]}」`:null, (cols.issueCountCols?.length? `不良/変更など=${cols.issueCountCols.map(i=>`「${header[i]}」`).join('、')}`:null) ].filter(Boolean).join(' ／ ');
+      const detectEl = document.querySelector('#detect'); if(detectEl) detectEl.textContent = detect? `自動検出: ${detect}`: '';
+
+      if(!charts){ const warn=document.createElement('div'); warn.style.cssText='max-width:1120px;margin:12px auto 0;padding:12px 16px;border:1px solid #f0ad4e;background:#fffbe6;border-radius:12px;color:#6b4f00;font-size:13px'; warn.innerHTML='データを解釈できませんでした。CSVの列名を確認してください（例：<b>年月日/出荷日</b>、<b>数量</b>、<b>顧客</b>、<b>部位/品名</b> など）。'; document.body.insertBefore(warn, document.body.children[1]); }
+    }catch(err){ console.error(err); const warn=document.createElement('div'); warn.style.cssText='max-width:1120px;margin:12px auto 0;padding:12px 16px;border:1px solid #ef4444;background:#fff1f2;border-radius:12px;color:#991b1b;font-size:13px'; warn.textContent='品質情報データの取得に失敗しました。ネットワーク/CSV公開設定をご確認ください。'; document.body.insertBefore(warn, document.body.children[1]); }
+  }
+
+  window.addEventListener('load', run);
 })();
 </script>
 </body>
