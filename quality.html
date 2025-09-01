@@ -21,6 +21,8 @@
     .row{display:flex;align-items:end;justify-content:space-between;gap:16px;flex-wrap:wrap}
     h1{margin:0;font-size:clamp(20px,4vw,28px);letter-spacing:.08em}
     .sub{font-size:12px;color:var(--muted)}
+    .btn-src{font-size:12px;margin-left:8px;text-decoration:underline;color:var(--accent)}
+    @media print{ .btn-src{ display:none } }
     .credit{font-size:12px;color:var(--muted)}
     .right{display:flex;align-items:center;gap:10px}
     .btn-home{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--ink);text-decoration:none;box-shadow:var(--shadow);font-size:13px}
@@ -58,7 +60,7 @@
       <div class="row">
         <div>
           <h1>品質情報</h1>
-          <div class="sub" id="subtitle">読み込み中…</div>
+          <div class="sub" id="subtitle">読み込み中…</div><a id="openSrc" class="btn-src" href="#" target="_blank" rel="noopener">データを開く</a>
         </div>
         <div class="right">
           <a class="btn-home no-print" href="https://wahyu0312-source.github.io/kensa-portal/" title="ホームへ">Home</a>
@@ -134,7 +136,8 @@
   };
 
   // Init subtitle
-  el('#subtitle').textContent = `データ元: Googleスプレッドシート（${new URL(CSV_URL).searchParams.get('gid')}） / 生成: ${fmtYMD(new Date())}`;
+  el('#subtitle').textContent = `データ元: Googleスプレッドシート（${new URL(CSV_URL_BASE).searchParams.get('gid')}） / 生成: ${fmtYMD(new Date())}`;
+  const a = el('#openSrc'); if(a){ a.href = CSV_URL_BASE; }
 
   // Helpers
   function tryParseDate(v){
@@ -153,51 +156,67 @@
   const isNumeric = v => v !== null && v !== '' && !isNaN(Number((''+v).toString().replace(/,/g,'')));
 
   function detectColumns(header, rows){
-    const lower = header.map(h => (h||'').toString());
-    const includesAny = (s, arr) => arr.some(k => s.includes(k));
+    const H = header.map(h => (h||'').toString());
+    const includesAny = (s, arr)=> arr.some(k=> s.includes(k));
+    // ---- optional forced mapping ----
+    const FORCE = { year:null, month:null, qty:null, customer:null, part:null };
 
-    // date column: pick with most parseable values
-    const dateKeys = ['日','年月日','Date','DATE','date','出荷日','製造日','発行'];
-    let bestDateIdx = -1, bestScore = -1;
-    header.forEach((h, i) => {
-      const hs = (h||'')+'';
-      if(includesAny(hs, dateKeys)){
-        let score=0; for(const r of rows){ if(tryParseDate(r[i])) score++; }
-        if(score>bestScore){ bestScore=score; bestDateIdx=i; }
+    // ---- date ----
+    let dateIdx = -1, dateScore=-1;
+    for(let i=0;i<H.length;i++){
+      const h = H[i];
+      if(includesAny(h, ['日','年月日','Date','DATE','date','出荷日','製造日','発行'])){
+        let s=0; for(const r of rows.slice(0,300)){ if(tryParseDate(r[i])) s++; }
+        if(s>dateScore){ dateScore=s; dateIdx=i; }
       }
-    });
-
-    // qty column: numeric and name suggests quantity
-    const qtyKeys = ['数量','数','Qty','QTY','台数','個数','数量(済)','済'];
-    let qtyIdx = -1; let qtyScore=-1;
-    header.forEach((h,i)=>{
-      const hs=(h||'')+'';
-      const score = rows.slice(0,200).reduce((acc,r)=>acc + (isNumeric(r[i])?1:0),0);
-      if(includesAny(hs, qtyKeys) && score>Math.max(qtyScore, 3)) { qtyIdx=i; qtyScore=score; }
-    });
-
-    // customer column
-    const custKeys = ['顧客','客先','Customer','顧客名','得意先'];
-    let custIdx = -1;
-    header.forEach((h,i)=>{ if(includesAny((h||'')+'', custKeys) && custIdx===-1) custIdx=i; });
-
-    // part column
-    const partKeys = ['部位','品名','品目','機種','型式','製品名','ASSY'];
-    let partIdx = -1;
-    header.forEach((h,i)=>{ if(includesAny((h||'')+'', partKeys) && partIdx===-1) partIdx=i; });
-
-    // issue count columns: numeric & header suggests defects/changes
-    const issueKeys = ['クレーム','不良','不具合','変更','設計','是正','手直し','修正','社内'];
-    const issueCols = [];
-    header.forEach((h,i)=>{
-      const hs=(h||'')+'';
-      const numericRatio = rows.length ? rows.slice(0,200).reduce((a,r)=> a + (isNumeric(r[i])?1:0),0) / Math.min(rows.length,200) : 0;
-      if(includesAny(hs, issueKeys) || /件|回|数$/.test(hs)){
-        if(numericRatio>0.3) issueCols.push(i);
+    }
+    if(dateIdx<0){
+      for(let i=0;i<H.length;i++){
+        let s=0; for(const r of rows.slice(0,300)){ if(tryParseDate(r[i])) s++; }
+        if(s>dateScore){ dateScore=s; dateIdx=i; }
       }
-    });
+      if(dateScore < 5) dateIdx = null;
+    }
 
-    return {date: bestDateIdx>-1?bestDateIdx:null, qty: qtyIdx>-1?qtyIdx:null, customer: custIdx>-1?custIdx:null, part: partIdx>-1?partIdx:null, issueCountCols: issueCols};
+    // ---- qty ----
+    const nameToIndex = name => name==null? -1 : H.findIndex(h=> h===name);
+    let qtyIdx = nameToIndex(FORCE.qty);
+    if(qtyIdx<0){
+      let qtyScore=-1;
+      for(let i=0;i<H.length;i++){
+        const h = H[i];
+        if(includesAny(h, ['数量','数量(済)','数','台数','個数','Qty','QTY','済'])){
+          let s=0; for(const r of rows.slice(0,300)){ if(isNumeric(r[i])) s+= Number((''+r[i]).replace(/,/g,'')); }
+          if(s>qtyScore){ qtyScore=s; qtyIdx=i; }
+        }
+      }
+      if(qtyIdx<0){
+        for(let i=0;i<H.length;i++){
+          let s=0, cnt=0; for(const r of rows.slice(0,300)){ if(isNumeric(r[i])){ s+=Number((''+r[i]).replace(/,/g,'')); cnt++; } }
+          if(cnt>15 && s>qtyScore){ qtyScore=s; qtyIdx=i; }
+        }
+        if(qtyScore<=0) qtyIdx = null;
+      }
+    }
+
+    // ---- customer ----
+    let custIdx = nameToIndex(FORCE.customer);
+    if(custIdx<0){
+      custIdx = H.findIndex(h=> includesAny(h,['顧客','顧客名','客先','Customer','得意先']));
+      if(custIdx<0){ let best=-1, idx=-1; for(let i=0;i<H.length;i++){ const set = new Set(rows.slice(0,500).map(r=> (r[i]||'').toString().trim()).filter(Boolean)); if(set.size>best){ best=set.size; idx=i; } } custIdx = idx; }
+    }
+
+    // ---- part/category ----
+    let partIdx = nameToIndex(FORCE.part);
+    if(partIdx<0){
+      partIdx = H.findIndex(h=> includesAny(h,['部位','品名','品目','機種','型式','製品名','ASSY']));
+      if(partIdx<0){ const distinct = H.map((_,i)=> new Set(rows.slice(0,500).map(r=> (r[i]||'').toString().trim()).filter(Boolean)).size); const sorted = distinct.map((v,i)=>[i,v]).sort((a,b)=> b[1]-a[1]); partIdx = sorted[1]?.[0] ?? null; }
+    }
+
+    // ---- issue numeric columns ----
+    const issueCols=[]; for(let i=0;i<H.length;i++){ const h=H[i]; const looks=includesAny(h,['クレーム','不良','不具合','変更','設計','是正','手直し','修正','社内']); let ratio=0; const sample=rows.slice(0,200); if(sample.length){ ratio = sample.reduce((a,r)=> a + (isNumeric(r[i])?1:0),0)/sample.length; } if(looks || (ratio>0.5 && /(件|回|数)$/.test(h))) issueCols.push(i); }
+
+    return {date: dateIdx, qty: qtyIdx, customer: custIdx, part: partIdx, issueCountCols: issueCols};
   }
 
   function groupByMonth(rows, dateIdx, qtyIdx){
