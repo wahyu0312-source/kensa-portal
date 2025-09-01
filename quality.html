@@ -111,7 +111,7 @@
 
 <script>
 (() => {
-  const CSV_URL_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkHKcql0V0V2rD6VMmbCCib5djCj74e3beh3krOSplI7pWQvFDGK-54UOCh3sCGZHSxkjIK9gHxz7j/gviz/tq?tqx=out:csv&gid=1162640324';
+  const CSV_URL_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkHKcql0V0V2rD6VMmbCCib5djCj74e3beh3krOSplI7pWQvFDGK-54UOCh3sCGZHSxkjIK9gHxz7j/pub?gid=1162640324&single=true&output=csv';
   const CSV_URL = CSV_URL_BASE + '&t=' + Date.now();
   const state = {
     header: [],
@@ -388,7 +388,7 @@
 <script id="quality-patch">
 // --- Patch: stronger CSV parsing & column detection + visible warning ---
 (() => {
-  const CSV_URL_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkHKcql0V0V2rD6VMmbCCib5djCj74e3beh3krOSplI7pWQvFDGK-54UOCh3sCGZHSxkjIK9gHxz7j/gviz/tq?tqx=out:csv&gid=1162640324';
+  const CSV_URL_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkHKcql0V0V2rD6VMmbCCib5djCj74e3beh3krOSplI7pWQvFDGK-54UOCh3sCGZHSxkjIK9gHxz7j/pub?gid=1162640324&single=true&output=csv';
   const CSV_URL = CSV_URL_BASE + '&t=' + Date.now();
   const el = (s)=> document.querySelector(s);
   const isNumeric = (v)=> v!==null && v!=='' && !isNaN(Number((''+v).replace(/,/g,'')));
@@ -567,6 +567,70 @@
       if(cols.part>=0){ const d=topN(rows, cols.part, cols.qty>=0? cols.qty:null, 10); if(d.length){ document.querySelector('#card-category').hidden=false; document.querySelector('#category-title').textContent = `${header[cols.part]} 別（TOP10）`; new Chart(document.querySelector('#chartCategory'), {type:'bar', data:{labels:d.map(x=>x[0]), datasets:[{data:d.map(x=>x[1])}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}}); charts++; } }
       if(!charts){ const warn=document.createElement('div'); warn.style.cssText='max-width:1120px;margin:12px auto 0;padding:12px 16px;border:1px solid #f0ad4e;background:#fffbe6;border-radius:12px;color:#6b4f00;font-size:13px'; warn.innerHTML='CSVは取得できましたが、必要な列（年/月 など）が見つかりません。'; document.body.insertBefore(warn, document.body.children[1]); }
     }catch(err){ const warn=document.createElement('div'); warn.style.cssText='max-width:1120px;margin:12px auto 0;padding:12px 16px;border:1px solid #ef4444;background:#fff1f2;border-radius:12px;color:#991b1b;font-size:13px'; warn.textContent='品質情報の代替読み込みにも失敗しました。公開設定やURLをご確認ください。'; document.body.insertBefore(warn, document.body.children[1]); console.error(err); }
+  })();
+})();
+</script>
+<script id="quality-jsonp-fallback">
+// --- JSONP fallback (Google Visualization API: out:json) to bypass CORS ---
+(function(){
+  const monthlyCard = document.querySelector('#card-monthly');
+  if(!monthlyCard) return;
+  // If charts already displayed by previous loaders, abort
+  if(!monthlyCard.hidden || !document.querySelector('#card-customer')?.hidden || !document.querySelector('#card-category')?.hidden) return;
+
+  const base = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkHKcql0V0V2rD6VMmbCCib5djCj74e3beh3krOSplI7pWQvFDGK-54UOCh3sCGZHSxkjIK9gHxz7j/';
+  const gid = '1162640324';
+  const url = `${base}gviz/tq?tqx=out:json&gid=${gid}&_=${Date.now()}`;
+
+  function isNum(v){ return v!==null && v!=='' && !isNaN(Number((''+v).replace(/,/g,''))); }
+  function topN(rows, idx, qIdx, n){ const m=new Map(); for(const r of rows){ const k=(r[idx]||'').toString().trim(); if(!k) continue; const v=(qIdx!=null && isNum(r[qIdx]))? Number((''+r[qIdx]).replace(/,/g,'')) : 1; m.set(k,(m.get(k)||0)+v);} return [...m.entries()].sort((a,b)=> b[1]-a[1]).slice(0,n); }
+  function groupYM(rows, yIdx, mIdx, qIdx){ const map=new Map(); const now=new Date(); for(const r of rows){ const y=Number((r[yIdx]||'').toString().replace(/[^0-9]/g,'')); const m=Number((r[mIdx]||'').toString().replace(/[^0-9]/g,'')); if(!y||!m) continue; const key=`${y}-${String(m).padStart(2,'0')}`; const v=(qIdx!=null && isNum(r[qIdx]))? Number((''+r[qIdx]).replace(/,/g,'')) : 1; map.set(key,(map.get(key)||0)+v);} const labels=[], data=[]; for(let i=11;i>=0;i--){ const dt=new Date(now.getFullYear(), now.getMonth()-i, 1); const key=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; labels.push(`${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}`); data.push(map.get(key)||0);} return {labels,data}; }
+
+  function pickCols(header){
+    const H = header.map(h=> (h||'').toString());
+    const find=(alts)=> H.findIndex(h=> alts.some(a=> h.includes(a)));
+    const year = find(['年度','年','Year','year']);
+    const month = find(['月','Month','month']);
+    const qty = find(['数量(済)','数量','台数','個数','Qty','QTY','済']);
+    const cust = find(['顧客','顧客名','客先','Customer','得意先']);
+    const part = find(['部位','品名','品目','機種','型式','製品名','ASSY']);
+    return {year, month, qty, cust, part};
+  }
+
+  function drawAll(header, rows){
+    const cols = pickCols(header);
+    let charts=0;
+    if(cols.year>=0 && cols.month>=0){ const m=groupYM(rows, cols.year, cols.month, cols.qty>=0? cols.qty:null); if(m.data.some(v=>v>0)){ document.querySelector('#card-monthly').hidden=false; new Chart(document.querySelector('#chartMonthly'), {type:'line', data:{labels:m.labels, datasets:[{data:m.data, fill:true, tension:.25}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}}); charts++; } }
+    if(cols.cust>=0){ const d=topN(rows, cols.cust, cols.qty>=0? cols.qty:null, 10); if(d.length){ document.querySelector('#card-customer').hidden=false; new Chart(document.querySelector('#chartCustomer'), {type:'bar', data:{labels:d.map(x=>x[0]), datasets:[{data:d.map(x=>x[1])}]}, options:{responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false}}}}); charts++; } }
+    if(cols.part>=0){ const d=topN(rows, cols.part, cols.qty>=0? cols.qty:null, 10); if(d.length){ document.querySelector('#card-category').hidden=false; document.querySelector('#category-title').textContent = `${header[cols.part]} 別（TOP10）`; new Chart(document.querySelector('#chartCategory'), {type:'bar', data:{labels:d.map(x=>x[0]), datasets:[{data:d.map(x=>x[1])}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}}); charts++; } }
+    if(!charts){ const warn=document.createElement('div'); warn.style.cssText='max-width:1120px;margin:12px auto 0;padding:12px 16px;border:1px solid #f0ad4e;background:#fffbe6;border-radius:12px;color:#6b4f00;font-size:13px'; warn.innerHTML='CSV/JSONPは取得できましたが、必要な列（年/月・顧客・部位 など）が見つかりません。'; document.body.insertBefore(warn, document.body.children[1]); }
+  }
+
+  function toArrays(json){
+    // Convert Google Visualization JSON to [header, ...rows]
+    const cols = (json.table.cols||[]).map(c=> c.label || c.id || '');
+    const rows = (json.table.rows||[]).map(r=> cols.map((_,i)=> r.c[i]? (r.c[i].f ?? r.c[i].v ?? '') : ''));
+    return {header: cols, rows};
+  }
+
+  function loadJSONP(url){
+    return new Promise((resolve, reject)=>{
+      window.google = window.google || {}; window.google.visualization = window.google.visualization || {}; window.google.visualization.Query = window.google.visualization.Query || {};
+      window.google.visualization.Query.setResponse = (resp)=> resolve(resp);
+      const s=document.createElement('script'); s.src=url; s.onerror=reject; document.head.appendChild(s);
+      setTimeout(()=> reject(new Error('JSONP timeout')), 10000);
+    });
+  }
+
+  (async ()=>{
+    try{
+      const json = await loadJSONP(url);
+      if(!json || !json.table){ throw new Error('Invalid JSONP'); }
+      const {header, rows} = toArrays(json);
+      drawAll(header, rows);
+    }catch(err){
+      const warn=document.createElement('div'); warn.style.cssText='max-width:1120px;margin:12px auto 0;padding:12px 16px;border:1px solid #ef4444;background:#fff1f2;border-radius:12px;color:#991b1b;font-size:13px'; warn.textContent='JSONPでもデータ取得に失敗しました。スプレッドシートの公開設定をご確認ください。'; document.body.insertBefore(warn, document.body.children[1]); console.error(err);
+    }
   })();
 })();
 </script>
