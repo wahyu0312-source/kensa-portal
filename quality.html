@@ -147,14 +147,22 @@
 /* ========= CONFIG ========= */
 const CSV_URLS = [
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pub?gid=649800458&single=true&output=csv",
+  "https://cors.isomorphic-git.org/https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pub?gid=649800458&single=true&output=csv",
   "https://r.jina.ai/https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pub?gid=649800458&single=true&output=csv",
   "https://r.jina.ai/http://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pub?gid=649800458&single=true&output=csv",
 ];
-// fallback ke HTML table jika CSV kosong
+
 const PUBHTML_URLS = [
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pubhtml?gid=649800458&single=true",
+  "https://cors.isomorphic-git.org/https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pubhtml?gid=649800458&single=true",
   "https://r.jina.ai/https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pubhtml?gid=649800458&single=true",
   "https://r.jina.ai/http://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pubhtml?gid=649800458&single=true",
+];
+
+// GViz JSONP (tanpa CORS)
+const GVIZ_URLS = [
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/gviz/tq?gid=649800458",
+  "https://r.jina.ai/https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/gviz/tq?gid=649800458",
 ];
 
 const S = s => String(s ?? '').trim();
@@ -197,6 +205,55 @@ function applyChartDefaults(){
   Chart.defaults.color=ink; Chart.defaults.borderColor=grid;
   Chart.defaults.font.family='system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif';
 }
+Chart.register(ChartDataLabels);
+
+/* ========= GViz JSONP ========= */
+function parseGvizTable(tbl){
+  const header = (tbl.cols || []).map(c => (c && (c.label || c.id)) ? String(c.label || c.id).trim() : "");
+  const rows = (tbl.rows || []).map(r => (r.c || []).map((cell,i) => {
+    let v = cell ? cell.v : "";
+    if (v instanceof Date) {
+      const y=v.getFullYear(), m=v.getMonth()+1;
+      return `${y}-${String(m).padStart(2,'0')}`;
+    }
+    return v==null ? "" : String(v);
+  }));
+  return { header, rows };
+}
+function fetchGvizJSONP(baseUrl){
+  return new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    let timeoutId;
+    const prev = (((window.google||{}).visualization||{}).Query||{}).setResponse) || null;
+    window.google = window.google || {};
+    window.google.visualization = window.google.visualization || {};
+    window.google.visualization.Query = window.google.visualization.Query || {};
+
+    window.google.visualization.Query.setResponse = (resp)=>{
+      cleanup();
+      try{
+        if (resp && resp.table){
+          const {header, rows} = parseGvizTable(resp.table);
+          if (header.length && rows.length) { resolve({header, rows}); return; }
+        }
+        reject(new Error('GViz empty'));
+      }catch(e){ reject(e); }
+    };
+
+    function cleanup(){
+      clearTimeout(timeoutId);
+      s.remove();
+      if (prev) window.google.visualization.Query.setResponse = prev;
+      else delete window.google.visualization.Query.setResponse;
+    }
+
+    s.onerror = ()=>{ cleanup(); reject(new Error('GViz load error')); };
+    const url = baseUrl + (baseUrl.includes('?') ? '&':'?') + 'tqx=out:json&tq=' + encodeURIComponent('select *') + '&_ts=' + Date.now();
+    s.src = url;
+    timeoutId = setTimeout(()=>{ cleanup(); reject(new Error('GViz timeout')); }, 12000);
+    document.body.appendChild(s);
+  });
+}
 
 /* ========= STATE ========= */
 let isLoading=false;
@@ -218,10 +275,10 @@ function indexByName(header){
 }
 const valAt=(row,i)=> (i==null ? '' : (row[i] ?? ''));
 
-/* ========= FETCH ANY (CSV → HTML fallback) ========= */
+/* ========= FETCH (CSV → HTML → GViz) ========= */
 async function fetchAny(){
-  // coba CSV
-  for(const u of CSV_URLS){
+  // 1) CSV
+  for (const u of CSV_URLS){
     try{
       const res=await fetch(u + (u.includes('?')?'&':'?') + '_ts=' + Date.now(), {cache:'no-store'});
       if(!res.ok) continue;
@@ -229,21 +286,27 @@ async function fetchAny(){
       if(txt && txt.trim().length>0){
         const arr=parseCSV(txt);
         if(arr.length>=2) return {mode:'csv', header:arr[0], rows:arr.slice(1)};
-        console.warn('CSV empty, trying HTML fallback. first100=', txt.slice(0,100));
       }
-    }catch(e){ /* try next */ }
+    }catch(e){}
   }
-  // fallback ke pubhtml (table)
-  for(const u of PUBHTML_URLS){
+  // 2) pubhtml table
+  for (const u of PUBHTML_URLS){
     try{
       const res=await fetch(u + (u.includes('?')?'&':'?') + '_ts=' + Date.now(), {cache:'no-store'});
       if(!res.ok) continue;
       const html=await res.text();
       const {header, rows} = parsePubHtml(html);
       if(header.length && rows.length) return {mode:'html', header, rows};
-    }catch(e){ /* try next */ }
+    }catch(e){}
   }
-  throw new Error('No data from CSV or HTML');
+  // 3) GViz JSONP
+  for (const u of GVIZ_URLS){
+    try{
+      const out = await fetchGvizJSONP(u);
+      if(out.header.length && out.rows.length) return {mode:'gviz', header:out.header, rows:out.rows};
+    }catch(e){}
+  }
+  throw new Error('No data from CSV/HTML/GViz');
 }
 
 /* ========= AGGREGATE ========= */
@@ -377,7 +440,7 @@ async function load(){
     render();
     btn.textContent=old; btn.disabled=false; isLoading=false;
   }catch(e){
-    console.error(e); showErr('読み込みに失敗しました。公開設定/ネットワークをご確認ください。' + (e?.message? ' ('+e.message+')':'' ));
+    console.error(e); showErr('読み込みに失敗しました。公開設定/ネットワークをご確認ください。（No data from CSV/HTML/GViz）');
     const btn=document.getElementById('btnRefresh'); btn.textContent='Refresh now'; btn.disabled=false; isLoading=false;
   }
 }
