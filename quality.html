@@ -16,7 +16,6 @@
     --card:#0f172a; --ink:#e5e7eb; --muted:#94a3b8; --border:#1f2937;
     --accent:#60a5fa; --shadow:none; --grid:#223044;
   }
-
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
@@ -26,11 +25,9 @@
       radial-gradient(1200px 600px at -10% -10%, #c7d2fe33 0%, transparent 60%),
       radial-gradient(900px 500px at 110% 0%, #bae6fd33 0%, transparent 55%),
       linear-gradient(120deg,var(--bg1),var(--bg2));
-    padding-bottom:64px;
-    transition:padding-bottom .2s ease;
+    padding-bottom:64px; transition:padding-bottom .2s ease;
   }
   body.has-ticker{ padding-bottom: calc(64px + var(--ticker-h) + 12px); }
-
   header{position:sticky;top:0;z-index:10;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
   [data-theme="dark"] header{background:#0f172acc}
   .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
@@ -43,50 +40,35 @@
   .btn.active{border-color:#93c5fd;background:#f0f9ff}
   [data-theme="dark"] .btn.active{background:#0b3b6f66}
   .small{font-size:12px;color:var(--muted)}
-
   main{max-width:1200px;margin:26px auto;padding:0 20px}
   .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
   .card-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 10px}
   .title-nowrap{white-space:nowrap}
   @media (max-width:640px){ .title-nowrap{white-space:normal} }
-
   .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   select.btn{appearance:none;padding-right:26px;background-image:
     linear-gradient(45deg,transparent 50%,#64748b 50%),
     linear-gradient(135deg,#64748b 50%,transparent 50%);
     background-position:calc(100% - 18px) calc(1em - 2px),calc(100% - 13px) calc(1em - 2px);
-    background-size:5px 5px;background-repeat:no-repeat
-  }
-
+    background-size:5px 5px;background-repeat:no-repeat}
   .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .toolbar .spacer{flex:1 1 auto}
-
   .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .chart-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;min-height:380px;display:flex;align-items:center;justify-content:center}
   .chart-box.wide{grid-column:1/-1}
   .chart-box canvas{width:100%!important;height:330px!important}
   @media (max-width:900px){.chart-grid{grid-template-columns:1fr}}
   @media (max-width:768px){.row{flex-direction:column;align-items:flex-start}}
-
   /* Ticker */
-  .marquee{
-    position:fixed; left:0; right:0; bottom:20px; z-index:20;
-    width:max(280px,70%); margin:0 auto; height:var(--ticker-h); line-height:var(--ticker-h);
-    background:var(--accent); color:#fff; font-weight:600; border-radius:8px;
-    white-space:nowrap; overflow:hidden; box-shadow:0 6px 20px #0002;
-    transition:transform .25s ease, opacity .2s ease;
-  }
+  .marquee{position:fixed; left:0; right:0; bottom:20px; z-index:20; width:max(280px,70%); margin:0 auto; height:var(--ticker-h); line-height:var(--ticker-h); background:var(--accent); color:#fff; font-weight:600; border-radius:8px; white-space:nowrap; overflow:hidden; box-shadow:0 6px 20px #0002; transition:transform .25s ease, opacity .2s ease;}
   .marquee span{display:inline-block; padding:0 16px 0 100%; animation:marquee 25s linear infinite}
   .marquee:hover span{animation-play-state:paused}
   .marquee.hidden{transform:translateY(140%); opacity:0; pointer-events:none}
-  .marquee .close{
-    position:absolute; right:8px; top:0; bottom:0; margin:auto; height:22px; width:22px;
-    border:none; border-radius:6px; background:#ffffff33; color:#fff; cursor:pointer; line-height:22px;
-  }
+  .marquee .close{position:absolute; right:8px; top:0; bottom:0; margin:auto; height:22px; width:22px; border:none; border-radius:6px; background:#ffffff33; color:#fff; cursor:pointer; line-height:22px}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
-
   .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:var(--muted);background:#f1f5f9;padding:4px 0;z-index:21}
   [data-theme="dark"] .footer{background:#0b1220}
+  .banner{max-width:1200px;margin:10px auto 0;padding:10px 14px;border:1px solid #f0ad4e;background:#fffbe6;color:#6b4f00;border-radius:10px;font-size:13px}
 </style>
 </head>
 <body>
@@ -117,6 +99,8 @@
 </header>
 
 <main>
+  <div id="err" class="banner" style="display:none"></div>
+
   <section class="card" style="margin-bottom:16px">
     <div class="card-title">
       <h2 class="title-nowrap" style="margin:0">品質情報 — グラフ</h2>
@@ -129,25 +113,11 @@
 
     <div class="filterbar" aria-label="フィルター">
       <label class="small">Top 顧客:</label>
-      <select id="selTop" class="btn">
-        <option value="5">5</option>
-        <option value="10" selected>10</option>
-        <option value="15">15</option>
-        <option value="30">30</option>
-      </select>
-
+      <select id="selTop" class="btn"><option value="5">5</option><option value="10" selected>10</option><option value="15">15</option><option value="30">30</option></select>
       <label class="small">対象 年:</label>
       <select id="selYear" class="btn"></select>
-
       <label class="small">Quarter:</label>
-      <select id="selQuarter" class="btn">
-        <option value="ALL" selected>All</option>
-        <option value="Q1">Q1</option>
-        <option value="Q2">Q2</option>
-        <option value="Q3">Q3</option>
-        <option value="Q4">Q4</option>
-      </select>
-
+      <select id="selQuarter" class="btn"><option value="ALL" selected>All</option><option value="Q1">Q1</option><option value="Q2">Q2</option><option value="Q3">Q3</option><option value="Q4">Q4</option></select>
       <label class="small">月:</label>
       <select id="selMonth" class="btn" title="Quarter dipilih → opsi bulan nonaktif">
         <option value="ALL" selected>All</option>
@@ -156,24 +126,14 @@
         <option value="07">7</option><option value="08">8</option><option value="09">9</option>
         <option value="10">10</option><option value="11">11</option><option value="12">12</option>
       </select>
-
       <label class="small">クレーム種類:</label>
       <select id="selType" class="btn"><option value="ALL" selected>All</option></select>
-
       <label class="small">顧客:</label>
       <select id="selCust" class="btn"></select>
-
-      <label class="small" style="display:flex;align-items:center;gap:6px">
-        <input id="chkPareto" type="checkbox"> Pareto
-      </label>
-
+      <label class="small" style="display:flex;align-items:center;gap:6px"><input id="chkPareto" type="checkbox"> Pareto</label>
       <label class="small">向き:</label>
-      <select id="selOrient" class="btn" title="すべてのグラフの向き">
-        <option value="h" selected>Horizontal</option>
-        <option value="v">Vertical</option>
-      </select>
-
-      <button class="btn" id="btnReset" type="button" title="Reset ke default">Reset</button>
+      <select id="selOrient" class="btn"><option value="h" selected>Horizontal</option><option value="v">Vertical</option></select>
+      <button class="btn" id="btnReset" type="button">Reset</button>
     </div>
 
     <div class="small" id="chartNote" style="margin-top:6px">集計は1行=1件でカウント。フィルター: 年/月/Quarter/種類/顧客。</div>
@@ -196,435 +156,327 @@
 
 <div class="footer">Design by Wahyu</div>
 
-<!-- Libraries -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Base libs (primary CDN) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
-  // ===== Config & helpers =====
-  const CSV_URL  ="https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pub?gid=649800458&single=true&output=csv";
-  const S = s => String(s ?? '').trim();
-  const QUARTERS = {Q1:[1,2,3], Q2:[4,5,6], Q3:[7,8,9], Q4:[10,11,12]};
-  Chart.register(ChartDataLabels);
+/* ================= Fallback loader (untuk jaringan yang blok CDN) ================= */
+async function loadScriptOnce(url){
+  if([ ...document.scripts ].some(s => (s.src||'').includes(url))) return;
+  await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=url; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
+}
+async function ensureLibs(){
+  try{
+    if(!window.Chart) await loadScriptOnce('https://unpkg.com/chart.js@4.4.4/dist/chart.umd.js');
+    if(!window.Chart) throw new Error('Chart.js gagal dimuat');
+    if(!window.ChartDataLabels) await loadScriptOnce('https://unpkg.com/chartjs-plugin-datalabels@2');
+  }catch(e){
+    showErr('ライブラリの読み込みに失敗しました。ネットワーク/ブロックの有無をご確認ください。');
+    throw e;
+  }
+}
 
-  function parseCSV(t){
-    const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
-    let m, row=[]; t=t.replace(/\r\n?/g,"\n");
-    for(let i=0;i<t.length;){
-      re.lastIndex=i; m=re.exec(t); if(!m) break;
-      let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-      row.push(cell); i=re.lastIndex;
-      if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
+/* ================= Config & helpers ================= */
+const CSV_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pub?gid=649800458&single=true&output=csv";
+const S = s => String(s ?? '').trim();
+const QUARTERS = {Q1:[1,2,3], Q2:[4,5,6], Q3:[7,8,9], Q4:[10,11,12]};
+function showErr(msg){ const b=document.getElementById('err'); b.textContent=msg; b.style.display='block'; }
+function hideErr(){ const b=document.getElementById('err'); b.style.display='none'; b.textContent=''; }
+
+function parseCSV(t){
+  const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
+  let m, row=[]; t=t.replace(/\r\n?/g,"\n");
+  for(let i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break;
+    let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
+    row.push(cell); i=re.lastIndex; if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; } }
+  return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
+}
+function indexByName(header){
+  const map={}; header.forEach((h,i)=>map[S(h)]=i);
+  const find=(names)=>{ for(const n of names){ if(n in map) return map[n]; } return null; };
+  const findFuzzy=(re)=>{ for(let i=0;i<header.length;i++){ if(re.test(S(header[i]))) return i; } return null; };
+  return {
+    ym:   find(["年月"]) ?? findFuzzy(/年月|year.*month|ym/i),
+    date: find(["受付日","日付","Date"]) ?? findFuzzy(/(受付|日付|date)/i),
+    type: find(["クレーム種類","種類","種別"]) ?? findFuzzy(/(クレーム|種類|種別)/),
+    cust: find(["顧客名","客先","Customer"]) ?? findFuzzy(/(顧客|客先|customer)/i),
+    dept: find(["部署","部門","課"]) ?? findFuzzy(/(部署|部門|課)/),
+  };
+}
+const valAt=(row, idx)=> (idx==null ? "" : (row[idx] ?? ""));
+function parseJPDate(str){
+  const s=String(str??"").trim();
+  const m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+  if(m) return new Date(m[1], m[2]-1, m[3]);
+  const parts=s.replaceAll('-','/').split('/');
+  if(parts.length===3) return new Date(parts[0], parts[1]-1, parts[2]);
+  const d=new Date(s); return isNaN(d)?null:d;
+}
+function parseYMText(str){
+  const s=String(str??"").trim();
+  let m=s.match(/^(\d{4})\D(\d{1,2})$/); if(!m) m=s.match(/^(\d{4})(\d{1,2})$/);
+  if(!m) return null; const y=+m[1], mo=+m[2]; return (y && mo>=1 && mo<=12) ? {y, m:mo} : null;
+}
+const intTick=v=>Number.isInteger(v)?v:'';
+const isDark=()=> document.documentElement.getAttribute('data-theme')==='dark';
+const PALETTE_LIGHT=['#93c5fd','#a5b4fc','#fda4af','#fdba74','#86efac','#67e8f9','#f5d0fe','#c4b5fd','#fecaca','#fde68a','#bbf7d0','#bae6fd'];
+const PALETTE_DARK=['#60a5fa','#818cf8','#fca5a5','#fbbf24','#4ade80','#22d3ee','#f0abfc','#a78bfa','#f87171','#fde047','#86efac','#93c5fd'];
+const hexToRgba=(hex,a=0.8)=>{const h=hex.replace('#','');const b=parseInt(h,16);return`rgba(${(b>>16)&255},${(b>>8)&255},${b&255},${a})`};
+function softPalette(n,a=0.8){const base=isDark()?PALETTE_DARK:PALETTE_LIGHT; return Array.from({length:n},(_,i)=>hexToRgba(base[i%base.length],a));}
+function getTheme(){const st=getComputedStyle(document.documentElement);return {ink:st.getPropertyValue('--ink').trim()||'#0f172a',grid:st.getPropertyValue('--grid').trim()||'#e5e7eb'};}
+function applyChartDefaults(){
+  const c=getTheme();
+  Chart.defaults.color=c.ink; Chart.defaults.borderColor=c.grid;
+  Chart.defaults.font.family='system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif';
+  Chart.defaults.plugins=Chart.defaults.plugins||{}; Chart.defaults.plugins.legend=Chart.defaults.plugins.legend||{};
+  Chart.defaults.plugins.legend.labels=Chart.defaults.plugins.legend.labels||{}; Chart.defaults.plugins.legend.labels.color=c.ink;
+}
+
+/* ================= State ================= */
+let aborter=null,isLoading=false;
+let cached={header:[],rows:[],idx:null};
+let charts={dept:null,type:null,cust:null};
+let lastAgg=null;
+
+/* ================= Aggregate ================= */
+function aggregate({rows, idx, topN, yearPick, quarterPick, monthPick, typePick, custPick}){
+  const monthList = quarterPick==='ALL' ? null : QUARTERS[quarterPick];
+  const mapDept=new Map(), mapType=new Map(), mapCust=new Map();
+
+  for(const r of rows){
+    let y=null,m=null;
+    if(idx.ym!=null){ const ym=parseYMText(valAt(r,idx.ym)); if(ym){ y=ym.y; m=ym.m; } }
+    if((!y||!m) && idx.date!=null){ const d=parseJPDate(valAt(r,idx.date)); if(d){ y=d.getFullYear(); m=d.getMonth()+1; } }
+    if(!y||!m) continue;
+    if(String(y)!==String(yearPick)) continue;
+    const inQ = monthList ? monthList.includes(m) : true;
+    const inM = (monthPick==='ALL'? true : (m===parseInt(monthPick,10)));
+    if(!inQ || !inM) continue;
+
+    const type= idx.type!=null? S(valAt(r,idx.type)) : '';
+    const cust= idx.cust!=null? (S(valAt(r,idx.cust)) || '不明') : '不明';
+    const dept= idx.dept!=null? (S(valAt(r,idx.dept)) || '不明') : '不明';
+
+    if(typePick!=='ALL' && type!==typePick) continue;
+    if(custPick && cust!==custPick) continue;
+
+    if(dept) mapDept.set(dept,(mapDept.get(dept)||0)+1);
+    if(type) mapType.set(type,(mapType.get(type)||0)+1);
+    if(cust) mapCust.set(cust,(mapCust.get(cust)||0)+1);
+  }
+
+  const toTop=(mp,n)=>{const arr=[...mp.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n); return {labels:arr.map(x=>x[0]), data:arr.map(x=>x[1])};};
+  return {
+    byDept: toTop(mapDept, mapDept.size),
+    byType: toTop(mapType, mapType.size),
+    byCust: toTop(mapCust, topN)
+  };
+}
+
+/* ================= Pareto helper ================= */
+function addParetoIfNeeded(cfg, labels, values, enable, isHorizontal){
+  if(!enable) return;
+  const total=values.reduce((n,v)=>n+v,0);
+  let cum=0; const pct=values.map(v=>{cum+=v; return total? +(cum/total*100).toFixed(1):0;});
+  const amber=isDark()?'rgba(251,191,36,.95)':'rgba(234,179,8,.95)';
+  const ds={type:'line',label:'累積％',tension:.2,pointRadius:3,borderColor:amber,backgroundColor:'transparent',pointBackgroundColor:amber,pointBorderColor:amber,datalabels:{display:false}};
+  cfg.options.scales=cfg.options.scales||{};
+  if(isHorizontal){ ds.data=labels.map((lab,i)=>({x:pct[i],y:lab})); cfg.options.scales.x1={beginAtZero:true,max:100,position:'top',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}}; }
+  else { ds.data=pct; ds.yAxisID='y1'; cfg.options.scales.y1={beginAtZero:true,max:100,position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}}; }
+  cfg.data.datasets.push(ds);
+}
+
+/* ================= Render ================= */
+function render(){
+  applyChartDefaults();
+  const topN=+document.getElementById('selTop').value||10;
+  const yearPick=document.getElementById('selYear').value;
+  const quarterPick=document.getElementById('selQuarter').value;
+  const monthPick=document.getElementById('selMonth').value;
+  const typePick=document.getElementById('selType').value;
+  const custPick=document.getElementById('selCust').value;
+  const isPareto=document.getElementById('chkPareto').checked;
+  const isHorizontal=document.getElementById('selOrient').value==='h';
+  document.getElementById('selMonth').disabled = (quarterPick!=='ALL');
+
+  const agg=aggregate({rows:cached.rows, idx:cached.idx, topN, yearPick, quarterPick, monthPick, typePick, custPick});
+  const periodLabel = quarterPick!=='ALL' ? `${yearPick}年 ${quarterPick}` : (monthPick==='ALL'? `${yearPick}年 全月` : `${yearPick}年 ${parseInt(monthPick,10)}月`);
+  const theme=getTheme();
+
+  const drawBar=(canvasId,title,labels,values)=>{
+    const ctx=document.getElementById(canvasId).getContext('2d');
+    const colors=softPalette(values.length,isDark()?0.7:0.8);
+    const maxV=Math.max(1,...values);
+    const cfg={type:'bar',
+      data:{labels, datasets:[{label:'件数', data:values, backgroundColor:colors, borderColor:colors, borderWidth:1, maxBarThickness:28, categoryPercentage:.7, barPercentage:.9}]},
+      options:{indexAxis:isHorizontal?'y':'x', maintainAspectRatio:false, layout:{padding:{top:6,right:8,left:4,bottom:0}},
+        plugins:{legend:{display:false}, title:{display:true,text:title}, datalabels:{anchor:'end', align:isHorizontal?'right':'top', formatter:v=>v, color:theme.ink}},
+        scales: isHorizontal ? {x:{beginAtZero:true,suggestedMax:maxV*1.15,ticks:{callback:intTick}}, y:{grid:{display:false}}}
+                              : {y:{beginAtZero:true,suggestedMax:maxV*1.15,ticks:{callback:intTick}}, x:{grid:{display:false}}}
+      }};
+    return {ctx,cfg};
+  };
+
+  if(charts.dept) charts.dept.destroy();
+  {
+    const {ctx,cfg}=drawBar('chartDept', `クレーム（部署別｜${periodLabel}${typePick!=='ALL'?'｜'+typePick:''}）`, agg.byDept.labels, agg.byDept.data);
+    addParetoIfNeeded(cfg, agg.byDept.labels, agg.byDept.data, isPareto, isHorizontal);
+    charts.dept=new Chart(ctx,cfg);
+  }
+  if(charts.type) charts.type.destroy();
+  {
+    const {ctx,cfg}=drawBar('chartType', `クレーム（種類別｜${periodLabel}${custPick? '｜'+custPick : ''}）`, agg.byType.labels, agg.byType.data);
+    addParetoIfNeeded(cfg, agg.byType.labels, agg.byType.data, isPareto, isHorizontal);
+    charts.type=new Chart(ctx,cfg);
+  }
+  if(charts.cust) charts.cust.destroy();
+  {
+    const {ctx,cfg}=drawBar('chartCust', `クレーム（顧客別 TOP${topN}｜${periodLabel}${typePick!=='ALL'?'｜'+typePick:''}）`, agg.byCust.labels, agg.byCust.data);
+    addParetoIfNeeded(cfg, agg.byCust.labels, agg.byCust.data, isPareto, isHorizontal);
+    charts.cust=new Chart(ctx,cfg);
+  }
+
+  document.getElementById('chartNote').textContent = `期間: ${periodLabel} ／ 種類: ${typePick==='ALL'?'(全て)':typePick} ／ 顧客フィルタ: ${custPick||'(なし)'} ／ 集計は1行=1件`;
+}
+
+/* ================= Load CSV ================= */
+async function load(){
+  hideErr();
+  try{
+    if(isLoading){ aborter?.abort(); }
+    isLoading=true;
+    const btn=document.getElementById('btnRefresh'); const old=btn.textContent; btn.textContent='Loading...'; btn.disabled=true;
+
+    aborter=new AbortController();
+    const res=await fetch(CSV_URL + "&_ts=" + Date.now(), {signal:aborter.signal, cache:'no-store'});
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const text=await res.text(); const arr=parseCSV(text);
+    if(!arr.length) throw new Error('CSV empty');
+
+    const header=arr[0], rowsRaw=arr.slice(1), idx=indexByName(header);
+    if([idx.ym,idx.date,idx.type,idx.cust,idx.dept].every(v=>v==null)){
+      showErr('CSVの列名を検出できません。1行目（ヘッダ）に「年月 / 受付日 / クレーム種類 / 顧客名 / 部署」があるか確認してください。'); 
+      console.warn('Header:', header);
+      return;
     }
-    return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
-  }
+    cached={header, rows:rowsRaw, idx};
 
-  function indexByName(header){
-    const map={}; header.forEach((h,i)=>map[S(h)]=i);
-    const find=(names)=>{ for(const n of names){ if(n in map) return map[n]; } return null; };
-    const findFuzzy=(re)=>{ for(let i=0;i<header.length;i++){ if(re.test(S(header[i]))) return i; } return null; };
-    return {
-      ym:   find(["年月"]) ?? findFuzzy(/年月|year.*month|ym/i),
-      date: find(["受付日","日付","Date"]) ?? findFuzzy(/(受付|日付|date)/i),
-      type: find(["クレーム種類","種類","種別"]) ?? findFuzzy(/(クレーム|種類|種別)/),
-      cust: find(["顧客名","客先","Customer"]) ?? findFuzzy(/(顧客|客先|customer)/i),
-      dept: find(["部署","部門","課"]) ?? findFuzzy(/(部署|部門|課)/),
-    };
-  }
-  const valAt = (row, idx) => (idx==null ? "" : (row[idx] ?? ""));
-
-  function parseJPDate(str){
-    const s=String(str??"").trim();
-    const m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
-    if(m) return new Date(m[1], m[2]-1, m[3]);
-    const parts=s.replaceAll('-','/').split('/');
-    if(parts.length===3) return new Date(parts[0], parts[1]-1, parts[2]);
-    const d=new Date(s);
-    return isNaN(d)?null:d;
-  }
-  function parseYMText(str){
-    const s=String(str??"").trim();
-    let m=s.match(/^(\d{4})\D(\d{1,2})$/);
-    if(!m) m=s.match(/^(\d{4})(\d{1,2})$/);
-    if(!m) return null;
-    const y=+m[1], mo=+m[2];
-    return (y && mo>=1 && mo<=12) ? {y, m:mo} : null;
-  }
-  const ymKey=(y,m)=>`${y}-${String(m).padStart(2,'0')}`;
-  const intTick=(v)=>Number.isInteger(v)?v:'';
-
-  // ===== Theme & palette =====
-  const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
-  const PALETTE_LIGHT = ['#93c5fd','#a5b4fc','#fda4af','#fdba74','#86efac','#67e8f9','#f5d0fe','#c4b5fd','#fecaca','#fde68a','#bbf7d0','#bae6fd'];
-  const PALETTE_DARK  = ['#60a5fa','#818cf8','#fca5a5','#fbbf24','#4ade80','#22d3ee','#f0abfc','#a78bfa','#f87171','#fde047','#86efac','#93c5fd'];
-  const hexToRgba=(hex,a=0.8)=>{const h=hex.replace('#','');const b=parseInt(h,16);return`rgba(${(b>>16)&255},${(b>>8)&255},${b&255},${a})`};
-  function softPalette(n, alpha=0.8){ const base=isDark()?PALETTE_DARK:PALETTE_LIGHT; return Array.from({length:n},(_,i)=>hexToRgba(base[i%base.length],alpha)); }
-  function getTheme(){
-    const st=getComputedStyle(document.documentElement);
-    return { ink:st.getPropertyValue('--ink').trim()||'#0f172a', muted:st.getPropertyValue('--muted').trim()||'#64748b', grid:st.getPropertyValue('--grid').trim()||'#e5e7eb' };
-  }
-  function applyChartDefaults(){
-    const c=getTheme();
-    Chart.defaults.color=c.ink;
-    Chart.defaults.borderColor=c.grid;
-    Chart.defaults.font.family='system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif';
-    Chart.defaults.plugins=Chart.defaults.plugins||{};
-    Chart.defaults.plugins.legend=Chart.defaults.plugins.legend||{};
-    Chart.defaults.plugins.legend.labels=Chart.defaults.plugins.legend.labels||{};
-    Chart.defaults.plugins.legend.labels.color=c.ink;
-    Chart.defaults.plugins.title=Chart.defaults.plugins.title||{};
-    Chart.defaults.plugins.title.color=c.ink;
-    Chart.defaults.plugins.tooltip=Chart.defaults.plugins.tooltip||{};
-    Chart.defaults.plugins.tooltip.backgroundColor=isDark()?'rgba(15,23,42,.95)':'rgba(255,255,255,.95)';
-    Chart.defaults.plugins.tooltip.titleColor=isDark()?'#e5e7eb':'#0f172a';
-    Chart.defaults.plugins.tooltip.bodyColor=isDark()?'#e5e7eb':'#0f172a';
-    Chart.defaults.plugins.tooltip.borderColor=c.grid;
-    Chart.defaults.plugins.tooltip.borderWidth=1;
-  }
-
-  // ===== State =====
-  let aborter=null, isLoading=false;
-  let cached={ header:[], rows:[], idx:null };
-  let charts={ dept:null, type:null, cust:null };
-  let lastAgg=null;
-
-  // ===== Aggregate (1行=1件) =====
-  function aggregate({rows, idx, topN, yearPick, quarterPick, monthPick, typePick, custPick}){
-    const monthList = quarterPick==='ALL' ? null : QUARTERS[quarterPick];
-    const mapDept=new Map(), mapType=new Map(), mapCust=new Map();
-    const years = new Set();
-
-    for(const r of rows){
-      // extract date fields
-      let y=null, m=null;
-      if(idx.ym!=null){
-        const ym=parseYMText(valAt(r, idx.ym));
-        if(ym){ y=ym.y; m=ym.m; }
-      }
-      if((!y||!m) && idx.date!=null){
-        const d=parseJPDate(valAt(r, idx.date));
-        if(d){ y=d.getFullYear(); m=d.getMonth()+1; }
-      }
-      if(!y||!m) continue;
-      years.add(y);
-
-      // filter period
-      if(String(y)!==String(yearPick)) continue;
-      const inQuarter = monthList ? monthList.includes(m) : true;
-      const inMonth   = (monthPick==='ALL' ? true : (m===parseInt(monthPick,10)));
-      if(!inQuarter || !inMonth) continue;
-
-      const type = idx.type!=null ? S(valAt(r, idx.type)) : '';
-      const cust = idx.cust!=null ? (S(valAt(r, idx.cust)) || '不明') : '不明';
-      const dept = idx.dept!=null ? (S(valAt(r, idx.dept)) || '不明') : '不明';
-
-      if(typePick!=='ALL' && type !== typePick) continue;
-      if(custPick && cust !== custPick) continue;
-
-      // count
-      if(dept) mapDept.set(dept,(mapDept.get(dept)||0)+1);
-      if(type) mapType.set(type,(mapType.get(type)||0)+1);
-      if(cust) mapCust.set(cust,(mapCust.get(cust)||0)+1);
+    // build filters
+    const yearSet=new Set(), typeSet=new Set(), custTotals=new Map();
+    for(const r of rowsRaw){
+      let y=null,m=null;
+      if(idx.ym!=null){ const ym=parseYMText(valAt(r,idx.ym)); if(ym){ y=ym.y; m=ym.m; } }
+      if((!y||!m) && idx.date!=null){ const d=parseJPDate(valAt(r,idx.date)); if(d){ y=d.getFullYear(); m=d.getMonth()+1; } }
+      if(y) yearSet.add(String(y));
+      if(idx.type!=null){ const t=S(valAt(r, idx.type)); if(t) typeSet.add(t); }
+      if(idx.cust!=null){ const c=S(valAt(r, idx.cust)) || '不明'; custTotals.set(c,(custTotals.get(c)||0)+1); }
     }
+    const years=[...yearSet].sort();
+    const types=[...typeSet].sort();
+    const customers=[...custTotals.entries()].sort((a,b)=>b[1]-a[1]).map(([c])=>c);
 
-    const toTop = (mp, n=topN) => {
-      const arr=[...mp.entries()].sort((a,b)=>b[1]-a[1]).slice(0, n);
-      return { labels:arr.map(([k])=>k), data:arr.map(([,v])=>v) };
-    };
+    const selYear=document.getElementById('selYear');
+    selYear.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    selYear.value = years.at(-1) || new Date().getFullYear();
 
-    const byDept = toTop(mapDept, mapDept.size); // all
-    const byType = toTop(mapType, mapType.size);
-    const byCust = toTop(mapCust, topN);
+    const selType=document.getElementById('selType');
+    selType.innerHTML = `<option value="ALL">All</option>` + types.map(t=>`<option value="${t}">${t}</option>`).join('');
 
-    lastAgg={ byDept, byType, byCust, yearPick, quarterPick, monthPick, typePick, custPick };
-    return lastAgg;
-  }
+    const selCust=document.getElementById('selCust');
+    selCust.innerHTML = `<option value="">(指定なし)</option>` + customers.map(c=>`<option value="${c}">${c}</option>`).join('');
+    selCust.value = '';
 
-  // ===== Pareto helpers (supports H/V) =====
-  function addParetoIfNeeded(cfg, labels, values, enable, isHorizontal){
-    if(!enable) return;
-    const total=values.reduce((n,v)=>n+v,0);
-    let cum=0;
-    const pct=values.map(v=>{cum+=v; return total? +(cum/total*100).toFixed(1):0;});
-    const amber=isDark()?'rgba(251,191,36,.95)':'rgba(234,179,8,.95)';
-
-    const ds={
-      type:'line', label:'累積％', tension:.2, pointRadius:3,
-      borderColor:amber, backgroundColor:'transparent',
-      pointBackgroundColor:amber, pointBorderColor:amber,
-      datalabels:{ anchor:'end', align:'top', formatter:(v)=> (typeof v==='object'? v.x:v)+'%' }
-    };
-
-    cfg.options.scales = cfg.options.scales || {};
-    if(isHorizontal){
-      ds.data = labels.map((lab,i)=>({x:pct[i], y:lab}));
-      cfg.options.scales.x1 = { beginAtZero:true, max:100, position:'top',
-        grid:{ drawOnChartArea:false }, ticks:{ callback:(v)=>v+'%' } };
-    }else{
-      ds.data = pct; ds.yAxisID='y1';
-      cfg.options.scales.y1 = { beginAtZero:true, max:100, position:'right',
-        grid:{ drawOnChartArea:false }, ticks:{ callback:(v)=>v+'%' } };
-    }
-    cfg.data.datasets.push(ds);
-  }
-
-  // ===== Render =====
-  function render(){
-    applyChartDefaults();
-
-    const topN=+document.getElementById('selTop').value || 10;
-    const yearPick=document.getElementById('selYear').value;
-    const quarterPick=document.getElementById('selQuarter').value;
-    const monthPick=document.getElementById('selMonth').value;
-    const typePick=document.getElementById('selType').value;
-    const custPick=document.getElementById('selCust').value;
-    const isPareto=document.getElementById('chkPareto').checked;
-    const isHorizontal=document.getElementById('selOrient').value==='h';
-
-    document.getElementById('selMonth').disabled = (quarterPick!=='ALL');
-
-    const agg=aggregate({rows:cached.rows, idx:cached.idx, topN, yearPick, quarterPick, monthPick, typePick, custPick});
-    const periodLabel = quarterPick!=='ALL' ? `${yearPick}年 ${quarterPick}` : (monthPick==='ALL'? `${yearPick}年 全月` : `${yearPick}年 ${parseInt(monthPick,10)}月`);
-
-    const theme=getTheme();
-
-    // Chart A: 部署内訳（期間）
-    const ctxA=document.getElementById('chartDept').getContext('2d');
-    const colorsA=softPalette(agg.byDept.data.length, isDark()?0.7:0.8);
-    const maxA=Math.max(1,...agg.byDept.data);
-    const cfgA={
-      type:'bar',
-      data:{ labels:agg.byDept.labels,
-        datasets:[{ label:'件数', data:agg.byDept.data,
-          backgroundColor:colorsA, borderColor:colorsA, borderWidth:1,
-          maxBarThickness:28, categoryPercentage:.7, barPercentage:.9 }]},
-      options:{
-        indexAxis: isHorizontal ? 'y':'x',
-        maintainAspectRatio:false,
-        layout:{padding:{top:6,right:8,left:4,bottom:0}},
-        plugins:{ legend:{display:false},
-          title:{display:true,text:`クレーム（部署別｜${periodLabel}${typePick!=='ALL' ? '｜'+typePick : ''}）`},
-          datalabels:{ anchor:'end', align:isHorizontal?'right':'top', formatter:(v)=>v, color:theme.ink } },
-        scales: isHorizontal ? {
-          x:{ beginAtZero:true, suggestedMax:maxA*1.15, ticks:{ callback:intTick }, grid:{color:theme.grid} },
-          y:{ grid:{ display:false } }
-        } : {
-          y:{ beginAtZero:true, suggestedMax:maxA*1.15, ticks:{ callback:intTick }, grid:{color:theme.grid} },
-          x:{ grid:{ display:false } }
-        }
-      }
-    };
-    if(charts.dept) charts.dept.destroy();
-    addParetoIfNeeded(cfgA, agg.byDept.labels, agg.byDept.data, isPareto, isHorizontal);
-    charts.dept=new Chart(ctxA,cfgA);
-
-    // Chart B: 種類別
-    const ctxB=document.getElementById('chartType').getContext('2d');
-    const colorsB=softPalette(agg.byType.data.length, isDark()?0.7:0.8);
-    const maxB=Math.max(1,...agg.byType.data);
-    const cfgB={
-      type:'bar',
-      data:{ labels:agg.byType.labels,
-        datasets:[{ label:'件数', data:agg.byType.data,
-          backgroundColor:colorsB, borderColor:colorsB, borderWidth:1,
-          maxBarThickness:26, categoryPercentage:.7, barPercentage:.9 }]},
-      options:{
-        indexAxis: isHorizontal ? 'y':'x',
-        maintainAspectRatio:false,
-        layout:{padding:{top:6,right:8,left:4,bottom:0}},
-        plugins:{ legend:{display:false},
-          title:{display:true,text:`クレーム（種類別｜${periodLabel}${custPick? '｜'+custPick : ''}）`},
-          datalabels:{ anchor:'end', align:isHorizontal?'right':'top', formatter:(v)=>v, color:theme.ink } },
-        scales: isHorizontal ? {
-          x:{ beginAtZero:true, suggestedMax:maxB*1.15, ticks:{ callback:intTick }, grid:{color:theme.grid} },
-          y:{ grid:{ display:false } }
-        } : {
-          y:{ beginAtZero:true, suggestedMax:maxB*1.15, ticks:{ callback:intTick }, grid:{color:theme.grid} },
-          x:{ grid:{ display:false } }
-        }
-      }
-    };
-    if(charts.type) charts.type.destroy();
-    addParetoIfNeeded(cfgB, agg.byType.labels, agg.byType.data, isPareto, isHorizontal);
-    charts.type=new Chart(ctxB,cfgB);
-
-    // Chart C: 顧客別 TOP
-    const ctxC=document.getElementById('chartCust').getContext('2d');
-    const colorsC=softPalette(agg.byCust.data.length, isDark()?0.7:0.8);
-    const maxC=Math.max(1,...agg.byCust.data);
-    const cfgC={
-      type:'bar',
-      data:{ labels:agg.byCust.labels,
-        datasets:[{ label:'件数', data:agg.byCust.data,
-          backgroundColor:colorsC, borderColor:colorsC, borderWidth:1,
-          maxBarThickness:26, categoryPercentage:.7, barPercentage:.9 }]},
-      options:{
-        indexAxis: isHorizontal ? 'y':'x',
-        maintainAspectRatio:false,
-        layout:{padding:{top:6,right:8,left:4,bottom:0}},
-        plugins:{ legend:{display:false},
-          title:{display:true,text:`クレーム（顧客別 TOP${topN}｜${periodLabel}${typePick!=='ALL' ? '｜'+typePick : ''}）`},
-          datalabels:{ anchor:'end', align:isHorizontal?'right':'top', formatter:(v)=>v, color:theme.ink } },
-        scales: isHorizontal ? {
-          x:{ beginAtZero:true, suggestedMax:maxC*1.15, ticks:{ callback:intTick }, grid:{color:theme.grid} },
-          y:{ grid:{ display:false } }
-        } : {
-          y:{ beginAtZero:true, suggestedMax:maxC*1.15, ticks:{ callback:intTick }, grid:{color:theme.grid} },
-          x:{ grid:{ display:false } }
-        }
-      }
-    };
-    if(charts.cust) charts.cust.destroy();
-    addParetoIfNeeded(cfgC, agg.byCust.labels, agg.byCust.data, isPareto, isHorizontal);
-    charts.cust=new Chart(ctxC,cfgC);
-
-    document.getElementById('chartNote').textContent = `期間: ${periodLabel} ／ 種類: ${typePick==='ALL'?'(全て)':typePick} ／ 顧客フィルタ: ${custPick||'(なし)'} ／ 集計は1行=1件`;
-    lastAgg=agg;
-  }
-
-  // ===== Fetch =====
-  async function load(){
-    try{
-      if(isLoading){ aborter?.abort(); }
-      isLoading=true;
-      const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
-      btn.textContent='Loading...'; btn.disabled=true;
-
-      aborter=new AbortController();
-      const res=await fetch(CSV_URL + "&_ts=" + Date.now(), {signal:aborter.signal, cache:'no-store'});
-      if(!res.ok) throw new Error("HTTP "+res.status);
-      const text=await res.text(); const arr=parseCSV(text); if(!arr.length) throw new Error('CSV empty');
-
-      const header=arr[0], rowsRaw=arr.slice(1), idx=indexByName(header);
-      const rows=[...rowsRaw];
-      cached={header, rows, idx};
-
-      // Build filter lists
-      const yearSet=new Set(), typeSet=new Set(), custTotals=new Map();
-      for(const r of rows){
-        // derive y/m
-        let y=null, m=null;
-        if(idx.ym!=null){ const ym=parseYMText(valAt(r, idx.ym)); if(ym){ y=ym.y; m=ym.m; } }
-        if((!y||!m) && idx.date!=null){ const d=parseJPDate(valAt(r, idx.date)); if(d){ y=d.getFullYear(); m=d.getMonth()+1; } }
-        if(y) yearSet.add(String(y));
-        if(idx.type!=null){ const t=S(valAt(r, idx.type)); if(t) typeSet.add(t); }
-        if(idx.cust!=null){ const c=S(valAt(r, idx.cust)) || '不明'; custTotals.set(c,(custTotals.get(c)||0)+1); }
-      }
-      const years=[...yearSet].sort();
-      const types=[...typeSet].sort();
-      const customers=[...custTotals.entries()].sort((a,b)=>b[1]-a[1]).map(([c])=>c);
-
-      const selYear=document.getElementById('selYear');
-      selYear.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join('');
-      selYear.value = years.at(-1) || new Date().getFullYear();
-
-      const selType=document.getElementById('selType');
-      selType.innerHTML = `<option value="ALL">All</option>` + types.map(t=>`<option value="${t}">${t}</option>`).join('');
-
-      const selCust=document.getElementById('selCust');
-      selCust.innerHTML = `<option value="">(指定なし)</option>` + customers.map(c=>`<option value="${c}">${c}</option>`).join('');
-      selCust.value = '';
-
-      render();
-
-      btn.textContent=old; btn.disabled=false; isLoading=false;
-    }catch(e){
-      console.error(e);
-      const btn=document.getElementById('btnRefresh'); btn.textContent='Refresh now'; btn.disabled=false; isLoading=false;
-      document.getElementById('chartNote').textContent='読み込みに失敗しました。CSVの公開設定/列名をご確認ください。';
-    }
-  }
-
-  // ===== Export & events =====
-  function exportChartsExcel(){
-    if(!lastAgg) return;
-    const wb=XLSX.utils.book_new();
-    const ws1=XLSX.utils.aoa_to_sheet([["部署","件数"], ...lastAgg.byDept.labels.map((n,i)=>[n,lastAgg.byDept.data[i]])]);
-    XLSX.utils.book_append_sheet(wb, ws1, `部署別(期間)`);
-    const ws2=XLSX.utils.aoa_to_sheet([["種類","件数"], ...lastAgg.byType.labels.map((k,i)=>[k,lastAgg.byType.data[i]])]);
-    XLSX.utils.book_append_sheet(wb, ws2, `種類別(期間)`);
-    const ws3=XLSX.utils.aoa_to_sheet([["顧客","件数"], ...lastAgg.byCust.labels.map((n,i)=>[n,lastAgg.byCust.data[i]])]);
-    XLSX.utils.book_append_sheet(wb, ws3, `顧客別TOP`);
-    XLSX.writeFile(wb, "品質情報_グラフ集計.xlsx");
-  }
-
-  async function exportPDF(){
-    const { jsPDF } = window.jspdf;
-    const pdf=new jsPDF({orientation:"landscape", unit:"pt", format:"a4"});
-    const items=[
-      {el:document.getElementById('chartDept'), title:'部署別（期間）'},
-      {el:document.getElementById('chartType'), title:'種類別（期間）'},
-      {el:document.getElementById('chartCust'), title:'顧客別（期間｜TOP）'},
-    ];
-    for(let i=0;i<items.length;i++){
-      if(i>0) pdf.addPage();
-      const png=items[i].el.toDataURL('image/png',1.0);
-      const pageW=pdf.internal.pageSize.getWidth();
-      const pageH=pdf.internal.pageSize.getHeight();
-      const margin=36;
-      const w=pageW-margin*2, h=pageH-margin*2-24;
-      pdf.setFontSize(14); pdf.text(items[i].title, margin, margin);
-      pdf.addImage(png,'PNG', margin, margin+12, w, h, undefined, 'FAST');
-    }
-    pdf.save('品質情報_グラフ(PDF).pdf');
-  }
-
-  let timer=null, intervalMs=60000;
-  function startAutoRefresh(ms){
-    intervalMs=ms; clearInterval(timer);
-    timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs);
-    document.getElementById('intervalInfo').textContent=`Interval: ${Math.round(intervalMs/1000)}s`;
-    const liveBtn=document.getElementById('btnLive');
-    if(intervalMs<=5000){ liveBtn.classList.add('active'); liveBtn.textContent='Live: On'; }
-    else{ liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off'; }
-  }
-
-  // Ticker controls
-  function setTickerVisible(on){
-    const el=document.getElementById('ticker');
-    el.classList.toggle('hidden', !on);
-    document.body.classList.toggle('has-ticker', on);
-    document.getElementById('chkTicker').checked=!!on;
-    localStorage.setItem('tickerOn', on ? '1':'0');
-  }
-
-  // Events
-  document.getElementById('btnRefresh').addEventListener('click', load);
-  document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
-  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
-
-  ['selTop','selYear','selQuarter','selMonth','selType','selCust','chkPareto','selOrient'].forEach(id=>{
-    document.getElementById(id).addEventListener('change', render);
-  });
-  document.getElementById('btnExcelCharts').addEventListener('click', exportChartsExcel);
-  document.getElementById('btnPDF').addEventListener('click', exportPDF);
-  document.getElementById('btnReset').addEventListener('click', ()=>{
-    document.getElementById('selTop').value="10";
-    const ySel=document.getElementById('selYear'); if(ySel.options.length) ySel.value=ySel.options[ySel.options.length-1].value;
-    document.getElementById('selQuarter').value="ALL";
-    document.getElementById('selMonth').value="ALL";
-    document.getElementById('selType').value="ALL";
-    const cSel=document.getElementById('selCust'); if(cSel.options.length) cSel.value=cSel.options[0].value;
-    document.getElementById('selOrient').value="h";
-    document.getElementById('chkPareto').checked=false;
     render();
-  });
-  document.getElementById('chkDark').addEventListener('change',(e)=>{
-    document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light');
-    render();
-  });
-  document.getElementById('chkTicker').addEventListener('change',(e)=> setTickerVisible(e.target.checked));
-  document.getElementById('btnCloseTicker').addEventListener('click', ()=> setTickerVisible(false));
+    btn.textContent=old; btn.disabled=false; isLoading=false;
+  }catch(e){
+    console.error(e);
+    showErr('読み込みに失敗しました。CSVの公開設定/ネットワークをご確認ください。');
+    const btn=document.getElementById('btnRefresh'); btn.textContent='Refresh now'; btn.disabled=false; isLoading=false;
+  }
+}
 
-  // Init
-  window.addEventListener('DOMContentLoaded', ()=>{
-    const savedTicker = localStorage.getItem('tickerOn') === '1';
-    setTickerVisible(savedTicker);
-    load(); startAutoRefresh(60000);
-  });
+/* ================= Export & events ================= */
+function exportChartsExcel(){
+  if(!lastAgg) return;
+  const wb=XLSX.utils.book_new();
+  const ws1=XLSX.utils.aoa_to_sheet([["部署","件数"], ...lastAgg.byDept.labels.map((n,i)=>[n,lastAgg.byDept.data[i]])]);
+  XLSX.utils.book_append_sheet(wb, ws1, `部署別(期間)`);
+  const ws2=XLSX.utils.aoa_to_sheet([["種類","件数"], ...lastAgg.byType.labels.map((k,i)=>[k,lastAgg.byType.data[i]])]);
+  XLSX.utils.book_append_sheet(wb, ws2, `種類別(期間)`);
+  const ws3=XLSX.utils.aoa_to_sheet([["顧客","件数"], ...lastAgg.byCust.labels.map((n,i)=>[n,lastAgg.byCust.data[i]])]);
+  XLSX.utils.book_append_sheet(wb, ws3, `顧客別TOP`);
+  XLSX.writeFile(wb, "品質情報_グラフ集計.xlsx");
+}
+async function exportPDF(){
+  const { jsPDF } = window.jspdf;
+  const pdf=new jsPDF({orientation:"landscape", unit:"pt", format:"a4"});
+  const items=[
+    {el:document.getElementById('chartDept'), title:'部署別（期間）'},
+    {el:document.getElementById('chartType'), title:'種類別（期間）'},
+    {el:document.getElementById('chartCust'), title:'顧客別（期間｜TOP）'},
+  ];
+  for(let i=0;i<items.length;i++){
+    if(i>0) pdf.addPage();
+    const png=items[i].el.toDataURL('image/png',1.0);
+    const pageW=pdf.internal.pageSize.getWidth(), pageH=pdf.internal.pageSize.getHeight(), margin=36;
+    pdf.setFontSize(14); pdf.text(items[i].title, margin, margin);
+    pdf.addImage(png,'PNG', margin, margin+12, pageW-margin*2, pageH-margin*2-24, undefined, 'FAST');
+  }
+  pdf.save('品質情報_グラフ(PDF).pdf');
+}
+
+/* ================= Live/ticker & init ================= */
+let timer=null, intervalMs=60000;
+function startAutoRefresh(ms){
+  intervalMs=ms; clearInterval(timer);
+  timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs);
+  document.getElementById('intervalInfo').textContent=`Interval: ${Math.round(intervalMs/1000)}s`;
+  const liveBtn=document.getElementById('btnLive');
+  if(intervalMs<=5000){ liveBtn.classList.add('active'); liveBtn.textContent='Live: On'; }
+  else{ liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off'; }
+}
+function setTickerVisible(on){
+  const el=document.getElementById('ticker');
+  el.classList.toggle('hidden', !on);
+  document.body.classList.toggle('has-ticker', on);
+  document.getElementById('chkTicker').checked=!!on;
+  localStorage.setItem('tickerOn', on ? '1':'0');
+}
+
+/* events */
+document.getElementById('btnRefresh').addEventListener('click', load);
+document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
+['selTop','selYear','selQuarter','selMonth','selType','selCust','chkPareto','selOrient'].forEach(id=>{ document.getElementById(id).addEventListener('change', render); });
+document.getElementById('btnExcelCharts').addEventListener('click', exportChartsExcel);
+document.getElementById('btnPDF').addEventListener('click', exportPDF);
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  document.getElementById('selTop').value="10";
+  const ySel=document.getElementById('selYear'); if(ySel.options.length) ySel.value=ySel.options[ySel.options.length-1].value;
+  document.getElementById('selQuarter').value="ALL";
+  document.getElementById('selMonth').value="ALL";
+  document.getElementById('selType').value="ALL";
+  const cSel=document.getElementById('selCust'); if(cSel.options.length) cSel.value=cSel.options[0].value;
+  document.getElementById('selOrient').value="h";
+  document.getElementById('chkPareto').checked=false;
+  render();
+});
+document.getElementById('chkDark').addEventListener('change',(e)=>{ document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light'); render(); });
+document.getElementById('chkTicker').addEventListener('change',(e)=> setTickerVisible(e.target.checked));
+document.getElementById('btnCloseTicker').addEventListener('click', ()=> setTickerVisible(false));
+
+/* boot */
+window.addEventListener('DOMContentLoaded', async ()=>{
+  const savedTicker = localStorage.getItem('tickerOn') === '1';
+  setTickerVisible(savedTicker);
+  await ensureLibs();              // <— penting: pastikan Chart.js & plugin ada
+  startAutoRefresh(60000);
+  load();
+});
 </script>
 </body>
 </html>
