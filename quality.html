@@ -112,29 +112,65 @@
 <script>
 Chart.register(ChartDataLabels);
 
-/* ====== SOURCE (pubHTML via r.jina.ai, no CORS) ====== */
-const PUBHTML_URL =
-  "https://r.jina.ai/https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pubhtml?gid=649800458&single=true";
+/* ====== SOURCES ====== */
+const GVIZ_URLS = [
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/gviz/tq?gid=649800458",
+  "https://r.jina.ai/https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/gviz/tq?gid=649800458"
+];
+const PUBHTML_URLS = [
+  "https://r.jina.ai/https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pubhtml?gid=649800458&single=true"
+];
 
 const S = s => String(s ?? '').trim();
 const intTick = v => Number.isInteger(v) ? v : '';
-
 function showErr(msg){ const b=document.getElementById('err'); b.textContent=msg; b.style.display='block'; }
 function hideErr(){ const b=document.getElementById('err'); b.style.display='none'; b.textContent=''; }
 function stat(msg){ const el=document.getElementById('stat'); el.textContent=msg; el.style.display='inline-block'; }
 
-/* ====== Parse pubHTML table ====== */
-function parsePubHtml(html){
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  const table = doc.querySelector('table.waffle') || doc.querySelector('table');
-  if(!table) return {header:[], rows:[]};
-  const rows = Array.from(table.rows).map(tr => Array.from(tr.cells).map(td => S(td.textContent)));
-  const clean = rows.filter(r => r.some(c => c!==''));
-  const header = clean[0] || []; const data = clean.slice(1);
-  return { header, rows:data };
+/* ====== GViz JSONP (tanpa CORS) ====== */
+function parseGvizTable(tbl){
+  const header = (tbl.cols||[]).map(c => (c && (c.label||c.id)) ? String(c.label||c.id).trim() : "");
+  const rows = (tbl.rows||[]).map(r => (r.c||[]).map((cell) => {
+    let v = cell ? cell.v : "";
+    return v==null ? "" : (v instanceof Date ? `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}` : String(v));
+  }));
+  return { header, rows };
+}
+function fetchGvizJSONP(base){
+  return new Promise((resolve,reject)=>{
+    const old=((window.google||{}).visualization||{}).Query?.setResponse;
+    window.google=window.google||{}; window.google.visualization=window.google.visualization||{};
+    window.google.visualization.Query=window.google.visualization.Query||{};
+    window.google.visualization.Query.setResponse = (resp)=>{
+      cleanup();
+      try{
+        if(resp && resp.table){
+          const out=parseGvizTable(resp.table);
+          if(out.header.length && out.rows.length){ resolve(out); return; }
+        }
+        reject(new Error('GViz empty'));
+      }catch(e){ reject(e); }
+    };
+    const s=document.createElement('script');
+    const url=base + (base.includes('?')?'&':'?') + 'tqx=out:json&tq=' + encodeURIComponent('select *') + '&_ts=' + Date.now();
+    let to=setTimeout(()=>{ cleanup(); reject(new Error('GViz timeout')); },12000);
+    function cleanup(){ clearTimeout(to); s.remove(); if(old) window.google.visualization.Query.setResponse=old; }
+    s.onerror=()=>{ cleanup(); reject(new Error('GViz onerror')); };
+    s.src=url; document.body.appendChild(s);
+  });
 }
 
-/* ====== Column index ====== */
+/* ====== pubHTML fallback ====== */
+function parsePubHtml(html){
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const table=doc.querySelector('table.waffle')||doc.querySelector('table');
+  if(!table) return {header:[],rows:[]};
+  const rows=Array.from(table.rows).map(tr=>Array.from(tr.cells).map(td=>S(td.textContent)));
+  const clean=rows.filter(r=>r.some(c=>c!==''));
+  return {header:clean[0]||[], rows:clean.slice(1)};
+}
+
+/* ====== Index & helpers ====== */
 function indexByName(header){
   const map={}; header.forEach((h,i)=>map[S(h)]=i);
   const find=(names)=>{ for(const n of names){ if(n in map) return map[n]; } return null; };
@@ -144,65 +180,47 @@ function indexByName(header){
     type: find(["クレーム種類","種類","種別"]) ?? findF(/(クレーム|種類|種別)/),
     cust: find(["顧客名","客先","Customer"])  ?? findF(/(顧客|客先|customer)/i),
     dept: find(["部署","部門","課"])          ?? findF(/(部署|部門|課)/),
-    // optional fallback date
     date: find(["日付","出荷日","受付日","発生日","Date"]) ?? findF(/(日付|出荷日|受付日|発生日|date)/i),
   };
 }
-
-/* ====== YM helpers ====== */
 function parseYMText(str){
   const s=S(str);
   let m=s.match(/^(\d{4})\D(\d{1,2})$/) || s.match(/^(\d{4})(\d{1,2})$/) || s.match(/^(\d{4})年?(\d{1,2})月?$/);
   if(!m) return null; const y=+m[1], mo=+m[2]; return (y && mo>=1 && mo<=12) ? {y, m:mo} : null;
 }
 function parseJPDate(str){
-  const s=S(str);
-  const m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
-  if(m) return new Date(+m[1], +m[2]-1, +m[3]);
-  const d=new Date(s); return isNaN(d)?null:d;
+  const s=S(str); const m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+  if(m) return new Date(+m[1], +m[2]-1, +m[3]); const d=new Date(s); return isNaN(d)?null:d;
 }
 
-/* ====== State ====== */
-let cached={header:[], rows:[], idx:null};
+/* ====== State + render ====== */
+let cached={header:[],rows:[],idx:null};
 let charts={dept:null,type:null,cust:null};
 const isDark=()=> document.documentElement.getAttribute('data-theme')==='dark';
 const PALETTE_LIGHT=['#93c5fd','#a5b4fc','#fda4af','#fdba74','#86efac','#67e8f9','#f5d0fe','#c4b5fd','#fecaca','#fde68a','#bbf7d0','#bae6fd'];
 const PALETTE_DARK=['#60a5fa','#818cf8','#fca5a5','#fbbf24','#4ade80','#22d3ee','#f0abfc','#a78bfa','#f87171','#fde047','#86efac','#93c5fd'];
 const hexToRgba=(hex,a=0.8)=>{const h=hex.replace('#','');const b=parseInt(h,16);return`rgba(${(b>>16)&255},${(b>>8)&255},${b&255},${a})`};
 function softPalette(n,a=0.8){ const base=isDark()?PALETTE_DARK:PALETTE_LIGHT; return Array.from({length:n},(_,i)=>hexToRgba(base[i%base.length],a)); }
-
-/* ====== Aggregate ====== */
-function aggregate({rows, idx, topN, yearPick, monthPick, typePick, custPick}){
+function applyChartDefaults(){
+  const st=getComputedStyle(document.documentElement);
+  Chart.defaults.color=st.getPropertyValue('--ink').trim()||'#0f172a';
+  Chart.defaults.borderColor=st.getPropertyValue('--grid').trim()||'#e5e7eb';
+  Chart.defaults.font.family='system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif';
+}
+function aggregate({rows,idx,topN,yearPick,monthPick,typePick,custPick}){
   const mDept=new Map(), mType=new Map(), mCust=new Map();
   for(const r of rows){
-    // get year/month
     let ym = idx.ym!=null ? parseYMText(r[idx.ym]) : null;
     if(!ym && idx.date!=null){ const d=parseJPDate(r[idx.date]); if(d) ym={y:d.getFullYear(), m:d.getMonth()+1}; }
     if(!ym) continue;
     if(String(ym.y)!==String(yearPick)) continue;
     if(monthPick!=='ALL' && ym.m!==parseInt(monthPick,10)) continue;
-
-    const type=S(r[idx.type]??'');
-    const cust=S(r[idx.cust]??'') || '不明';
-    const dept=S(r[idx.dept]??'') || '不明';
-    if(typePick!=='ALL' && type!==typePick) continue;
-    if(custPick && cust!==custPick) continue;
-
-    if(dept) mDept.set(dept,(mDept.get(dept)||0)+1);
-    if(type) mType.set(type,(mType.get(type)||0)+1);
-    if(cust) mCust.set(cust,(mCust.get(cust)||0)+1);
+    const type=S(r[idx.type]??''); const cust=S(r[idx.cust]??'')||'不明'; const dept=S(r[idx.dept]??'')||'不明';
+    if(typePick!=='ALL' && type!==typePick) continue; if(custPick && cust!==custPick) continue;
+    mDept.set(dept,(mDept.get(dept)||0)+1); mType.set(type,(mType.get(type)||0)+1); mCust.set(cust,(mCust.get(cust)||0)+1);
   }
   const toTop=(mp,n)=>{const arr=[...mp.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n);return{labels:arr.map(x=>x[0]),data:arr.map(x=>x[1])}};
-  return { byDept:toTop(mDept,mDept.size||1), byType:toTop(mType,mType.size||1), byCust:toTop(mCust, topN) };
-}
-
-/* ====== Render ====== */
-function applyChartDefaults(){
-  const st=getComputedStyle(document.documentElement);
-  const ink=st.getPropertyValue('--ink').trim()||'#0f172a';
-  const grid=st.getPropertyValue('--grid').trim()||'#e5e7eb';
-  Chart.defaults.color=ink; Chart.defaults.borderColor=grid;
-  Chart.defaults.font.family='system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif';
+  return {byDept:toTop(mDept,mDept.size||1),byType:toTop(mType,mType.size||1),byCust:toTop(mCust,topN)};
 }
 function render(){
   applyChartDefaults();
@@ -211,79 +229,85 @@ function render(){
   const monthPick=document.getElementById('selMonth').value;
   const typePick=document.getElementById('selType').value;
   const custPick=document.getElementById('selCust').value;
-  const agg=aggregate({rows:cached.rows, idx:cached.idx, topN, yearPick, monthPick, typePick, custPick});
+  const agg=aggregate({rows:cached.rows,idx:cached.idx,topN,yearPick,monthPick,typePick,custPick});
   const note=`${yearPick}年 ${monthPick==='ALL'?'全月':(parseInt(monthPick,10)+'月')}｜種類:${typePick==='ALL'?'全て':typePick}｜顧客:${custPick||'(指定なし)'}`;
-  document.getElementById('chartNote').textContent = note;
+  document.getElementById('chartNote').textContent=note;
 
-  const drawBar=(canvasId,title,labels,values)=>{
-    const ctx=document.getElementById(canvasId).getContext('2d');
-    const colors=softPalette(values.length,isDark()?0.7:0.8);
+  const orient=document.getElementById('selOrient').value==='h'?'y':'x';
+  const draw=(id,title,labels,values)=>{
+    const ctx=document.getElementById(id).getContext('2d'); const colors=softPalette(values.length,isDark()?0.7:0.8);
     const maxV=Math.max(1,...values);
-    const orient=document.getElementById('selOrient').value==='h'?'y':'x';
-    const cfg={type:'bar',
+    return new Chart(ctx,{type:'bar',
       data:{labels,datasets:[{label:'件数',data:values,backgroundColor:colors,borderColor:colors,borderWidth:1,maxBarThickness:28,categoryPercentage:.7,barPercentage:.9}]},
       options:{indexAxis:orient,maintainAspectRatio:false,plugins:{legend:{display:false},title:{display:true,text:title},datalabels:{anchor:'end',align:orient==='y'?'right':'top',formatter:v=>v}},
-        scales:orient==='y'
-          ?{x:{beginAtZero:true,suggestedMax:maxV*1.15,ticks:{callback:intTick}},y:{grid:{display:false}}}
-          :{y:{beginAtZero:true,suggestedMax:maxV*1.15,ticks:{callback:intTick}},x:{grid:{display:false}}}}
-    };
-    return new Chart(ctx,cfg);
+        scales:orient==='y'?{x:{beginAtZero:true,suggestedMax:maxV*1.15,ticks:{callback:intTick}},y:{grid:{display:false}}}
+                           :{y:{beginAtZero:true,suggestedMax:maxV*1.15,ticks:{callback:intTick}},x:{grid:{display:false}}}}
+    });
   };
-
-  charts.dept && charts.dept.destroy();
-  charts.type && charts.type.destroy();
-  charts.cust && charts.cust.destroy();
-
-  charts.dept = drawBar('chartDept','部署別（件数）',agg.byDept.labels,agg.byDept.data);
-  charts.type = drawBar('chartType','種類別（件数）',agg.byType.labels,agg.byType.data);
-  charts.cust = drawBar('chartCust',`顧客別 TOP${topN}（件数）`,agg.byCust.labels,agg.byCust.data);
+  charts.dept && charts.dept.destroy(); charts.type && charts.type.destroy(); charts.cust && charts.cust.destroy();
+  charts.dept=draw('chartDept','部署別（件数）',agg.byDept.labels,agg.byDept.data);
+  charts.type=draw('chartType','種類別（件数）',agg.byType.labels,agg.byType.data);
+  charts.cust=draw('chartCust',`顧客別 TOP${topN}（件数）`,agg.byCust.labels,agg.byCust.data);
 }
 
-/* ====== Load ====== */
+/* ====== Load: GViz → pubHTML fallback ====== */
 async function load(){
-  hideErr(); stat('Loading...');
+  hideErr(); stat('Loading…');
   try{
-    const res = await fetch(PUBHTML_URL + '&_ts=' + Date.now(), {cache:'no-store'});
-    if(!res.ok){ throw new Error('HTTP '+res.status); }
-    const html = await res.text();
-    const {header, rows} = parsePubHtml(html);
-    if(!header.length || !rows.length){ showErr('データが見つかりません（pubHTML）'); stat('No data'); return; }
-
-    const idx = indexByName(header);
-    if([idx.ym, idx.type, idx.cust, idx.dept].every(v=>v==null)){
-      showErr('列名が一致しません。「年月 / クレーム種類 / 顧客名 / 部署」を確認してください。'); stat('Header NG'); return;
+    // 1) GViz JSONP first
+    for(const u of GVIZ_URLS){
+      try{
+        const out = await fetchGvizJSONP(u);
+        const idx = indexByName(out.header);
+        if([idx.ym,idx.type,idx.cust,idx.dept].every(v=>v==null)) throw new Error('Header NG');
+        cached={header:out.header,rows:out.rows,idx};
+        // build filters
+        const yearSet=new Set(), typeSet=new Set(), custTotals=new Map();
+        for(const r of out.rows){
+          let ym = idx.ym!=null ? parseYMText(r[idx.ym]) : null;
+          if(!ym && idx.date!=null){ const d=parseJPDate(r[idx.date]); if(d) ym={y:d.getFullYear(), m:d.getMonth()+1}; }
+          if(ym) yearSet.add(String(ym.y));
+          const t=S(r[idx.type]??''); if(t) typeSet.add(t);
+          const c=S(r[idx.cust]??'')||'不明'; custTotals.set(c,(custTotals.get(c)||0)+1);
+        }
+        const years=[...yearSet].sort(); const types=[...typeSet].sort();
+        const customers=[...custTotals.entries()].sort((a,b)=>b[1]-a[1]).map(([c])=>c);
+        const ySel=document.getElementById('selYear'); ySel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join(''); ySel.value=years.at(-1)||new Date().getFullYear();
+        document.getElementById('selType').innerHTML=`<option value="ALL">All</option>`+types.map(t=>`<option value="${t}">${t}</option>`).join('');
+        document.getElementById('selCust').innerHTML=`<option value="">(指定なし)</option>`+customers.map(c=>`<option value="${c}">${c}</option>`).join('');
+        stat(`Data: OK (mode: gviz, rows: ${out.rows.length}, cols: ${out.header.length})`);
+        render(); return;
+      }catch(e){ /* try next */ }
     }
-    cached={header, rows, idx};
-
-    // Build filters
-    const yearSet=new Set(), typeSet=new Set(), custTotals=new Map();
-    for(const r of rows){
-      let ym = idx.ym!=null ? parseYMText(r[idx.ym]) : null;
-      if(!ym && idx.date!=null){ const d=parseJPDate(r[idx.date]); if(d) ym={y:d.getFullYear(), m:d.getMonth()+1}; }
-      if(ym) yearSet.add(String(ym.y));
-      const t=S(r[idx.type]??''); if(t) typeSet.add(t);
-      const c=S(r[idx.cust]??'') || '不明'; custTotals.set(c,(custTotals.get(c)||0)+1);
+    // 2) pubHTML fallback
+    for(const u of PUBHTML_URLS){
+      try{
+        const res=await fetch(u+'&_ts='+Date.now(),{cache:'no-store'}); if(!res.ok) continue;
+        const html=await res.text(); const out=parsePubHtml(html);
+        const idx=indexByName(out.header);
+        if(!(out.header.length && out.rows.length) || [idx.ym,idx.type,idx.cust,idx.dept].every(v=>v==null)) continue;
+        cached={header:out.header,rows:out.rows,idx};
+        // build filters (same as above)
+        const yearSet=new Set(), typeSet=new Set(), custTotals=new Map();
+        for(const r of out.rows){
+          let ym = idx.ym!=null ? parseYMText(r[idx.ym]) : null;
+          if(!ym && idx.date!=null){ const d=parseJPDate(r[idx.date]); if(d) ym={y:d.getFullYear(), m:d.getMonth()+1}; }
+          if(ym) yearSet.add(String(ym.y));
+          const t=S(r[idx.type]??''); if(t) typeSet.add(t);
+          const c=S(r[idx.cust]??'')||'不明'; custTotals.set(c,(custTotals.get(c)||0)+1);
+        }
+        const years=[...yearSet].sort(); const types=[...typeSet].sort();
+        const customers=[...custTotals.entries()].sort((a,b)=>b[1]-a[1]).map(([c])=>c);
+        const ySel=document.getElementById('selYear'); ySel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join(''); ySel.value=years.at(-1)||new Date().getFullYear();
+        document.getElementById('selType').innerHTML=`<option value="ALL">All</option>`+types.map(t=>`<option value="${t}">${t}</option>`).join('');
+        document.getElementById('selCust').innerHTML=`<option value="">(指定なし)</option>`+customers.map(c=>`<option value="${c}">${c}</option>`).join('');
+        stat(`Data: OK (mode: html, rows: ${out.rows.length}, cols: ${out.header.length})`);
+        render(); return;
+      }catch(e){ /* try next */ }
     }
-    const years=[...yearSet].sort(); const types=[...typeSet].sort();
-    const customers=[...custTotals.entries()].sort((a,b)=>b[1]-a[1]).map(([c])=>c);
-
-    const selYear=document.getElementById('selYear');
-    selYear.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');
-    selYear.value = years.at(-1) || new Date().getFullYear();
-
-    const selType=document.getElementById('selType');
-    selType.innerHTML=`<option value="ALL">All</option>` + types.map(t=>`<option value="${t}">${t}</option>`).join('');
-
-    const selCust=document.getElementById('selCust');
-    selCust.innerHTML=`<option value="">(指定なし)</option>` + customers.map(c=>`<option value="${c}">${c}</option>`).join('');
-    selCust.value='';
-
-    stat(`Data: OK (mode: html, rows: ${rows.length}, cols: ${header.length})`);
-    render();
+    throw new Error('No data from GViz/pubHTML');
   }catch(e){
-    console.error(e);
-    showErr('読み込みに失敗しました（ネットワーク/公開設定を確認）。');
-    stat('Error');
+    console.error(e); showErr('読み込みに失敗しました（GViz/pubHTMLの両方でデータが取れません）。'); stat('No data');
   }
 }
 
