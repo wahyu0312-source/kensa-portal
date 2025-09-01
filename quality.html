@@ -112,8 +112,14 @@
 <script>
 Chart.register(ChartDataLabels);
 
+/* ====== CONFIG: ganti docId di sini bila perlu ====== */
+const DOC_ID = "1lWcysDJF1MUVetWSn_bj7sRtmMQgy0-RRbpq0E"; // <- docId file Anda
+
 /* ====== SOURCES ====== */
 const GVIZ_URLS = [
+  // GViz via docId (butuh “Anyone with the link: Viewer”)
+  `https://docs.google.com/spreadsheets/d/${DOC_ID}/gviz/tq?gid=649800458`,
+  // GViz via published token (butuh Publish to the web)
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/gviz/tq?gid=649800458",
   "https://r.jina.ai/https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/gviz/tq?gid=649800458"
 ];
@@ -127,7 +133,7 @@ function showErr(msg){ const b=document.getElementById('err'); b.textContent=msg
 function hideErr(){ const b=document.getElementById('err'); b.style.display='none'; b.textContent=''; }
 function stat(msg){ const el=document.getElementById('stat'); el.textContent=msg; el.style.display='inline-block'; }
 
-/* ====== GViz JSONP (tanpa CORS) ====== */
+/* ====== GViz JSONP ====== */
 function parseGvizTable(tbl){
   const header = (tbl.cols||[]).map(c => (c && (c.label||c.id)) ? String(c.label||c.id).trim() : "");
   const rows = (tbl.rows||[]).map(r => (r.c||[]).map((cell) => {
@@ -138,7 +144,7 @@ function parseGvizTable(tbl){
 }
 function fetchGvizJSONP(base){
   return new Promise((resolve,reject)=>{
-    const old=((window.google||{}).visualization||{}).Query?.setResponse;
+    const prev=((window.google||{}).visualization||{}).Query?.setResponse;
     window.google=window.google||{}; window.google.visualization=window.google.visualization||{};
     window.google.visualization.Query=window.google.visualization.Query||{};
     window.google.visualization.Query.setResponse = (resp)=>{
@@ -154,7 +160,7 @@ function fetchGvizJSONP(base){
     const s=document.createElement('script');
     const url=base + (base.includes('?')?'&':'?') + 'tqx=out:json&tq=' + encodeURIComponent('select *') + '&_ts=' + Date.now();
     let to=setTimeout(()=>{ cleanup(); reject(new Error('GViz timeout')); },12000);
-    function cleanup(){ clearTimeout(to); s.remove(); if(old) window.google.visualization.Query.setResponse=old; }
+    function cleanup(){ clearTimeout(to); s.remove(); if(prev) window.google.visualization.Query.setResponse=prev; }
     s.onerror=()=>{ cleanup(); reject(new Error('GViz onerror')); };
     s.src=url; document.body.appendChild(s);
   });
@@ -180,7 +186,7 @@ function indexByName(header){
     type: find(["クレーム種類","種類","種別"]) ?? findF(/(クレーム|種類|種別)/),
     cust: find(["顧客名","客先","Customer"])  ?? findF(/(顧客|客先|customer)/i),
     dept: find(["部署","部門","課"])          ?? findF(/(部署|部門|課)/),
-    date: find(["日付","出荷日","受付日","発生日","Date"]) ?? findF(/(日付|出荷日|受付日|発生日|date)/i),
+    date: find(["受付日","日付","出荷日","受付日","発生日","Date"]) ?? findF(/(受付日|日付|出荷日|発生日|date)/i),
   };
 }
 function parseYMText(str){
@@ -287,7 +293,6 @@ async function load(){
         const idx=indexByName(out.header);
         if(!(out.header.length && out.rows.length) || [idx.ym,idx.type,idx.cust,idx.dept].every(v=>v==null)) continue;
         cached={header:out.header,rows:out.rows,idx};
-        // build filters (same as above)
         const yearSet=new Set(), typeSet=new Set(), custTotals=new Map();
         for(const r of out.rows){
           let ym = idx.ym!=null ? parseYMText(r[idx.ym]) : null;
@@ -307,7 +312,7 @@ async function load(){
     }
     throw new Error('No data from GViz/pubHTML');
   }catch(e){
-    console.error(e); showErr('読み込みに失敗しました（GViz/pubHTMLの両方でデータが取れません）。'); stat('No data');
+    console.error(e); showErr('読み込みに失敗しました（GViz/pubHTMLの両方でデータが取れません）。「共有=Anyone viewer / Publish to the web」を確認してください。'); stat('No data');
   }
 }
 
