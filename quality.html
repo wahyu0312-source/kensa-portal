@@ -242,7 +242,7 @@
   }
 
   // Chart makers
-  Chart.register(ChartDataLabels);
+  if (window.ChartDataLabels) { Chart.register(window.ChartDataLabels); }
   function makeBar(ctx, labels, values, {horizontal=false, title, maxBars=10}={}){
     return new Chart(ctx, {
       type: 'bar',
@@ -430,7 +430,7 @@
   function topN(rows, idx, qtyIdx, n=10){ const m=new Map(); for(const r of rows){ const key=(r[idx]||'').toString().trim(); if(!key) continue; const val=(qtyIdx!=null && isNumeric(r[qtyIdx]))? Number((''+r[qtyIdx]).replace(/,/g,'')) : 1; m.set(key,(m.get(key)||0)+val); } return [...m.entries()].sort((a,b)=> b[1]-a[1]).slice(0,n); }
   function sumNumericByCols(rows, colIdxs){ const sums=[]; for(const i of colIdxs){ let s=0; for(const r of rows){ if(isNumeric(r[i])) s+= Number((''+r[i]).replace(/,/g,'')); } sums.push([i,s]); } return sums.sort((a,b)=> b[1]-a[1]); }
 
-  function ensureLibs(){ return !!(window.Chart && window.ChartDataLabels && window.Papa); }
+  function ensureLibs(){ return !!(window.Chart && window.Papa); }
 
   async function fetchCsv(){
     // try Papa direct
