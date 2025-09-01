@@ -8,12 +8,12 @@
   :root{ --bg1:#eef2ff; --bg2:#f8fafc; --card:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
          --accent:#2563eb; --shadow:0 30px 60px rgba(15,23,42,.08); --radius:20px; --grid:#e5e7eb; --ticker-h:28px; }
   [data-theme="dark"]{ --bg1:#0b1220; --bg2:#0b1220; --card:#0f172a; --ink:#e5e7eb; --muted:#94a3b8; --border:#1f2937; --accent:#60a5fa; --shadow:none; --grid:#223044; }
-
   *{box-sizing:border-box} html,body{height:100%}
   body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
        background:radial-gradient(1200px 600px at -10% -10%, #c7d2fe33 0%, transparent 60%),
                   radial-gradient(900px 500px at 110% 0%, #bae6fd33 0%, transparent 55%),
-                  linear-gradient(120deg,var(--bg1),var(--bg2)); padding-bottom:64px; transition:padding-bottom .2s ease;}
+                  linear-gradient(120deg,var(--bg1),var(--bg2));
+       padding-bottom:64px; transition:padding-bottom .2s ease;}
   body.has-ticker{ padding-bottom: calc(64px + var(--ticker-h) + 12px); }
   header{position:sticky;top:0;z-index:10;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
   [data-theme="dark"] header{background:#0f172acc}
@@ -113,7 +113,7 @@
       <label class="small" style="display:flex;align-items:center;gap:6px"><input id="chkPareto" type="checkbox"> Pareto</label>
 
       <label class="small">向き:</label>
-      <select id="selOrient" class="btn"><option value="h" selected>Horizontal</option><option value="v">Vertical</option></select>
+      <select id="selOrient" class="btn"><option value="h">Horizontal</option><option value="v" selected>Vertical</option></select>
 
       <button class="btn" id="btnReset" type="button">Reset</button>
     </div>
@@ -181,7 +181,7 @@ function parseCSV(t){
 }
 function parsePubHtml(html){
   const doc = new DOMParser().parseFromString(html, 'text/html');
-  let table = doc.querySelector('table.waffle') || doc.querySelector('table');
+  const table = doc.querySelector('table.waffle') || doc.querySelector('table');
   if(!table) return {header:[], rows:[]};
   const rows = Array.from(table.rows).map(tr => Array.from(tr.cells).map(td => S(td.textContent)));
   const clean = rows.filter(r => r.some(c => c!==''));
@@ -189,8 +189,16 @@ function parsePubHtml(html){
   return { header, rows:data };
 }
 function parseYMText(str){
-  const s=S(str); let m=s.match(/^(\d{4})\D(\d{1,2})$/); if(!m) m=s.match(/^(\d{4})(\d{1,2})$/);
+  const s=S(str);
+  let m=s.match(/^(\d{4})\D(\d{1,2})$/); if(!m) m=s.match(/^(\d{4})(\d{1,2})$/);
   if(!m) return null; const y=+m[1], mo=+m[2]; return (y && mo>=1 && mo<=12) ? {y, m:mo} : null;
+}
+function parseJPDate(str){
+  const s=String(str??"").trim();
+  let m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+  if(m) return new Date(+m[1], +m[2]-1, +m[3]);
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
 }
 const intTick=v=>Number.isInteger(v)?v:'';
 const isDark=()=> document.documentElement.getAttribute('data-theme')==='dark';
@@ -212,10 +220,7 @@ function parseGvizTable(tbl){
   const header = (tbl.cols || []).map(c => (c && (c.label || c.id)) ? String(c.label || c.id).trim() : "");
   const rows = (tbl.rows || []).map(r => (r.c || []).map((cell,i) => {
     let v = cell ? cell.v : "";
-    if (v instanceof Date) {
-      const y=v.getFullYear(), m=v.getMonth()+1;
-      return `${y}-${String(m).padStart(2,'0')}`;
-    }
+    if (v instanceof Date) { const y=v.getFullYear(), m=v.getMonth()+1; return `${y}-${String(m).padStart(2,'0')}`; }
     return v==null ? "" : String(v);
   }));
   return { header, rows };
@@ -228,7 +233,6 @@ function fetchGvizJSONP(baseUrl){
     window.google = window.google || {};
     window.google.visualization = window.google.visualization || {};
     window.google.visualization.Query = window.google.visualization.Query || {};
-
     window.google.visualization.Query.setResponse = (resp)=>{
       cleanup();
       try{
@@ -239,14 +243,12 @@ function fetchGvizJSONP(baseUrl){
         reject(new Error('GViz empty'));
       }catch(e){ reject(e); }
     };
-
     function cleanup(){
       clearTimeout(timeoutId);
       s.remove();
       if (prev) window.google.visualization.Query.setResponse = prev;
-      else delete window.google.visualization.Query.setResponse;
+      else delete window.google.visualualization?.Query?.setResponse;
     }
-
     s.onerror = ()=>{ cleanup(); reject(new Error('GViz load error')); };
     const url = baseUrl + (baseUrl.includes('?') ? '&':'?') + 'tqx=out:json&tq=' + encodeURIComponent('select *') + '&_ts=' + Date.now();
     s.src = url;
@@ -263,21 +265,21 @@ let lastAgg=null;
 
 /* ========= INDEX HEADER ========= */
 function indexByName(header){
-  const map={}; header.forEach((h,i)=>map[S(h)]=i);
+  const map={}; header.forEach((h,i)=>map[String(h ?? '').trim()]=i);
   const find=(names)=>{ for(const n of names){ if(n in map) return map[n]; } return null; };
-  const findF=(re)=>{ for(let i=0;i<header.length;i++){ if(re.test(S(header[i]))) return i; } return null; };
+  const findF=(re)=>{ for(let i=0;i<header.length;i++){ if(re.test(String(header[i] ?? '').trim())) return i; } return null; };
   return {
-    ym:   find(["年月"]) ?? findF(/年月|year.*month|ym/i),
-    type: find(["クレーム種類","種類","種別"]) ?? findF(/(クレーム|種類|種別)/i),
-    cust: find(["顧客名","客先","Customer"]) ?? findF(/(顧客|客先|customer)/i),
-    dept: find(["部署","部門","課"]) ?? findF(/(部署|部門|課)/),
+    ym:   find(["年月"]) ?? findF(/^\s*年\s*月\s*$/),
+    date: find(["日付","出荷日","受付日","発生日","Date","DATE","date"]) ?? findF(/(日付|出荷日|受付日|発生日|date)/i),
+    type: find(["クレーム種類","種類","種別"]) ?? findF(/(クレーム|種類|種別)/),
+    cust: find(["顧客名","客先","Customer"])  ?? findF(/(顧客|客先|customer)/i),
+    dept: find(["部署","部門","課"])          ?? findF(/(部署|部門|課)/),
   };
 }
 const valAt=(row,i)=> (i==null ? '' : (row[i] ?? ''));
 
 /* ========= FETCH (CSV → HTML → GViz) ========= */
 async function fetchAny(){
-  // 1) CSV
   for (const u of CSV_URLS){
     try{
       const res=await fetch(u + (u.includes('?')?'&':'?') + '_ts=' + Date.now(), {cache:'no-store'});
@@ -289,7 +291,6 @@ async function fetchAny(){
       }
     }catch(e){}
   }
-  // 2) pubhtml table
   for (const u of PUBHTML_URLS){
     try{
       const res=await fetch(u + (u.includes('?')?'&':'?') + '_ts=' + Date.now(), {cache:'no-store'});
@@ -299,7 +300,6 @@ async function fetchAny(){
       if(header.length && rows.length) return {mode:'html', header, rows};
     }catch(e){}
   }
-  // 3) GViz JSONP
   for (const u of GVIZ_URLS){
     try{
       const out = await fetchGvizJSONP(u);
@@ -313,9 +313,17 @@ async function fetchAny(){
 function aggregate({rows, idx, topN, yearPick, quarterPick, monthPick, typePick, custPick}){
   const monthList = quarterPick==='ALL' ? null : QUARTERS[quarterPick];
   const mDept=new Map(), mType=new Map(), mCust=new Map();
+
   for(const r of rows){
-    const ym= idx.ym!=null ? parseYMText(valAt(r, idx.ym)) : null;
+    // YM dari 年月 ATAU fallback 日付
+    let ym = null;
+    if (idx.ym!=null) ym = parseYMText(valAt(r, idx.ym));
+    if (!ym && idx.date!=null){
+      const d = parseJPDate(valAt(r, idx.date));
+      if (d) ym = { y: d.getFullYear(), m: d.getMonth()+1 };
+    }
     if(!ym) continue;
+
     if(String(ym.y)!==String(yearPick)) continue;
     const inQ = monthList ? monthList.includes(ym.m) : true;
     const inM = (monthPick==='ALL' ? true : (ym.m===parseInt(monthPick,10)));
@@ -332,8 +340,9 @@ function aggregate({rows, idx, topN, yearPick, quarterPick, monthPick, typePick,
     if(type) mType.set(type,(mType.get(type)||0)+1);
     if(cust) mCust.set(cust,(mCust.get(cust)||0)+1);
   }
+
   const toTop=(mp,n)=>{ const arr=[...mp.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n); return {labels:arr.map(x=>x[0]), data:arr.map(x=>x[1])}; };
-  const agg={ byDept:toTop(mDept,mDept.size), byType:toTop(mType,mType.size), byCust:toTop(mCust, topN) };
+  const agg={ byDept:toTop(mDept,mDept.size||1), byType:toTop(mType,mType.size||1), byCust:toTop(mCust, topN) };
   lastAgg=agg; return agg;
 }
 
@@ -409,8 +418,8 @@ async function load(){
 
     const any = await fetchAny(); // {mode, header, rows}
     const idx = indexByName(any.header);
-    if([idx.ym,idx.type,idx.cust,idx.dept].every(v=>v==null)){
-      showErr('列名を検出できません。「年月 / クレーム種類 / 顧客名 / 部署」を確認してください。');
+    if([idx.ym,idx.date,idx.type,idx.cust,idx.dept].every(v=>v==null)){
+      showErr('列名を検出できません。「年月 / 日付 / クレーム種類 / 顧客名 / 部署」を確認してください。');
       console.warn('Header parsed:', any.header); isLoading=false; btn.textContent=old; btn.disabled=false; return;
     }
     cached={header:any.header, rows:any.rows, idx};
@@ -418,7 +427,11 @@ async function load(){
     // build filters
     const yearSet=new Set(), typeSet=new Set(), custTotals=new Map();
     for(const r of any.rows){
-      const ym=parseYMText(valAt(r,idx.ym)); if(ym) yearSet.add(String(ym.y));
+      // derive year from 年月 or 日付
+      let ym = idx.ym!=null ? parseYMText(valAt(r,idx.ym)) : null;
+      if(!ym && idx.date!=null){ const d=parseJPDate(valAt(r,idx.date)); if(d) ym={y:d.getFullYear(), m:d.getMonth()+1}; }
+      if(ym) yearSet.add(String(ym.y));
+
       const t=S(valAt(r, idx.type)); if(t) typeSet.add(t);
       const c=S(valAt(r, idx.cust)) || '不明'; custTotals.set(c,(custTotals.get(c)||0)+1);
     }
@@ -440,7 +453,7 @@ async function load(){
     render();
     btn.textContent=old; btn.disabled=false; isLoading=false;
   }catch(e){
-    console.error(e); showErr('読み込みに失敗しました。公開設定/ネットワークをご確認ください。（No data from CSV/HTML/GViz）');
+    console.error(e); showErr('読み込みに失敗しました。公開設定/ネットワークをご確認ください。（CSV/HTML/GViz すべて不可）');
     const btn=document.getElementById('btnRefresh'); btn.textContent='Refresh now'; btn.disabled=false; isLoading=false;
   }
 }
@@ -505,8 +518,8 @@ document.getElementById('btnReset').addEventListener('click', ()=>{
   document.getElementById('selQuarter').value="ALL";
   document.getElementById('selMonth').value="ALL";
   document.getElementById('selType').value="ALL";
-  const cSel=document.getElementById('selCust'); if(cSel.options.length) cSel.value=cSel.options[0].value;
-  document.getElementById('selOrient').value="h";
+  const cSel=document.getElementById('selCust'); if(cSel.options.length) cSel.value='';
+  document.getElementById('selOrient').value="v";
   document.getElementById('chkPareto').checked=false;
   render();
 });
