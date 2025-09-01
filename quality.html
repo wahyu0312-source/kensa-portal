@@ -1,17 +1,17 @@
 <!doctype html>
 <html lang="ja" data-theme="light">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>品質情報（グラフ）</title>
 <style>
   :root{--bg1:#eef2ff;--bg2:#f8fafc;--card:#fff;--ink:#0f172a;--muted:#64748b;--border:#e5e7eb;--accent:#2563eb;--shadow:0 30px 60px rgba(15,23,42,.08);--radius:20px;--grid:#e5e7eb}
   [data-theme="dark"]{--bg1:#0b1220;--bg2:#0b1220;--card:#0f172a;--ink:#e5e7eb;--muted:#94a3b8;--border:#1f2937;--accent:#60a5fa;--shadow:none;--grid:#223044}
-  *{box-sizing:border-box}html,body{height:100%}
-  body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;background:
-    radial-gradient(1200px 600px at -10% -10%, #c7d2fe33 0%, transparent 60%),
-    radial-gradient(900px 500px at 110% 0%, #bae6fd33 0%, transparent 55%),
-    linear-gradient(120deg,var(--bg1),var(--bg2))}
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
+       background:radial-gradient(1200px 600px at -10% -10%, #c7d2fe33 0%, transparent 60%),
+                  radial-gradient(900px 500px at 110% 0%, #bae6fd33 0%, transparent 55%),
+                  linear-gradient(120deg,var(--bg1),var(--bg2))}
   header{position:sticky;top:0;z-index:10;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
   [data-theme="dark"] header{background:#0f172acc}
   .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
@@ -28,7 +28,8 @@
   .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   select.btn{appearance:none;padding-right:26px;background-image:
     linear-gradient(45deg,transparent 50%,#64748b 50%),
-    linear-gradient(135deg,#64748b 50%,transparent 50%);background-position:calc(100% - 18px) calc(1em - 2px),calc(100% - 13px) calc(1em - 2px);
+    linear-gradient(135deg,#64748b 50%,transparent 50%);
+    background-position:calc(100% - 18px) calc(1em - 2px),calc(100% - 13px) calc(1em - 2px);
     background-size:5px 5px;background-repeat:no-repeat}
   .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .chart-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;min-height:380px;display:flex;align-items:center;justify-content:center}
@@ -45,12 +46,11 @@
   <div class="wrap row">
     <div style="display:flex;align-items:center;gap:10px">
       <img src="tsh.png" alt="TSH" style="height:36px">
-      <strong>品質管理生産技術</strong>
+      <strong>品質情報</strong>
       <span id="stat" class="chip" style="display:none"></span>
     </div>
     <nav>
       <a href="./index.html">ホーム</a>
-      <a href="./charts.html"><strong>出荷検査（グラフ）</strong></a>
     </nav>
     <div class="controls">
       <button id="btnRefresh" class="btn" type="button">Refresh now</button>
@@ -93,7 +93,7 @@
         <select id="selOrient" class="btn"><option value="h">Horizontal</option><option value="v" selected>Vertical</option></select>
       </div>
     </div>
-    <div class="small" id="chartNote">集計は1行=1件。列: 年月 / クレーム種類 / 顧客名 / 部署。</div>
+    <div class="small" id="chartNote">集計は1行=1件。列: 年月 / 受付日 / クレーム種類 / 顧客名 / 部署。</div>
   </section>
 
   <section class="card" aria-label="チャート">
@@ -112,95 +112,71 @@
 <script>
 Chart.register(ChartDataLabels);
 
-/* ====== CONFIG: ganti docId di sini bila perlu ====== */
-const DOC_ID = "1lWcysDJF1MUVetWSn_bj7sRtmMQgy0-RRbpq0E"; // <- docId file Anda
-
-/* ====== SOURCES ====== */
-const GVIZ_URLS = [
-  // GViz via docId (butuh “Anyone with the link: Viewer”)
-  `https://docs.google.com/spreadsheets/d/${DOC_ID}/gviz/tq?gid=649800458`,
-  // GViz via published token (butuh Publish to the web)
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/gviz/tq?gid=649800458",
-  "https://r.jina.ai/https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/gviz/tq?gid=649800458"
-];
-const PUBHTML_URLS = [
-  "https://r.jina.ai/https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pubhtml?gid=649800458&single=true"
-];
+/* ===== CSV sources (langsung + 2 fallback anti‑CORS) ===== */
+const CSV_DIRECT =
+ "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pub?gid=649800458&single=true&output=csv";
+const CSV_PROXY_RJINA = "https://r.jina.ai/" + CSV_DIRECT;
+const CSV_PROXY_ISO   = "https://cors.isomorphic-git.org/" + CSV_DIRECT;
+const CSV_URLS = [CSV_DIRECT, CSV_PROXY_RJINA, CSV_PROXY_ISO];
 
 const S = s => String(s ?? '').trim();
 const intTick = v => Number.isInteger(v) ? v : '';
+
 function showErr(msg){ const b=document.getElementById('err'); b.textContent=msg; b.style.display='block'; }
 function hideErr(){ const b=document.getElementById('err'); b.style.display='none'; b.textContent=''; }
 function stat(msg){ const el=document.getElementById('stat'); el.textContent=msg; el.style.display='inline-block'; }
 
-/* ====== GViz JSONP ====== */
-function parseGvizTable(tbl){
-  const header = (tbl.cols||[]).map(c => (c && (c.label||c.id)) ? String(c.label||c.id).trim() : "");
-  const rows = (tbl.rows||[]).map(r => (r.c||[]).map((cell) => {
-    let v = cell ? cell.v : "";
-    return v==null ? "" : (v instanceof Date ? `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}` : String(v));
-  }));
-  return { header, rows };
-}
-function fetchGvizJSONP(base){
-  return new Promise((resolve,reject)=>{
-    const prev=((window.google||{}).visualization||{}).Query?.setResponse;
-    window.google=window.google||{}; window.google.visualization=window.google.visualization||{};
-    window.google.visualization.Query=window.google.visualization.Query||{};
-    window.google.visualization.Query.setResponse = (resp)=>{
-      cleanup();
-      try{
-        if(resp && resp.table){
-          const out=parseGvizTable(resp.table);
-          if(out.header.length && out.rows.length){ resolve(out); return; }
-        }
-        reject(new Error('GViz empty'));
-      }catch(e){ reject(e); }
-    };
-    const s=document.createElement('script');
-    const url=base + (base.includes('?')?'&':'?') + 'tqx=out:json&tq=' + encodeURIComponent('select *') + '&_ts=' + Date.now();
-    let to=setTimeout(()=>{ cleanup(); reject(new Error('GViz timeout')); },12000);
-    function cleanup(){ clearTimeout(to); s.remove(); if(prev) window.google.visualization.Query.setResponse=prev; }
-    s.onerror=()=>{ cleanup(); reject(new Error('GViz onerror')); };
-    s.src=url; document.body.appendChild(s);
-  });
+/* ===== CSV parser (tahan kutip, koma, CRLF) ===== */
+function parseCSV(t){
+  const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
+  let m, row=[]; t=t.replace(/\r\n?/g,"\n");
+  for(let i=0;i<t.length;){
+    re.lastIndex=i; m=re.exec(t); if(!m) break;
+    let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
+    row.push(cell); i=re.lastIndex;
+    if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
+  }
+  return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
 }
 
-/* ====== pubHTML fallback ====== */
-function parsePubHtml(html){
-  const doc=new DOMParser().parseFromString(html,'text/html');
-  const table=doc.querySelector('table.waffle')||doc.querySelector('table');
-  if(!table) return {header:[],rows:[]};
-  const rows=Array.from(table.rows).map(tr=>Array.from(tr.cells).map(td=>S(td.textContent)));
-  const clean=rows.filter(r=>r.some(c=>c!==''));
-  return {header:clean[0]||[], rows:clean.slice(1)};
-}
-
-/* ====== Index & helpers ====== */
+/* ===== Header indexing ===== */
 function indexByName(header){
   const map={}; header.forEach((h,i)=>map[S(h)]=i);
   const find=(names)=>{ for(const n of names){ if(n in map) return map[n]; } return null; };
   const findF=(re)=>{ for(let i=0;i<header.length;i++){ if(re.test(S(header[i]))) return i; } return null; };
   return {
     ym:   find(["年月"]) ?? findF(/年\s*月/),
+    date: find(["受付日","日付","出荷日","発生日","Date"]) ?? findF(/(受付日|日付|出荷日|発生日|date)/i),
     type: find(["クレーム種類","種類","種別"]) ?? findF(/(クレーム|種類|種別)/),
-    cust: find(["顧客名","客先","Customer"])  ?? findF(/(顧客|客先|customer)/i),
-    dept: find(["部署","部門","課"])          ?? findF(/(部署|部門|課)/),
-    date: find(["受付日","日付","出荷日","受付日","発生日","Date"]) ?? findF(/(受付日|日付|出荷日|発生日|date)/i),
+    cust: find(["顧客名","顧客","客先","Customer","顧客会社","顧客製品名"]) ?? findF(/(顧客|客先|customer)/i),
+    dept: find(["部署","部門","課"]) ?? findF(/(部署|部門|課)/),
   };
 }
+
+/* ===== Date helpers ===== */
 function parseYMText(str){
   const s=S(str);
   let m=s.match(/^(\d{4})\D(\d{1,2})$/) || s.match(/^(\d{4})(\d{1,2})$/) || s.match(/^(\d{4})年?(\d{1,2})月?$/);
   if(!m) return null; const y=+m[1], mo=+m[2]; return (y && mo>=1 && mo<=12) ? {y, m:mo} : null;
 }
-function parseJPDate(str){
-  const s=S(str); const m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
-  if(m) return new Date(+m[1], +m[2]-1, +m[3]); const d=new Date(s); return isNaN(d)?null:d;
+function parseDateSmart(str){
+  let s=S(str);
+  if(!s) return null;
+  // hapus weekday english di depan (e.g. "Monday, June 02, 2025")
+  s = s.replace(/^[A-Za-z]+,\s+/, '');
+  // coba langsung
+  let d=new Date(s); if(!isNaN(d)) return d;
+  // ubah yyyy年m月d日
+  s = s.replace(/[年\/\-\.](\s*)/g,'/').replace(/日/,'');
+  d=new Date(s); if(!isNaN(d)) return d;
+  // yyyy-mm-dd
+  const m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})$/);
+  if(m){ d=new Date(+m[1],+m[2]-1,+m[3]); if(!isNaN(d)) return d; }
+  return null;
 }
 
-/* ====== State + render ====== */
-let cached={header:[],rows:[],idx:null};
+/* ===== State ===== */
+let cached={header:[], rows:[], idx:null};
 let charts={dept:null,type:null,cust:null};
 const isDark=()=> document.documentElement.getAttribute('data-theme')==='dark';
 const PALETTE_LIGHT=['#93c5fd','#a5b4fc','#fda4af','#fdba74','#86efac','#67e8f9','#f5d0fe','#c4b5fd','#fecaca','#fde68a','#bbf7d0','#bae6fd'];
@@ -213,21 +189,49 @@ function applyChartDefaults(){
   Chart.defaults.borderColor=st.getPropertyValue('--grid').trim()||'#e5e7eb';
   Chart.defaults.font.family='system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif';
 }
-function aggregate({rows,idx,topN,yearPick,monthPick,typePick,custPick}){
+
+/* ===== Fetch CSV (dengan fallback) ===== */
+async function fetchAnyCSV(){
+  for(const u of CSV_URLS){
+    try{
+      const res=await fetch(u + (u.includes('?')?'&':'?') + '_ts=' + Date.now(), {cache:'no-store'});
+      if(!res.ok) continue;
+      const txt=await res.text();
+      const arr=parseCSV(txt);
+      if(arr.length>=2) return {mode:(u===CSV_DIRECT?'csv':'csv-proxy'), header:arr[0], rows:arr.slice(1)};
+    }catch(e){}
+  }
+  throw new Error('CSV fetch failed on all endpoints');
+}
+
+/* ===== Aggregate ===== */
+function aggregate({rows, idx, topN, yearPick, monthPick, typePick, custPick}){
   const mDept=new Map(), mType=new Map(), mCust=new Map();
   for(const r of rows){
+    // tentukan YM
     let ym = idx.ym!=null ? parseYMText(r[idx.ym]) : null;
-    if(!ym && idx.date!=null){ const d=parseJPDate(r[idx.date]); if(d) ym={y:d.getFullYear(), m:d.getMonth()+1}; }
+    if(!ym && idx.date!=null){ const d=parseDateSmart(r[idx.date]); if(d) ym={y:d.getFullYear(), m:d.getMonth()+1}; }
     if(!ym) continue;
+
     if(String(ym.y)!==String(yearPick)) continue;
     if(monthPick!=='ALL' && ym.m!==parseInt(monthPick,10)) continue;
-    const type=S(r[idx.type]??''); const cust=S(r[idx.cust]??'')||'不明'; const dept=S(r[idx.dept]??'')||'不明';
-    if(typePick!=='ALL' && type!==typePick) continue; if(custPick && cust!==custPick) continue;
-    mDept.set(dept,(mDept.get(dept)||0)+1); mType.set(type,(mType.get(type)||0)+1); mCust.set(cust,(mCust.get(cust)||0)+1);
+
+    const type=S(r[idx.type]??'');
+    const cust=S(r[idx.cust]??'') || '不明';
+    const dept=S(r[idx.dept]??'') || '不明';
+
+    if(typePick!=='ALL' && type!==typePick) continue;
+    if(custPick && cust!==custPick) continue;
+
+    mDept.set(dept,(mDept.get(dept)||0)+1);
+    mType.set(type,(mType.get(type)||0)+1);
+    mCust.set(cust,(mCust.get(cust)||0)+1);
   }
   const toTop=(mp,n)=>{const arr=[...mp.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n);return{labels:arr.map(x=>x[0]),data:arr.map(x=>x[1])}};
-  return {byDept:toTop(mDept,mDept.size||1),byType:toTop(mType,mType.size||1),byCust:toTop(mCust,topN)};
+  return { byDept:toTop(mDept,mDept.size||1), byType:toTop(mType,mType.size||1), byCust:toTop(mCust, topN) };
 }
+
+/* ===== Render ===== */
 function render(){
   applyChartDefaults();
   const topN=+document.getElementById('selTop').value||10;
@@ -235,7 +239,7 @@ function render(){
   const monthPick=document.getElementById('selMonth').value;
   const typePick=document.getElementById('selType').value;
   const custPick=document.getElementById('selCust').value;
-  const agg=aggregate({rows:cached.rows,idx:cached.idx,topN,yearPick,monthPick,typePick,custPick});
+  const agg=aggregate({rows:cached.rows, idx:cached.idx, topN, yearPick, monthPick, typePick, custPick});
   const note=`${yearPick}年 ${monthPick==='ALL'?'全月':(parseInt(monthPick,10)+'月')}｜種類:${typePick==='ALL'?'全て':typePick}｜顧客:${custPick||'(指定なし)'}`;
   document.getElementById('chartNote').textContent=note;
 
@@ -256,67 +260,51 @@ function render(){
   charts.cust=draw('chartCust',`顧客別 TOP${topN}（件数）`,agg.byCust.labels,agg.byCust.data);
 }
 
-/* ====== Load: GViz → pubHTML fallback ====== */
+/* ===== Load ===== */
 async function load(){
   hideErr(); stat('Loading…');
   try{
-    // 1) GViz JSONP first
-    for(const u of GVIZ_URLS){
-      try{
-        const out = await fetchGvizJSONP(u);
-        const idx = indexByName(out.header);
-        if([idx.ym,idx.type,idx.cust,idx.dept].every(v=>v==null)) throw new Error('Header NG');
-        cached={header:out.header,rows:out.rows,idx};
-        // build filters
-        const yearSet=new Set(), typeSet=new Set(), custTotals=new Map();
-        for(const r of out.rows){
-          let ym = idx.ym!=null ? parseYMText(r[idx.ym]) : null;
-          if(!ym && idx.date!=null){ const d=parseJPDate(r[idx.date]); if(d) ym={y:d.getFullYear(), m:d.getMonth()+1}; }
-          if(ym) yearSet.add(String(ym.y));
-          const t=S(r[idx.type]??''); if(t) typeSet.add(t);
-          const c=S(r[idx.cust]??'')||'不明'; custTotals.set(c,(custTotals.get(c)||0)+1);
-        }
-        const years=[...yearSet].sort(); const types=[...typeSet].sort();
-        const customers=[...custTotals.entries()].sort((a,b)=>b[1]-a[1]).map(([c])=>c);
-        const ySel=document.getElementById('selYear'); ySel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join(''); ySel.value=years.at(-1)||new Date().getFullYear();
-        document.getElementById('selType').innerHTML=`<option value="ALL">All</option>`+types.map(t=>`<option value="${t}">${t}</option>`).join('');
-        document.getElementById('selCust').innerHTML=`<option value="">(指定なし)</option>`+customers.map(c=>`<option value="${c}">${c}</option>`).join('');
-        stat(`Data: OK (mode: gviz, rows: ${out.rows.length}, cols: ${out.header.length})`);
-        render(); return;
-      }catch(e){ /* try next */ }
+    const any = await fetchAnyCSV(); // {mode, header, rows}
+    const idx = indexByName(any.header);
+    if([idx.ym,idx.date,idx.type,idx.cust,idx.dept].every(v=>v==null)){
+      showErr('列名を検出できません。「年月 / 受付日 / クレーム種類 / 顧客名 / 部署」を確認してください。');
+      stat('Header NG'); return;
     }
-    // 2) pubHTML fallback
-    for(const u of PUBHTML_URLS){
-      try{
-        const res=await fetch(u+'&_ts='+Date.now(),{cache:'no-store'}); if(!res.ok) continue;
-        const html=await res.text(); const out=parsePubHtml(html);
-        const idx=indexByName(out.header);
-        if(!(out.header.length && out.rows.length) || [idx.ym,idx.type,idx.cust,idx.dept].every(v=>v==null)) continue;
-        cached={header:out.header,rows:out.rows,idx};
-        const yearSet=new Set(), typeSet=new Set(), custTotals=new Map();
-        for(const r of out.rows){
-          let ym = idx.ym!=null ? parseYMText(r[idx.ym]) : null;
-          if(!ym && idx.date!=null){ const d=parseJPDate(r[idx.date]); if(d) ym={y:d.getFullYear(), m:d.getMonth()+1}; }
-          if(ym) yearSet.add(String(ym.y));
-          const t=S(r[idx.type]??''); if(t) typeSet.add(t);
-          const c=S(r[idx.cust]??'')||'不明'; custTotals.set(c,(custTotals.get(c)||0)+1);
-        }
-        const years=[...yearSet].sort(); const types=[...typeSet].sort();
-        const customers=[...custTotals.entries()].sort((a,b)=>b[1]-a[1]).map(([c])=>c);
-        const ySel=document.getElementById('selYear'); ySel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join(''); ySel.value=years.at(-1)||new Date().getFullYear();
-        document.getElementById('selType').innerHTML=`<option value="ALL">All</option>`+types.map(t=>`<option value="${t}">${t}</option>`).join('');
-        document.getElementById('selCust').innerHTML=`<option value="">(指定なし)</option>`+customers.map(c=>`<option value="${c}">${c}</option>`).join('');
-        stat(`Data: OK (mode: html, rows: ${out.rows.length}, cols: ${out.header.length})`);
-        render(); return;
-      }catch(e){ /* try next */ }
+    cached={header:any.header, rows:any.rows, idx};
+
+    // Build filters
+    const yearSet=new Set(), typeSet=new Set(), custTotals=new Map();
+    for(const r of any.rows){
+      let ym = idx.ym!=null ? parseYMText(r[idx.ym]) : null;
+      if(!ym && idx.date!=null){ const d=parseDateSmart(r[idx.date]); if(d) ym={y:d.getFullYear(), m:d.getMonth()+1}; }
+      if(ym) yearSet.add(String(ym.y));
+      const t=S(r[idx.type]??''); if(t) typeSet.add(t);
+      const c=S(r[idx.cust]??'') || '不明'; custTotals.set(c,(custTotals.get(c)||0)+1);
     }
-    throw new Error('No data from GViz/pubHTML');
+    const years=[...yearSet].sort(); const types=[...typeSet].sort();
+    const customers=[...custTotals.entries()].sort((a,b)=>b[1]-a[1]).map(([c])=>c);
+
+    const selYear=document.getElementById('selYear');
+    selYear.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    selYear.value=years.at(-1) || new Date().getFullYear();
+
+    const selType=document.getElementById('selType');
+    selType.innerHTML=`<option value="ALL">All</option>` + types.map(t=>`<option value="${t}">${t}</option>`).join('');
+
+    const selCust=document.getElementById('selCust');
+    selCust.innerHTML=`<option value="">(指定なし)</option>` + customers.map(c=>`<option value="${c}">${c}</option>`).join('');
+    selCust.value='';
+
+    stat(`Data: OK (${any.mode}, rows: ${any.rows.length}, cols: ${any.header.length})`);
+    render();
   }catch(e){
-    console.error(e); showErr('読み込みに失敗しました（GViz/pubHTMLの両方でデータが取れません）。「共有=Anyone viewer / Publish to the web」を確認してください。'); stat('No data');
+    console.error(e);
+    showErr('読み込みに失敗しました（CSV が取得できません）。公開設定/ネットワークをご確認ください。');
+    stat('No data');
   }
 }
 
-/* ====== UI ====== */
+/* ===== UI ===== */
 document.getElementById('btnRefresh').addEventListener('click', load);
 ['selTop','selYear','selMonth','selType','selCust','selOrient'].forEach(id=>document.getElementById(id).addEventListener('change', render));
 document.getElementById('chkDark').addEventListener('change',e=>{
