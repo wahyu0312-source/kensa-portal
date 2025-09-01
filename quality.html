@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>品質情報（リアルタイム・ダッシュボード v3）</title>
+  <title>品質情報（リアルタイム・部署内訳 v4）</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -15,7 +15,7 @@
     *{box-sizing:border-box}
     html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif}
     header{position:sticky;top:0;background:#ffffffcc;backdrop-filter:blur(8px);border-bottom:1px solid var(--border);z-index:10}
-    .container{max-width:1200px;margin:0 auto;padding:14px 18px}
+    .container{max-width:1100px;margin:0 auto;padding:14px 18px}
     .row{display:flex;align-items:end;justify-content:space-between;gap:16px;flex-wrap:wrap}
     h1{margin:0;font-size:clamp(18px,4vw,26px)}
     .sub{font-size:12px;color:var(--muted)}
@@ -23,19 +23,16 @@
     .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--ink);text-decoration:none;box-shadow:var(--shadow);font-size:13px}
     .btn:hover{border-color:var(--accent)}
     main{padding:18px}
-    .controls{max-width:1200px;margin:0 auto 14px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-wrap:wrap;gap:10px}
+    .controls{max-width:1100px;margin:0 auto 14px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-wrap:wrap;gap:10px}
     .controls label{font-size:12px;color:var(--muted)}
     .controls .g{display:flex;flex-direction:column;gap:6px}
-    .controls select,.controls input{padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:#fff;min-width:120px}
-    .grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:14px}
-    @media(min-width:960px){.grid{grid-template-columns:1fr 1fr}}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .controls select{padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:#fff;min-width:120px}
+    .card{max-width:1100px;margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
     .card h2{margin:0;padding:10px 14px;border-bottom:1px solid var(--border);font-size:14px}
-    .card .body{padding:10px 12px}
-    .chart{height:320px}
-    footer{max-width:1200px;margin:16px auto;padding:0 18px;color:var(--muted);font-size:12px}
-    .warn{max-width:1200px;margin:12px auto 0;padding:12px 16px;border:1px solid #f0ad4e;background:#fffbe6;border-radius:12px;color:#6b4f00;font-size:13px}
-    .help{font-size:12px;color:var(--muted)}
+    .body{padding:12px}
+    .chart{height:420px}
+    footer{max-width:1100px;margin:16px auto;padding:0 18px;color:var(--muted);font-size:12px}
+    .warn{max-width:1100px;margin:12px auto 0;padding:12px 16px;border:1px solid #f0ad4e;background:#fffbe6;border-radius:12px;color:#6b4f00;font-size:13px}
   </style>
 </head>
 <body>
@@ -43,7 +40,7 @@
     <div class="container">
       <div class="row">
         <div>
-          <h1>品質情報（リアルタイム）</h1>
+          <h1>品質情報（部署内訳）</h1>
           <div class="sub" id="subtitle">読み込み中…</div>
         </div>
         <div class="right">
@@ -57,61 +54,35 @@
   <section class="controls">
     <div class="g">
       <label>Year</label>
-      <select id="yearSel"><option value="all">All</option></select>
+      <select id="yearSel"><option value="">(自動)</option></select>
     </div>
     <div class="g">
       <label>Month</label>
-      <select id="monthSel"><option value="all">All</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select>
+      <select id="monthSel"><option value="">(自動)</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select>
     </div>
     <div class="g">
-      <label>Quarter</label>
-      <select id="qSel">
-        <option value="all">All</option>
-        <option value="Q1">Q1 (1-3)</option>
-        <option value="Q2">Q2 (4-6)</option>
-        <option value="Q3">Q3 (7-9)</option>
-        <option value="Q4">Q4 (10-12)</option>
-      </select>
+      <label>クレーム種類</label>
+      <select id="typeSel"><option value="">(自動)</option></select>
     </div>
     <div class="g">
-      <label>クレーム種類（絞り込み）</label>
-      <select id="typeSel"><option value="all">All</option></select>
-    </div>
-    <div class="g">
-      <label>部署グラフ</label>
+      <label>表示</label>
       <div style="display:flex;gap:8px;align-items:center">
-        <label class="help"><input type="checkbox" id="paretoChk"> Pareto</label>
         <select id="orientSel"><option value="h">Horizontal</option><option value="v">Vertical</option></select>
+        <label style="font-size:12px;color:var(--muted)"><input type="checkbox" id="paretoChk"> Pareto</label>
       </div>
     </div>
     <div class="g" style="align-self:flex-end">
-      <button id="refreshBtn" class="btn" type="button">Refresh now</button>
+      <button id="refreshBtn" class="btn" type="button">Refresh</button>
     </div>
   </section>
 
-  <main>
-    <div class="grid">
-      <section class="card">
-        <h2>月別推移（件数）</h2>
-        <div class="body"><canvas id="cMonthly" class="chart"></canvas></div>
-      </section>
-      <section class="card">
-        <h2>クレーム種類（件数）</h2>
-        <div class="body"><canvas id="cType" class="chart"></canvas></div>
-      </section>
-      <section class="card">
-        <h2>部署（選択年月の内訳）</h2>
-        <div class="body">
-          <div class="help" id="deptHelp">Year/Month と 種類の絞り込みに合わせて表示します。</div>
-          <canvas id="cDept" class="chart"></canvas>
-        </div>
-      </section>
-      <section class="card">
-        <h2>顧客名（選択条件のTOP15）</h2>
-        <div class="body"><canvas id="cCust" class="chart"></canvas></div>
-      </section>
+  <section class="card">
+    <h2 id="titleDept">部署内訳</h2>
+    <div class="body">
+      <canvas id="cDept" class="chart"></canvas>
+      <div id="note" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
     </div>
-  </main>
+  </section>
 
   <footer>
     <div id="footInfo"></div>
@@ -122,19 +93,17 @@
 (() => {
   // ====== Config ======
   const SRC = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pub?gid=649800458&single=true&output=csv';
-  const COLS = { ym: '年月', date: '受付日', type: 'クレーム種類', customer: '顧客名', dept: '部署' };
+  const COLS = { ym: '年月', date: '受付日', type: 'クレーム種類', dept: '部署' };
+  const TYPE_DEFAULTS = ['客先クレーム','客先ｸﾚｰﾑ','各先クレーム']; // 優先候補
 
-  // ====== State ======
-  let DATA = [];      // tidy rows: {y,m,ym,type,cust,dept}
-  let CHARTS = {};    // refs
+  let DATA = []; // {y,m,ym,type,dept}
+  let CHART = null;
 
-  // ====== Helpers ======
   const el = s => document.querySelector(s);
   const fmtYMD = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
   function parseYMText(v){
     if(v==null) return null;
     const s = (''+v).trim();
-    // 2025/06 , 2025-6 , 2025年6月 , 202506
     let m = s.match(/(\\d{4})\\D+?(\\d{1,2})/);
     if(!m) m=s.match(/(\\d{4})(\\d{2})/);
     if(!m) return null;
@@ -147,192 +116,139 @@
     const d=new Date(s);
     return isNaN(d)? null : d;
   }
-  function monthToQuarter(m){ return m<=3?'Q1': m<=6?'Q2': m<=9?'Q3':'Q4'; }
-  function uniq(arr){ return [...new Set(arr)]; }
-  function destroyCharts(){ Object.values(CHARTS).forEach(c=>{ try{ c.destroy(); }catch{} }); CHARTS={}; }
+  const uniq = arr => [...new Set(arr)];
 
   if (window.ChartDataLabels) Chart.register(window.ChartDataLabels);
 
-  function makeLine(ctx, labels, values){
-    return new Chart(ctx, {
-      type:'line',
-      data:{ labels, datasets:[{ data: values, fill:true, tension:.25 }]},
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{display:false}, datalabels:{display:false} },
-        scales:{ x:{ grid:{display:false} }, y:{ beginAtZero:true, grid:{color:'#eee'} } }
-      }
-    });
-  }
-  function makeBar(ctx, labels, values, horizontal=false, pareto=false){
-    const datasets = [{ data: values, borderWidth:1, datalabels:{ color:'#111', anchor:'end', align:'end', offset:4, rotation: horizontal?0:-90, formatter:v=> v } }];
+  function makeDeptChart(labels, values, horizontal, pareto){
+    if(CHART) try{ CHART.destroy(); }catch{}
+    const ctx = el('#cDept');
+    const datasets = [{
+      type:'bar',
+      data: values,
+      borderWidth:1,
+      datalabels:{ color:'#111', anchor:'end', align:'end', offset:4, rotation: horizontal?0:-90, formatter:v=> v }
+    }];
     const options = {
       responsive:true, maintainAspectRatio:false, indexAxis: horizontal?'y':'x',
-      plugins:{ legend:{display:false}, datalabels:{ color:'#111' } },
-      scales:{ x:{ grid:{display:false}, ticks:{font:{size:10}} }, y:{ beginAtZero:true, grid:{color:'#eee'}, ticks:{font:{size:10}} } }
+      plugins:{ legend:{display:false}, datalabels:{ color:'#111' }, tooltip:{enabled:true} },
+      scales:{ x:{ grid:{display:false}, ticks:{font:{size:11}} }, y:{ beginAtZero:true, grid:{color:'#eee'}, ticks:{font:{size:11}} } }
     };
-
     if(pareto){
       const total = values.reduce((a,b)=>a+b,0)||1;
       const cum = values.reduce((arr,v,i)=>{ arr.push((v + (arr[i-1]||0))); return arr; },[]).map(v=> (v/total*100));
       if(horizontal){
-        // horizontal bar: numeric axis is x
         options.scales.x1 = { beginAtZero:true, max:100, position:'top', grid:{display:false}, ticks:{callback:v=>v+'%'} };
         datasets.push({ type:'line', data:cum, xAxisID:'x1', borderWidth:2, pointRadius:2, datalabels:{display:false} });
       }else{
-        // vertical bar: numeric axis is y
         options.scales.y1 = { beginAtZero:true, max:100, position:'right', grid:{display:false}, ticks:{callback:v=>v+'%'} };
         datasets.push({ type:'line', data:cum, yAxisID:'y1', borderWidth:2, pointRadius:2, datalabels:{display:false} });
       }
     }
-
-    return new Chart(ctx, { type:'bar', data:{ labels, datasets }, options });
+    CHART = new Chart(ctx, { type:'bar', data:{ labels, datasets }, options });
   }
 
-  // ====== Load ======
   async function loadCSV(){
     return await new Promise((resolve, reject)=>{
       Papa.parse(SRC + '&t=' + Date.now(), {
         download:true, header:true, skipEmptyLines:true,
-        complete: (r)=> resolve(r.data),
+        complete: r=> resolve(r.data),
         error: reject
       });
     });
   }
 
-  function detectColumns(sampleRow){
-    const headers = Object.keys(sampleRow || {});
+  function detectColumns(sample){
+    const headers = Object.keys(sample||{});
     const find = (name, alts=[]) => {
       if(headers.includes(name)) return name;
       const candidates = [name, ...alts];
-      for(const h of headers){
-        if(candidates.some(k => h.includes(k))) return h;
-      }
+      for(const h of headers){ if(candidates.some(k=> h.includes(k))) return h; }
       return null;
     };
     const hYM = find(COLS.ym, ['年月']);
     const hDate = find(COLS.date, ['日','DATE','Date']);
     const hType = find(COLS.type, ['種類','種別']);
-    const hCust = find(COLS.customer, ['顧客','客先','Customer']);
     const hDept = find(COLS.dept, ['部署','部門','課']);
-    return { hYM, hDate, hType, hCust, hDept, headers };
+    return { hYM, hDate, hType, hDept };
   }
 
   function tidyRows(rows){
     const det = detectColumns(rows[0]||{});
-    const out = [];
+    const out=[];
     for(const r of rows){
       let y=null,m=null;
       if(det.hYM && r[det.hYM]){
-        const p = parseYMText(r[det.hYM]);
-        if(p){ y=p.y; m=p.m; }
+        const p=parseYMText(r[det.hYM]); if(p){ y=p.y; m=p.m; }
       }
-      if((!y || !m) && det.hDate && r[det.hDate]){
-        const d = parseDate(r[det.hDate]);
-        if(d){ y=d.getFullYear(); m=d.getMonth()+1; }
+      if((!y||!m) && det.hDate && r[det.hDate]){
+        const d=parseDate(r[det.hDate]); if(d){ y=d.getFullYear(); m=d.getMonth()+1; }
       }
-      if(!y || !m) continue; // skip rows without year-month
-      out.push({
-        y, m, ym: `${y}/${String(m).padStart(2,'0')}`,
-        type: (r[det.hType]||'').toString().trim(),
-        cust: (r[det.hCust]||'').toString().trim(),
-        dept: (r[det.hDept]||'').toString().trim()
-      });
+      if(!y||!m) continue;
+      out.push({ y, m, ym: `${y}/${String(m).padStart(2,'0')}`, type: (r[det.hType]||'').toString().trim(), dept: (r[det.hDept]||'').toString().trim() });
     }
-    el('#footInfo').textContent = `列検出: 年月=${det.hYM||'(なし→受付日から算出)'} / 日付=${det.hDate||'(なし)'} / 種類=${det.hType||'(なし)'} / 顧客=${det.hCust||'(なし)'} / 部署=${det.hDept||'(なし)'}`;
+    // footer info
+    el('#footInfo').textContent = `列検出: 年月=${det.hYM||'(なし→受付日から算出)'} / 日付=${det.hDate||'(なし)'} / 種類=${det.hType||'(なし)'} / 部署=${det.hDept||'(なし)'}`;
     return out;
   }
 
-  function filterRows(rows){
-    const yearSel = el('#yearSel').value;
-    const qSel = el('#qSel').value;
-    const monthSel = el('#monthSel').value;
-    const tSel = el('#typeSel').value;
-    return rows.filter(r => {
-      if(yearSel!=='all' && r.y!==+yearSel) return false;
-      if(monthSel!=='all' && r.m!==+monthSel) return false;
-      if(qSel!=='all' && monthToQuarter(r.m)!==qSel) return false;
-      if(tSel!=='all' && r.type!==tSel) return false;
-      return true;
-    });
+  function fillControls(){
+    const years = uniq(DATA.map(r=> r.y)).sort((a,b)=> a-b);
+    const types = uniq(DATA.map(r=> r.type)).filter(Boolean).sort();
+    const ySel = el('#yearSel'); years.forEach(y=>{ const o=document.createElement('option'); o.value=String(y); o.textContent=String(y); ySel.appendChild(o); });
+    const tSel = el('#typeSel'); types.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; tSel.appendChild(o); });
+    // Defaults: latest ym and 客先クレーム if exists
+    const latest = DATA.reduce((acc,r)=> acc ? (r.y>acc.y || (r.y===acc.y && r.m>acc.m)? r:acc) : r, null);
+    if(latest){ ySel.value = String(latest.y); el('#monthSel').value = String(latest.m); }
+    const pref = TYPE_DEFAULTS.find(x=> types.includes(x));
+    if(pref){ tSel.value = pref; }
   }
 
-  function aggregateAndDraw(){
-    const rows = filterRows(DATA);
-
-    // 1) Monthly trend (ignores Month selector to show full year trend with other filters)
-    const byYM = new Map();
-    rows.forEach(r => byYM.set(r.ym, (byYM.get(r.ym)||0)+1));
-    const ymKeys = [...byYM.keys()].sort((a,b)=>{
-      const [ya,ma]=a.split('/').map(Number); const [yb,mb]=b.split('/').map(Number);
-      return ya!==yb? ya-yb : ma-mb;
-    });
-    const ymVals = ymKeys.map(k=> byYM.get(k));
-    CHARTS.monthly && CHARTS.monthly.destroy();
-    if(ymKeys.length){ CHARTS.monthly = makeLine(el('#cMonthly'), ymKeys, ymVals); }
-
-    // 2) Type bar (current filters)
-    const typeCount = new Map(); rows.forEach(r => { if(r.type) typeCount.set(r.type,(typeCount.get(r.type)||0)+1); });
-    CHARTS.type && CHARTS.type.destroy();
-    if(typeCount.size){
-      const entries = [...typeCount.entries()].sort((a,b)=> b[1]-a[1]);
-      CHARTS.type = makeBar(el('#cType'), entries.map(e=>e[0]), entries.map(e=>e[1]), false, false);
-    }
-
-    // 3) Dept breakdown for selected Year/Month (and Type filter)
-    const monthSel = el('#monthSel').value;
+  function draw(){
+    const year = el('#yearSel').value;
+    const month = el('#monthSel').value;
+    const type = el('#typeSel').value;
     const orient = el('#orientSel').value;
     const pareto = el('#paretoChk').checked;
-    const deptCount = new Map();
-    rows.forEach(r => {
-      // only count rows matching Month if a specific month is set; if All, count all
-      if(monthSel!=='all' && r.m!==+monthSel) return;
-      if(r.dept) deptCount.set(r.dept,(deptCount.get(r.dept)||0)+1);
-    });
-    CHARTS.dept && CHARTS.dept.destroy();
-    if(deptCount.size){
-      const entries = [...deptCount.entries()].sort((a,b)=> b[1]-a[1]);
-      const labels = entries.map(e=>e[0]);
-      const values = entries.map(e=>e[1]);
-      CHARTS.dept = makeBar(el('#cDept'), labels, values, orient==='h', pareto);
-      el('#deptHelp').textContent = (monthSel==='all' ? '月=All（全期間）' : `月=${monthSel}`) + (el('#typeSel').value==='all' ? '' : ` ／ 種類=${el('#typeSel').value}`);
-    }else{
-      el('#deptHelp').textContent = '該当データがありません。';
-    }
 
-    // 4) Customer TOP15 with current filters
-    const custCount = new Map(); rows.forEach(r => { if(r.cust) custCount.set(r.cust,(custCount.get(r.cust)||0)+1); });
-    CHARTS.cust && CHARTS.cust.destroy();
-    if(custCount.size){
-      const entries = [...custCount.entries()].sort((a,b)=> b[1]-a[1]).slice(0,15);
-      CHARTS.cust = makeBar(el('#cCust'), entries.map(e=>e[0]), entries.map(e=>e[1]), true, false);
+    // require year, month, type (if empty, auto from latest / first)
+    const rows = DATA.filter(r => (!year || r.y===+year) && (!month || r.m===+month) && (!type || r.type===type));
+    const labelYM = rows.length? `${rows[0].y}/${String(rows[0].m).padStart(2,'0')}` : (year && month? `${year}/${String(month).padStart(2,'0')}`: '—');
+
+    const counts = new Map();
+    rows.forEach(r => { if(r.dept) counts.set(r.dept,(counts.get(r.dept)||0)+1); });
+    const entries = [...counts.entries()].sort((a,b)=> b[1]-a[1]);
+    const labels = entries.map(e=>e[0]);
+    const values = entries.map(e=>e[1]);
+
+    el('#titleDept').textContent = `部署内訳 ｜ ${type || '(全種類)'} ｜ ${labelYM}`;
+    if(!labels.length){
+      el('#note').textContent = '該当データがありません。Year と Month と 種類を選択してください。';
+      makeDeptChart(['データなし'], [0], orient==='h', false);
+      return;
+    }else{
+      el('#note').textContent = `合計 ${values.reduce((a,b)=>a+b,0)} 件`;
     }
+    makeDeptChart(labels, values, orient==='h', pareto);
   }
 
   async function main(){
     try{
       el('#openSrc').href = SRC;
       el('#subtitle').textContent = `データ元: Googleスプレッドシート（gid=${new URL(SRC).searchParams.get('gid')}） / 読込: ${fmtYMD(new Date())}`;
-      const rows = await loadCSV(); // header:true
-      if(!rows || !rows.length){
-        const w=document.createElement('div'); w.className='warn'; w.textContent='CSVにデータがありません。'; document.body.insertBefore(w, document.body.children[1]); return;
-      }
+      const rows = await loadCSV();
+      if(!rows || !rows.length){ const w=document.createElement('div'); w.className='warn'; w.textContent='CSVにデータがありません。'; document.body.insertBefore(w, document.body.children[1]); return; }
       DATA = tidyRows(rows);
-      // Fill controls
-      const years = uniq(DATA.map(r=> r.y)).sort((a,b)=> a-b);
-      const yearSel = el('#yearSel'); years.forEach(y=>{ const o=document.createElement('option'); o.value=String(y); o.textContent=String(y); yearSel.appendChild(o); });
-      const types = uniq(DATA.map(r=> r.type)).filter(Boolean).sort(); const typeSel = el('#typeSel'); types.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; typeSel.appendChild(o); });
-      // Events
+      fillControls();
       ['change','keyup'].forEach(ev=>{
-        el('#yearSel').addEventListener(ev, aggregateAndDraw);
-        el('#qSel').addEventListener(ev, aggregateAndDraw);
-        el('#monthSel').addEventListener(ev, aggregateAndDraw);
-        el('#typeSel').addEventListener(ev, aggregateAndDraw);
-        el('#orientSel').addEventListener(ev, aggregateAndDraw);
-        el('#paretoChk').addEventListener(ev, aggregateAndDraw);
+        el('#yearSel').addEventListener(ev, draw);
+        el('#monthSel').addEventListener(ev, draw);
+        el('#typeSel').addEventListener(ev, draw);
+        el('#orientSel').addEventListener(ev, draw);
+        el('#paretoChk').addEventListener(ev, draw);
       });
-      el('#refreshBtn').onclick = async ()=>{ const rows = await loadCSV(); DATA = tidyRows(rows); aggregateAndDraw(); };
-      // First render
-      aggregateAndDraw();
+      el('#refreshBtn').onclick = async ()=>{ const rows = await loadCSV(); DATA = tidyRows(rows); draw(); };
+      draw();
     }catch(err){
       console.error(err);
       const w=document.createElement('div'); w.className='warn'; w.textContent='CSVの取得に失敗しました。公開設定やURLをご確認ください。'; document.body.insertBefore(w, document.body.children[1]);
