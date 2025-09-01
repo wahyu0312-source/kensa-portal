@@ -144,12 +144,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
-/* ================== CONFIG ================== */
-const CSV_URL_PRIMARY = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pub?gid=649800458&single=true&output=csv";
-// mirror bila kantor blok docs.google.com
-const CSV_URL_FALLBACKS = [
+/* ========= CONFIG ========= */
+const CSV_URLS = [
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pub?gid=649800458&single=true&output=csv",
   "https://r.jina.ai/https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pub?gid=649800458&single=true&output=csv",
   "https://r.jina.ai/http://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pub?gid=649800458&single=true&output=csv",
+];
+// fallback ke HTML table jika CSV kosong
+const PUBHTML_URLS = [
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pubhtml?gid=649800458&single=true",
+  "https://r.jina.ai/https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pubhtml?gid=649800458&single=true",
+  "https://r.jina.ai/http://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pubhtml?gid=649800458&single=true",
 ];
 
 const S = s => String(s ?? '').trim();
@@ -157,7 +162,7 @@ const QUARTERS = {Q1:[1,2,3], Q2:[4,5,6], Q3:[7,8,9], Q4:[10,11,12]};
 function showErr(msg){ const b=document.getElementById('err'); b.textContent=msg; b.style.display='block'; }
 function hideErr(){ const b=document.getElementById('err'); b.style.display='none'; b.textContent=''; }
 
-/* ================== HELPERS ================== */
+/* ========= HELPERS ========= */
 function parseCSV(t){
   const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
   let m, row=[]; t=t.replace(/\r\n?/g,"\n");
@@ -165,6 +170,15 @@ function parseCSV(t){
     let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
     row.push(cell); i=re.lastIndex; if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; } }
   return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
+}
+function parsePubHtml(html){
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  let table = doc.querySelector('table.waffle') || doc.querySelector('table');
+  if(!table) return {header:[], rows:[]};
+  const rows = Array.from(table.rows).map(tr => Array.from(tr.cells).map(td => S(td.textContent)));
+  const clean = rows.filter(r => r.some(c => c!==''));
+  const header = clean[0] || []; const data = clean.slice(1);
+  return { header, rows:data };
 }
 function parseYMText(str){
   const s=S(str); let m=s.match(/^(\d{4})\D(\d{1,2})$/); if(!m) m=s.match(/^(\d{4})(\d{1,2})$/);
@@ -184,13 +198,13 @@ function applyChartDefaults(){
   Chart.defaults.font.family='system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif';
 }
 
-/* ================== STATE ================== */
+/* ========= STATE ========= */
 let isLoading=false;
 let cached={header:[], rows:[], idx:null};
 let charts={dept:null,type:null,cust:null};
 let lastAgg=null;
 
-/* ================== INDEX HEADER ================== */
+/* ========= INDEX HEADER ========= */
 function indexByName(header){
   const map={}; header.forEach((h,i)=>map[S(h)]=i);
   const find=(names)=>{ for(const n of names){ if(n in map) return map[n]; } return null; };
@@ -204,21 +218,35 @@ function indexByName(header){
 }
 const valAt=(row,i)=> (i==null ? '' : (row[i] ?? ''));
 
-/* ================== FETCH CSV (fallback) ================== */
-async function fetchTextWithFallback(){
-  const urls=[CSV_URL_PRIMARY, ...CSV_URL_FALLBACKS];
-  let lastErr=null;
-  for(const u of urls){
+/* ========= FETCH ANY (CSV → HTML fallback) ========= */
+async function fetchAny(){
+  // coba CSV
+  for(const u of CSV_URLS){
     try{
       const res=await fetch(u + (u.includes('?')?'&':'?') + '_ts=' + Date.now(), {cache:'no-store'});
-      if(!res.ok) throw new Error('HTTP '+res.status+' @ '+u);
-      const t=await res.text(); if(t && t.length>10) return t;
-    }catch(e){ lastErr=e; }
+      if(!res.ok) continue;
+      const txt=await res.text();
+      if(txt && txt.trim().length>0){
+        const arr=parseCSV(txt);
+        if(arr.length>=2) return {mode:'csv', header:arr[0], rows:arr.slice(1)};
+        console.warn('CSV empty, trying HTML fallback. first100=', txt.slice(0,100));
+      }
+    }catch(e){ /* try next */ }
   }
-  throw lastErr || new Error('All sources failed');
+  // fallback ke pubhtml (table)
+  for(const u of PUBHTML_URLS){
+    try{
+      const res=await fetch(u + (u.includes('?')?'&':'?') + '_ts=' + Date.now(), {cache:'no-store'});
+      if(!res.ok) continue;
+      const html=await res.text();
+      const {header, rows} = parsePubHtml(html);
+      if(header.length && rows.length) return {mode:'html', header, rows};
+    }catch(e){ /* try next */ }
+  }
+  throw new Error('No data from CSV or HTML');
 }
 
-/* ================== AGGREGATE ================== */
+/* ========= AGGREGATE ========= */
 function aggregate({rows, idx, topN, yearPick, quarterPick, monthPick, typePick, custPick}){
   const monthList = quarterPick==='ALL' ? null : QUARTERS[quarterPick];
   const mDept=new Map(), mType=new Map(), mCust=new Map();
@@ -246,7 +274,7 @@ function aggregate({rows, idx, topN, yearPick, quarterPick, monthPick, typePick,
   lastAgg=agg; return agg;
 }
 
-/* ================== PARETO ================== */
+/* ========= PARETO ========= */
 function addParetoIfNeeded(cfg, labels, values, enable, isHorizontal){
   if(!enable) return;
   const total=values.reduce((n,v)=>n+v,0); let cum=0;
@@ -259,7 +287,7 @@ function addParetoIfNeeded(cfg, labels, values, enable, isHorizontal){
   cfg.data.datasets.push(ds);
 }
 
-/* ================== RENDER ================== */
+/* ========= RENDER ========= */
 function render(){
   applyChartDefaults();
   const topN=+document.getElementById('selTop').value||10;
@@ -309,27 +337,24 @@ function render(){
     `期間: ${periodLabel} ／ 種類: ${typePick==='ALL'?'(全て)':typePick} ／ 顧客フィルタ: ${custPick||'(なし)'} ／ 集計は1行=1件`;
 }
 
-/* ================== LOAD ================== */
+/* ========= LOAD ========= */
 async function load(){
   hideErr();
   try{
     if(isLoading) return; isLoading=true;
     const btn=document.getElementById('btnRefresh'); const old=btn.textContent; btn.textContent='Loading...'; btn.disabled=true;
 
-    const text = await fetchTextWithFallback();
-    const arr = parseCSV(text);
-    if(!arr.length) throw new Error('CSV empty');
-    const header=arr[0], rows=arr.slice(1);
-    const idx=indexByName(header);
+    const any = await fetchAny(); // {mode, header, rows}
+    const idx = indexByName(any.header);
     if([idx.ym,idx.type,idx.cust,idx.dept].every(v=>v==null)){
-      showErr('CSVの列名を検出できません。ヘッダに「年月 / クレーム種類 / 顧客名 / 部署」があるか確認してください。');
-      console.warn('Header:', header); isLoading=false; btn.textContent=old; btn.disabled=false; return;
+      showErr('列名を検出できません。「年月 / クレーム種類 / 顧客名 / 部署」を確認してください。');
+      console.warn('Header parsed:', any.header); isLoading=false; btn.textContent=old; btn.disabled=false; return;
     }
-    cached={header, rows, idx};
+    cached={header:any.header, rows:any.rows, idx};
 
     // build filters
     const yearSet=new Set(), typeSet=new Set(), custTotals=new Map();
-    for(const r of rows){
+    for(const r of any.rows){
       const ym=parseYMText(valAt(r,idx.ym)); if(ym) yearSet.add(String(ym.y));
       const t=S(valAt(r, idx.type)); if(t) typeSet.add(t);
       const c=S(valAt(r, idx.cust)) || '不明'; custTotals.set(c,(custTotals.get(c)||0)+1);
@@ -357,7 +382,7 @@ async function load(){
   }
 }
 
-/* ================== EXPORT & EVENTS ================== */
+/* ========= EXPORT & EVENTS ========= */
 function exportChartsExcel(){
   if(!lastAgg) return;
   const wb=XLSX.utils.book_new();
@@ -367,7 +392,7 @@ function exportChartsExcel(){
   XLSX.utils.book_append_sheet(wb, ws2, `種類別(期間)`);
   const ws3=XLSX.utils.aoa_to_sheet([["顧客","件数"], ...lastAgg.byCust.labels.map((n,i)=>[n,lastAgg.byCust.data[i]])]);
   XLSX.utils.book_append_sheet(wb, ws3, `顧客別TOP`);
-  XLSX.writeFile(wb, "品質情報_グラフ集計.csv.xlsx");
+  XLSX.writeFile(wb, "品質情報_グラフ集計.xlsx");
 }
 async function exportPDF(){
   const { jsPDF } = window.jspdf;
@@ -387,7 +412,7 @@ async function exportPDF(){
   pdf.save('品質情報_グラフ(PDF).pdf');
 }
 
-/* ================== LIVE & UI ================== */
+/* ========= LIVE & UI ========= */
 let timer=null, intervalMs=60000;
 function startAutoRefresh(ms){
   intervalMs=ms; clearInterval(timer);
