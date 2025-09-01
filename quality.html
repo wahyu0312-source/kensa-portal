@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>品質情報 | 品質管理生産技術システム</title>
+  <title>品質情報（リアルタイム）| 品質管理生産技術システム</title>
 
   <!-- Chart.js & optional datalabels -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
@@ -58,7 +58,7 @@
     <div class="container">
       <div class="row">
         <div>
-          <h1>品質情報</h1>
+          <h1>品質情報（リアルタイム）</h1>
           <div class="sub" id="subtitle">読み込み中…</div><a id="openSrc" class="btn-src" href="#" target="_blank" rel="noopener">データを開く</a>
         </div>
         <div class="right">
@@ -68,68 +68,34 @@
     </div>
   </header>
 
-  <!-- 設定 UI -->
-  <section class="no-print" style="max-width:1120px;margin:10px auto 0;padding:0 20px">
-    <details id="settings" style="background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow)">
-      <summary style="cursor:pointer;padding:10px 14px;color:var(--muted);font-size:13px">⚙️ 表示設定（列の対応が合わない時に変更）</summary>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;padding:12px 14px;border-top:1px solid var(--border)">
-        <label style="display:flex;flex-direction:column;gap:6px;font-size:12px">日付列
-          <select id="map-date"></select>
-        </label>
-        <div style="display:flex;gap:8px">
-          <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;flex:1">年（代替）
-            <select id="map-year"></select>
-          </label>
-          <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;flex:1">月（代替）
-            <select id="map-month"></select>
-          </label>
-        </div>
-        <label style="display:flex;flex-direction:column;gap:6px;font-size:12px">数量（合計する数値列 / 無指定=1件=1カウント）
-          <select id="map-qty"></select>
-        </label>
-        <label style="display:flex;flex-direction:column;gap:6px;font-size:12px">顧客
-          <select id="map-cust"></select>
-        </label>
-        <label style="display:flex;flex-direction:column;gap:6px;font-size:12px">分類（部位・品名など）
-          <select id="map-part"></select>
-        </label>
-        <div style="display:flex;align-items:flex-end;gap:8px">
-          <button id="applyMapping" style="padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer">適用</button>
-          <button id="resetMapping" style="padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer">リセット</button>
-          <span id="mapSaved" style="font-size:12px;color:var(--muted)"></span>
-        </div>
-      </div>
-    </details>
-  </section>
-
   <main>
     <div class="grid" id="cards">
       <section class="card" id="card-monthly" hidden>
-        <h2>月別推移</h2>
+        <h2>月別推移（年月）</h2>
         <div class="body">
           <div class="chart-box"><canvas id="chartMonthly"></canvas></div>
           <div class="legend" id="legend-monthly"></div>
         </div>
       </section>
 
+      <section class="card" id="card-type" hidden>
+        <h2>クレーム種類（件数）</h2>
+        <div class="body">
+          <div class="chart-box"><canvas id="chartType"></canvas></div>
+        </div>
+      </section>
+
       <section class="card" id="card-customer" hidden>
-        <h2>顧客別（TOP10）</h2>
+        <h2>顧客名（TOP10）</h2>
         <div class="body">
           <div class="chart-box"><canvas id="chartCustomer"></canvas></div>
         </div>
       </section>
 
-      <section class="card" id="card-category" hidden>
-        <h2 id="category-title">分類別（TOP10）</h2>
+      <section class="card" id="card-dept" hidden>
+        <h2>部署（TOP10）</h2>
         <div class="body">
-          <div class="chart-box"><canvas id="chartCategory"></canvas></div>
-        </div>
-      </section>
-
-      <section class="card" id="card-pareto" hidden>
-        <h2>不良/変更 主要項目（Pareto）</h2>
-        <div class="body">
-          <div class="chart-box"><canvas id="chartPareto"></canvas></div>
+          <div class="chart-box"><canvas id="chartDept"></canvas></div>
         </div>
       </section>
     </div>
@@ -142,552 +108,179 @@
 
 <script>
 (() => {
-  // ====== CONFIG ======
-  // Wahyu's CSV (Published to the web). You can change the gid if your sheet tab differs.
-  const CSV_URL_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkHKcql0V0V2rD6VMmbCCib5djCj74e3beh3krOSplI7pWQvFDGK-54UOCh3sCGZHSxkjIK9gHxz7j/pub?gid=1162640324&single=true&output=csv';
+  // ===== CONFIG =====
+  const CSV_URL_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTTyGRhapP1p6YUqQiGWwmHRYZjl-kxfuYeROLQNcOk0ZZFZeaGgQRZF1PNkiLe0mGXCX5pHnRUJsG6/pub?gid=649800458&single=true&output=csv';
   const CSV_URL = CSV_URL_BASE + '&t=' + Date.now();
+  const COLS = { ym: '年月', type: 'クレーム種類', customer: '顧客名', dept: '部署' };
 
-  // ====== Helpers ======
-  const el = (s) => document.querySelector(s);
-  const fmtYMD = (d) => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  // ===== Helpers =====
+  const el = (s)=> document.querySelector(s);
+  const fmtYMD = (d)=> `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
   const isNumeric = (v)=> v!==null && v!=='' && !isNaN(Number((''+v).replace(/,/g,'')));
-  const int = (v)=> { const n = Number(String(v).replace(/[^0-9.-]/g,'')); return Number.isFinite(n)? n: NaN; };
 
-  // Subtitle + open source link
-  el('#subtitle').textContent = `データ元: Googleスプレッドシート（${new URL(CSV_URL_BASE).searchParams.get('gid')}） / 生成: ${fmtYMD(new Date())}`;
+  // Title subtext + source link
+  el('#subtitle').textContent = `データ元: Googleスプレッドシート（gid=${new URL(CSV_URL_BASE).searchParams.get('gid')}） / 生成: ${fmtYMD(new Date())}`;
   const a = el('#openSrc'); if(a){ a.href = CSV_URL_BASE; }
 
-  // ====== State ======
-  const state = {
-    header: [], rows: [],
-    cols: { date:null, qty:null, customer:null, part:null, issueCountCols:[], year:null, month:null }
-  };
-
-  // ====== Parsing ======
-  function tryParseDate(v){
+  // 年月 parser → returns {y,m,label} or null
+  function parseYM(v){
     if(v==null) return null;
-    // Excel serial
-    if(isNumeric(v)){
-      const num = Number((''+v).replace(/,/g,''));
-      if(num>20000 && num<80000){
-        const d0 = new Date(Date.UTC(1899,11,30));
-        const d = new Date(d0.getTime() + num*86400000);
-        return d;
-      }
+    const s = (''+v).trim();
+    // patterns: 2025/06, 2025-6, 2025年6月, 2025.06
+    let m = s.match(/(\d{4})\D+(\d{1,2})/);
+    if(!m){
+      // pure yyyymm or yyyym?
+      m = s.match(/(\d{4})(\d{1,2})/);
     }
-    const tRaw = (''+v).trim();
-    const ym1 = tRaw.match(/^(\\d{4})[\\/-](\\d{1,2})$/);
-    const ym2 = tRaw.match(/^(\\d{4})年(\\d{1,2})月$/);
-    if(ym1 || ym2){
-      const y = Number((ym1||ym2)[1]);
-      const m = Number((ym1||ym2)[2]);
-      return new Date(y, m-1, 1);
-    }
-    const t = tRaw.replace(/年|\\./g,'/').replace(/月/g,'/').replace(/日/g,'');
-    const d = new Date(t);
-    return isNaN(d)? null:d;
+    if(!m) return null;
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    if(!y || !mo || mo<1 || mo>12) return null;
+    return { y, m: mo, label: `${y}/${String(mo).padStart(2,'0')}` };
   }
 
-  function findHeaderAndData(allRows){
-    let bestScore=-1, bestIdx=0;
-    for(let i=0;i<Math.min(10, allRows.length); i++){
-      const r=allRows[i];
-      const nonEmpty=r.filter(c=> (c||'').toString().trim()!=='').length;
-      const numeric=r.filter(c=> isNumeric(c)).length;
-      const bonus=/(日|年月日|顧客|客先|数量|部位|品名|不良|変更|クレーム|年|月)/.test(r.join(' '))?5:0;
-      const score=nonEmpty-numeric+bonus;
-      if(score>bestScore){bestScore=score; bestIdx=i;}
-    }
-    return { header: allRows[bestIdx], rows: allRows.slice(bestIdx+1) };
+  function idxOf(header, name){
+    return header.findIndex(h => (h||'').toString().trim() === name);
   }
 
-  function detectColumns(header, rows){
-    const H = header.map(h => (h||'').toString());
-    const includesAny = (s, arr)=> arr.some(k=> s.includes(k));
-
-    // ---- date ----
-    let dateIdx = -1, dateScore=-1;
-    for(let i=0;i<H.length;i++){
-      const h = H[i];
-      if(includesAny(h, ['日','年月日','Date','DATE','date','出荷日','製造日','発行'])){
-        let s=0; for(const r of rows.slice(0,300)){ if(tryParseDate(r[i])) s++; }
-        if(s>dateScore){ dateScore=s; dateIdx=i; }
-      }
-    }
-    if(dateIdx<0){
-      for(let i=0;i<H.length;i++){
-        let s=0; for(const r of rows.slice(0,300)){ if(tryParseDate(r[i])) s++; }
-        if(s>dateScore){ dateScore=s; dateIdx=i; }
-      }
-      if(dateScore < 5) dateIdx = null;
-    }
-
-    // ---- qty ----
-    let qtyIdx = -1, qtyScore=-1;
-    for(let i=0;i<H.length;i++){
-      const h = H[i];
-      if(includesAny(h, ['数量','数量(済)','数','台数','個数','Qty','QTY','済'])){
-        let s=0; for(const r of rows.slice(0,300)){ if(isNumeric(r[i])) s+= Number((''+r[i]).replace(/,/g,'')); }
-        if(s>qtyScore){ qtyScore=s; qtyIdx=i; }
-      }
-    }
-    if(qtyIdx<0){
-      for(let i=0;i<H.length;i++){
-        let s=0, cnt=0; for(const r of rows.slice(0,300)){ if(isNumeric(r[i])){ s+=Number((''+r[i]).replace(/,/g,'')); cnt++; } }
-        if(cnt>15 && s>qtyScore){ qtyScore=s; qtyIdx=i; }
-      }
-      if(qtyScore<=0) qtyIdx = null;
-    }
-
-    // ---- customer ----
-    let custIdx = H.findIndex(h=> includesAny(h,['顧客','顧客名','客先','Customer','得意先']));
-    if(custIdx<0){
-      let best=-1, idx=-1; for(let i=0;i<H.length;i++){
-        const set = new Set(rows.slice(0,500).map(r=> (r[i]||'').toString().trim()).filter(Boolean));
-        if(set.size>best){ best=set.size; idx=i; }
-      } custIdx = idx;
-    }
-
-    // ---- part ----
-    let partIdx = H.findIndex(h=> includesAny(h,['部位','品名','品目','機種','型式','製品名','ASSY']));
-    if(partIdx<0){
-      const distinct = H.map((_,i)=> new Set(rows.slice(0,500).map(r=> (r[i]||'').toString().trim()).filter(Boolean)).size);
-      const sorted = distinct.map((v,i)=>[i,v]).sort((a,b)=> b[1]-a[1]);
-      partIdx = sorted[1]?.[0] ?? null;
-    }
-
-    // ---- issue cols ----
-    const issueCols=[]; for(let i=0;i<H.length;i++){
-      const h=H[i];
-      const looks=includesAny(h,['クレーム','不良','不具合','変更','設計','是正','手直し','修正','社内']);
-      let ratio=0; const sample=rows.slice(0,200); if(sample.length){
-        ratio = sample.reduce((a,r)=> a + (isNumeric(r[i])?1:0),0)/sample.length;
-      }
-      if(looks || (ratio>0.5 && /(件|回|数)$/.test(h))) issueCols.push(i);
-    }
-
-    return {date: dateIdx, qty: qtyIdx, customer: custIdx, part: partIdx, issueCountCols: issueCols, year:null, month:null};
+  function topN(mapEntries, n=10){
+    return [...mapEntries].sort((a,b)=> b[1]-a[1]).slice(0,n);
   }
 
-  // ====== Aggregations ======
-  function groupByMonth(rows, dateIdx, qtyIdx){
-    const map = new Map();
-    for(const r of rows){
-      const d = tryParseDate(r[dateIdx]);
-      if(!d) continue;
-      const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      const val = qtyIdx!=null && isNumeric(r[qtyIdx]) ? Number((''+r[qtyIdx]).replace(/,/g,'')) : 1;
-      map.set(ym, (map.get(ym)||0) + val);
-    }
-    const labels=[]; const data=[];
-    // use chronological keys present
-    const keys = [...map.keys()].sort();
-    if(keys.length){
-      for(const k of keys){
-        labels.push(k.replace('-', '/'));
-        data.push(map.get(k)||0);
-      }
-    }
-    return {labels, data};
-  }
-
-  function topN(rows, idx, qtyIdx, n=10){
-    const counts = new Map();
-    for(const r of rows){
-      const key = (r[idx]||'').toString().trim();
-      if(!key) continue;
-      const val = qtyIdx!=null && isNumeric(r[qtyIdx]) ? Number((''+r[qtyIdx]).replace(/,/g,'')) : 1;
-      counts.set(key, (counts.get(key)||0) + val);
-    }
-    return [...counts.entries()].sort((a,b)=> b[1]-a[1]).slice(0,n);
-  }
-
-  function sumNumericByCols(rows, colIdxs){
-    const sums = [];
-    for(const i of colIdxs){
-      let s=0; for(const r of rows){ if(isNumeric(r[i])) s+= Number((''+r[i]).replace(/,/g,'')); }
-      sums.push([i,s]);
-    }
-    return sums.sort((a,b)=> b[1]-a[1]);
-  }
-
-  // ====== Charts ======
+  // ===== Charts =====
   if (window.ChartDataLabels) { Chart.register(window.ChartDataLabels); }
 
+  function makeLine(ctx, labels, values){
+    return new Chart(ctx, {
+      type:'line',
+      data:{ labels, datasets:[{ data: values, fill:true, tension:.25 }]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, datalabels:{display:false} },
+        scales:{ x:{ grid:{display:false} }, y:{ beginAtZero:true, grid:{color:'#eee'} } }
+      }
+    });
+  }
+
   function makeBar(ctx, labels, values, {horizontal=false}={}){
-    const c = new Chart(ctx, {
+    return new Chart(ctx, {
       type:'bar',
-      data:{ labels, datasets:[{label:'', data:values, borderWidth:1}]},
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        indexAxis: horizontal?'y':'x',
-        plugins:{ legend:{display:false},
-          tooltip:{enabled:true},
-          datalabels:{ anchor:'end', align:'end', formatter:v=> (v>=1000? v.toLocaleString(): v), font:{size:10}, rotation: horizontal?0:-90 }
-        },
+      data:{ labels, datasets:[{ data: values, borderWidth:1 }]},
+      options:{ responsive:true, maintainAspectRatio:false, indexAxis: horizontal?'y':'x',
+        plugins:{ legend:{display:false}, datalabels:{ anchor:'end', align:'end', formatter:v=> v, rotation: horizontal?0:-90, font:{size:10} } },
         scales:{ x:{ grid:{display:false}, ticks:{font:{size:10}} }, y:{ beginAtZero:true, grid:{color:'#eee'}, ticks:{font:{size:10}} } }
       }
     });
-    return c;
   }
 
-  function makeLine(ctx, labels, values){
-    const c = new Chart(ctx, {
-      type:'line',
-      data:{ labels, datasets:[{label:'月別合計', data:values, fill:true, tension:.25}]},
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{display:false}, datalabels:{display:false}},
-        scales:{ x:{ grid:{display:false}}, y:{ beginAtZero:true, grid:{color:'#eee'}} }
-      }
-    });
-    return c;
-  }
-
-  function makePareto(ctx, labels, values){
-    const total = values.reduce((a,b)=>a+b,0)||1;
-    const cum = values.reduce((arr,v,i)=>{ arr.push((v + (arr[i-1]||0))); return arr; },[]).map(v=> (v/total*100));
-    const c = new Chart(ctx, {
-      type:'bar',
-      data:{ labels, datasets:[ { label:'件数', data: values, yAxisID:'y' }, { label:'累積%', data: cum, type:'line', yAxisID:'y1', borderWidth:2, pointRadius:2 } ] },
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{position:'bottom'}, datalabels:{ formatter:(v,ctx)=> ctx.dataset.type==='line'? '': v, align:'end', anchor:'end', font:{size:10} } },
-        scales:{ y:{ beginAtZero:true, grid:{color:'#eee'} }, y1:{ beginAtZero:true, max:100, position:'right', grid:{display:false}, ticks:{callback:(v)=>v+'%'} }, x:{ grid:{display:false}, ticks:{font:{size:10}}} }
-      }
-    });
-    return c;
-  }
-
-  // ====== Render ======
-  function render(){
-    const {header, rows, cols} = state;
-    // clear visibility
-    document.querySelectorAll('#cards section.card').forEach(sec=> sec.hidden=true);
-
-    let charts=0;
-
-    // Monthly trend by date (sorted by dataset order)
-    if(cols.date!=null){
-      const {labels, data} = groupByMonth(rows, cols.date, cols.qty);
-      if(data.length && data.some(v=>v>0)){
-        el('#card-monthly').hidden=false;
-        const c = makeLine(el('#chartMonthly'), labels, data);
-        el('#legend-monthly').innerHTML = `<span class="pill">集計対象: ${header[cols.date]||'日付'}${cols.qty!=null?` × ${header[cols.qty]}`:'（1件=1カウント）'}</span>`;
-        charts++;
-      }
-    }
-
-    // Customer top10 (only if detected)
-    if(cols.customer!=null){
-      const data = topN(rows, cols.customer, cols.qty, 10);
-      if(data.length){
-        el('#card-customer').hidden=false;
-        makeBar(el('#chartCustomer'), data.map(d=>d[0]), data.map(d=>d[1]), {horizontal:true});
-        charts++;
-      }
-    }
-
-    // Part/Category top10
-    if(cols.part!=null){
-      const data = topN(rows, cols.part, cols.qty, 10);
-      if(data.length){
-        el('#card-category').hidden=false;
-        el('#category-title').textContent = `${header[cols.part]} 別（TOP10）`;
-        makeBar(el('#chartCategory'), data.map(d=>d[0]), data.map(d=>d[1]), {horizontal:false});
-        charts++;
-      }
-    }
-
-    // Pareto on issue columns (optional 3rd chart)
-    if(charts < 3 && state.cols.issueCountCols?.length){
-      const sums = sumNumericByCols(rows, state.cols.issueCountCols);
-      if(sums.length){
-        el('#card-pareto').hidden=false;
-        const top = sums.slice(0,10);
-        makePareto(el('#chartPareto'), top.map(([i])=> header[i]), top.map(([,v])=> v));
-        charts++;
-      }
-    }
-
-    // Detection summary
-    const detect = [
-      cols.date!=null? `日付=「${header[cols.date]}」`:null,
-      (cols.year!=null && cols.month!=null)? `年月=「${header[cols.year]}＋${header[cols.month]}」`:null,
-      cols.qty!=null? `数量=「${header[cols.qty]}」`:null,
-      cols.customer!=null? `顧客=「${header[cols.customer]}」`:null,
-      cols.part!=null? `分類=「${header[cols.part]}」`:null,
-      (cols.issueCountCols?.length? `不良/変更など=${cols.issueCountCols.map(i=>`「${header[i]}」`).join('、')}`:null)
-    ].filter(Boolean).join(' ／ ');
-    el('#detect').textContent = detect? `自動検出: ${detect}`: '';
-
-    if(!charts){
-      const warn = document.createElement('div');
-      warn.style.cssText = 'max-width:1120px;margin:12px auto 0;padding:12px 16px;border:1px solid #f0ad4e;background:#fffbe6;border-radius:12px;color:#6b4f00;font-size:13px';
-      warn.innerHTML = 'データを解釈できませんでした。上の⚙️設定から列を指定してください。';
-      document.body.insertBefore(warn, document.body.children[1]);
-    }
-  }
-
-  // ====== UI mapping helpers ======
-  function fillSelect(sel, header, extraNone){
-    sel.innerHTML='';
-    const opt0=document.createElement('option');
-    opt0.value=''; opt0.textContent= extraNone || '（未選択）'; sel.appendChild(opt0);
-    header.forEach((h,i)=>{ const o=document.createElement('option'); o.value=String(i); o.textContent=`${h || '(空白)'} [${i}]`; sel.appendChild(o); });
-  }
-  function setSelect(sel, idx){ sel.value = (idx==null || idx<0)? '' : String(idx); }
-  function getSelectIdx(sel){ const v=sel.value; return v===''? null : Number(v); }
-  function saveMapping(m){ localStorage.setItem('quality.mapping', JSON.stringify(m)); el('#mapSaved').textContent='保存しました'; setTimeout(()=> el('#mapSaved').textContent='', 1200); }
-  function loadMapping(){ try{ return JSON.parse(localStorage.getItem('quality.mapping')||'{}'); }catch{ return {}; } }
-  function applyMappingFromUI(){
-    const m = {
-      date: getSelectIdx(el('#map-date')),
-      year: getSelectIdx(el('#map-year')),
-      month: getSelectIdx(el('#map-month')),
-      qty: getSelectIdx(el('#map-qty')),
-      customer: getSelectIdx(el('#map-cust')),
-      part: getSelectIdx(el('#map-part')),
-    };
-    saveMapping(m);
-    state.cols.date = m.date!=null? m.date : state.cols.date;
-    state.cols.qty = m.qty!=null? m.qty : state.cols.qty;
-    state.cols.customer = m.customer!=null? m.customer : state.cols.customer;
-    state.cols.part = m.part!=null? m.part : state.cols.part;
-    state.cols.year = m.year; state.cols.month = m.month;
-    document.querySelectorAll('#cards section.card').forEach(sec=> sec.hidden=true);
-    render();
-  }
-
-  // ====== Matrix mode (Year/Month x Item) ======
-  function parseMatrix(data){
-    const rec=[]; const ymOrder=[]; const seenYM=new Set();
-    for(let r=0; r<data.length-2; r++){
-      const row = data[r];
-      const next = data[r+1];
-      // detect header pair (years + months)
-      const monthsRow = (String(row[0]).includes('年/月') || row.slice(1).filter(v=>{const n=int(v); return n>=1 && n<=12;}).length>=5)? row :
-                        (String(next?.[0]).includes('年/月') || (next && next.slice(1).filter(v=>{const n=int(v); return n>=1 && n<=12;}).length>=5)? next : null);
-      const yearsRow  = monthsRow===row? data[r-1] : row;
-      if(!monthsRow) continue;
-      const ymAtCol = {};
-      let curYear = null; let startCol = 1;
-      for(let c=startCol; c<monthsRow.length; c++){
-        const m = int(monthsRow[c]); const yCell = yearsRow? yearsRow[c]: null; const yCandidate = (int(yCell)>=1900 && int(yCell)<=2100)? int(yCell): null;
-        if(!Number.isFinite(m) || m<1 || m>12) continue;
-        if(yCandidate) curYear = yCandidate;
-        if(!curYear) continue;
-        const ym = `${curYear}-${String(m).padStart(2,'0')}`;
-        ymAtCol[c] = ym;
-        if(!seenYM.has(ym)){ seenYM.add(ym); ymOrder.push(ym); }
-      }
-      if(Object.keys(ymAtCol).length<5) continue;
-      let rr = (monthsRow===row? r+1 : r+2);
-      while(rr < data.length){
-        const a = data[rr];
-        const label = (a[0]||'').toString().trim();
-        if(!label || /^(合計|小計)$/i.test(label) || String(label).includes('年/月')) break;
-        let touched=false;
-        for(const cStr in ymAtCol){
-          const c=Number(cStr);
-          const v=a[c];
-          const num=int(v);
-          if(Number.isFinite(num) && num!==0){
-            rec.push({ ym: ymAtCol[c], item: label, value: num });
-            touched=true;
-          }
-        }
-        if(!touched && !a.slice(1).some(x=> String(x).trim()!=='')) break;
-        rr++;
-      }
-      r = rr;
-    }
-    return {records:rec, ymOrder};
-  }
-
-  function drawFromRecords(records, ymOrder){
-    if(!records.length) return false;
-    const monthly=new Map(); const perItem=new Map();
-    for(const {ym,item,value} of records){
-      monthly.set(ym,(monthly.get(ym)||0)+value);
-      perItem.set(item,(perItem.get(item)||0)+value);
-    }
-    document.querySelectorAll('#cards section.card').forEach(s=> s.hidden=true);
-    const monthLabels = ymOrder;
-    const monthValues = monthLabels.map(ym=> monthly.get(ym)||0);
-    el('#card-monthly').hidden=false;
-    makeLine(el('#chartMonthly'), monthLabels.map(s=> s.replace('-', '/')), monthValues);
-    el('#legend-monthly').innerHTML = `<span class="pill">集計対象: 年/月 × 項目（矩形表）</span>`;
-    const top = [...perItem.entries()].sort((a,b)=> b[1]-a[1]).slice(0,10);
-    if(top.length){
-      el('#card-category').hidden=false;
-      el('#category-title').textContent='項目別（TOP10）';
-      makeBar(el('#chartCategory'), top.map(x=>x[0]), top.map(x=>x[1]), {horizontal:false});
-    }
-    el('#card-customer').hidden = true;
-    const det = el('#detect'); if(det) det.textContent = 'モード: 年/月×項目のマトリクスを検出して可視化（シート順: ' + monthLabels.join(' → ') + '）';
-    return true;
-  }
-
-  // ====== Loaders ======
-  async function loadViaPapa(url){
+  // ===== Load & Render =====
+  async function loadCSV(){
     return await new Promise((resolve, reject)=>{
-      Papa.parse(url, { download:true, header:false, skipEmptyLines:true,
-        complete: (results)=> results?.data?.length ? resolve(results.data) : reject(new Error('Empty CSV')),
-        error: reject
+      Papa.parse(CSV_URL, {
+        download:true, header:false, skipEmptyLines:true,
+        complete: (r)=> resolve(r.data),
+        error: (e)=> reject(e)
       });
     });
   }
 
-  async function loadViaFetch(url){
-    const res = await fetch(url, {cache:'no-store'});
-    const text = await res.text();
-    return await new Promise((resolve)=> Papa.parse(text, { header:false, skipEmptyLines:true, complete: r=> resolve(r.data)}));
-  }
-
-  function loadJSONP(url){
-    return new Promise((resolve, reject)=>{
-      window.google = window.google || {}; window.google.visualization = window.google.visualization || {}; window.google.visualization.Query = window.google.visualization.Query || {};
-      window.google.visualization.Query.setResponse = (resp)=> resolve(resp);
-      const s=document.createElement('script'); s.src=url; s.onerror=reject; document.head.appendChild(s);
-      setTimeout(()=> reject(new Error('JSONP timeout')), 10000);
-    });
-  }
-
-  function toArraysFromJSONP(json){
-    const cols = (json.table.cols||[]).map(c=> c.label || c.id || '');
-    const rows = (json.table.rows||[]).map(r=> cols.map((_,i)=> r.c[i]? (r.c[i].f ?? r.c[i].v ?? '') : ''));
-    return {header: cols, rows};
-  }
-
-  async function mainLoad(){
-    try{
-      // 1) CSV (Papa download)
-      const data = await loadViaPapa(CSV_URL);
-      if(data && data.length){
-        state.header = data[0];
-        state.rows = data.slice(1);
-        state.cols = detectColumns(state.header, state.rows);
-        // Build mapping UI
-        fillSelect(el('#map-date'), state.header, '（未選択）');
-        fillSelect(el('#map-year'), state.header, '（未使用）');
-        fillSelect(el('#map-month'), state.header, '（未使用）');
-        fillSelect(el('#map-qty'), state.header, '（1件=1カウント）');
-        fillSelect(el('#map-cust'), state.header, '（未選択）');
-        fillSelect(el('#map-part'), state.header, '（未選択）');
-        setSelect(el('#map-date'), state.cols.date);
-        setSelect(el('#map-qty'), state.cols.qty);
-        setSelect(el('#map-cust'), state.cols.customer);
-        setSelect(el('#map-part'), state.cols.part);
-        const saved = loadMapping();
-        if(Object.keys(saved).length){
-          setSelect(el('#map-date'), saved.date ?? state.cols.date);
-          setSelect(el('#map-year'), saved.year ?? null);
-          setSelect(el('#map-month'), saved.month ?? null);
-          setSelect(el('#map-qty'), saved.qty ?? state.cols.qty);
-          setSelect(el('#map-cust'), saved.customer ?? state.cols.customer);
-          setSelect(el('#map-part'), saved.part ?? state.cols.part);
-          // apply saved
-          state.cols.date = saved.date ?? state.cols.date;
-          state.cols.qty = saved.qty ?? state.cols.qty;
-          state.cols.customer = saved.customer ?? state.cols.customer;
-          state.cols.part = saved.part ?? state.cols.part;
-          state.cols.year = saved.year ?? null;
-          state.cols.month = saved.month ?? null;
-        }
-        // Render traditional mode
-        render();
-        // If nothing drawn, try Matrix mode (for Year/Month matrix tables)
-        if(el('#card-monthly').hidden){
-          const {records, ymOrder} = parseMatrix(data);
-          if(records.length){
-            drawFromRecords(records, ymOrder);
-          }
-        }
-        // Bind mapping buttons
-        el('#applyMapping').onclick = applyMappingFromUI;
-        el('#resetMapping').onclick = ()=>{ localStorage.removeItem('quality.mapping'); location.reload(); };
-        return;
-      }
-    }catch(e1){
-      console.warn('Papa.download failed, fallback to fetch()', e1);
-    }
-
-    try{
-      // 2) Fetch + Papa.parse string
-      const data = await loadViaFetch(CSV_URL);
-      if(data && data.length){
-        state.header = data[0];
-        state.rows = data.slice(1);
-        state.cols = detectColumns(state.header, state.rows);
-        // Build mapping UI
-        fillSelect(el('#map-date'), state.header, '（未選択）');
-        fillSelect(el('#map-year'), state.header, '（未使用）');
-        fillSelect(el('#map-month'), state.header, '（未使用）');
-        fillSelect(el('#map-qty'), state.header, '（1件=1カウント）');
-        fillSelect(el('#map-cust'), state.header, '（未選択）');
-        fillSelect(el('#map-part'), state.header, '（未選択）');
-        setSelect(el('#map-date'), state.cols.date);
-        setSelect(el('#map-qty'), state.cols.qty);
-        setSelect(el('#map-cust'), state.cols.customer);
-        setSelect(el('#map-part'), state.cols.part);
-        render();
-        if(el('#card-monthly').hidden){
-          const {records, ymOrder} = parseMatrix(data);
-          if(records.length){
-            drawFromRecords(records, ymOrder);
-          }
-        }
-        el('#applyMapping').onclick = applyMappingFromUI;
-        el('#resetMapping').onclick = ()=>{ localStorage.removeItem('quality.mapping'); location.reload(); };
-        return;
-      }
-    }catch(e2){
-      console.warn('Fetch text failed, fallback to JSONP', e2);
-    }
-
-    try{
-      // 3) JSONP (gviz / out:json) – bypass CORS
-      const base = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkHKcql0V0V2rD6VMmbCCib5djCj74e3beh3krOSplI7pWQvFDGK-54UOCh3sCGZHSxkjIK9gHxz7j/';
-      const gid = '1162640324';
-      const url = `${base}gviz/tq?tqx=out:json&gid=${gid}&_=${Date.now()}`;
-      const json = await loadJSONP(url);
-      if(json && json.table){
-        const {header, rows} = toArraysFromJSONP(json);
-        const data = [header, ...rows];
-        state.header = header; state.rows = rows;
-        state.cols = detectColumns(header, rows);
-        // Build mapping UI
-        fillSelect(el('#map-date'), state.header, '（未選択）');
-        fillSelect(el('#map-year'), state.header, '（未使用）');
-        fillSelect(el('#map-month'), state.header, '（未使用）');
-        fillSelect(el('#map-qty'), state.header, '（1件=1カウント）');
-        fillSelect(el('#map-cust'), state.header, '（未選択）');
-        fillSelect(el('#map-part'), state.header, '（未選択）');
-        setSelect(el('#map-date'), state.cols.date);
-        setSelect(el('#map-qty'), state.cols.qty);
-        setSelect(el('#map-cust'), state.cols.customer);
-        setSelect(el('#map-part'), state.cols.part);
-        render();
-        if(el('#card-monthly').hidden){
-          const {records, ymOrder} = parseMatrix(data);
-          if(records.length){
-            drawFromRecords(records, ymOrder);
-          }
-        }
-        el('#applyMapping').onclick = applyMappingFromUI;
-        el('#resetMapping').onclick = ()=>{ localStorage.removeItem('quality.mapping'); location.reload(); };
-        return;
-      }
-      throw new Error('JSONP invalid');
-    }catch(e3){
-      console.error(e3);
+  function render(data){
+    if(!data || data.length<2){
       const warn=document.createElement('div');
       warn.style.cssText='max-width:1120px;margin:12px auto 0;padding:12px 16px;border:1px solid #ef4444;background:#fff1f2;border-radius:12px;color:#991b1b;font-size:13px';
-      warn.textContent='品質情報データの取得に失敗しました。公開設定やURL（Publish to Web）をご確認ください。';
+      warn.textContent='CSVにデータがありません。';
+      document.body.insertBefore(warn, document.body.children[1]);
+      return;
+    }
+    const header = data[0].map(v=> (v||'').toString().trim());
+    const rows = data.slice(1);
+    const idxYM = idxOf(header, COLS.ym);
+    const idxType = idxOf(header, COLS.type);
+    const idxCust = idxOf(header, COLS.customer);
+    const idxDept = idxOf(header, COLS.dept);
+
+    // Validate required columns
+    const missing = [];
+    if(idxYM<0) missing.push(COLS.ym);
+    if(idxType<0) missing.push(COLS.type);
+    if(idxCust<0) missing.push(COLS.customer);
+    if(idxDept<0) missing.push(COLS.dept);
+    if(missing.length){
+      const warn=document.createElement('div');
+      warn.style.cssText='max-width:1120px;margin:12px auto 0;padding:12px 16px;border:1px solid #f0ad4e;background:#fffbe6;border-radius:12px;color:#6b4f00;font-size:13px';
+      warn.innerHTML = '必要な列が見つかりません：<b>' + missing.join('、') + '</b>';
+      document.body.insertBefore(warn, document.body.children[1]);
+      el('#detect').textContent = 'ヘッダー: ' + header.join(' / ');
+      return;
+    }
+
+    // Aggregations
+    const mapYM = new Map();
+    const mapType = new Map();
+    const mapCust = new Map();
+    const mapDept = new Map();
+
+    for(const r of rows){
+      const ym = parseYM(r[idxYM]);
+      const type = (r[idxType]||'').toString().trim();
+      const cust = (r[idxCust]||'').toString().trim();
+      const dept = (r[idxDept]||'').toString().trim();
+
+      if(ym) mapYM.set(ym.label, (mapYM.get(ym.label)||0) + 1);
+      if(type) mapType.set(type, (mapType.get(type)||0) + 1);
+      if(cust) mapCust.set(cust, (mapCust.get(cust)||0) + 1);
+      if(dept) mapDept.set(dept, (mapDept.get(dept)||0) + 1);
+    }
+
+    // Sort 年月 chronologically
+    const ymSorted = [...mapYM.keys()].sort((a,b)=>{
+      const [ya,ma]=a.split('/').map(Number); const [yb,mb]=b.split('/').map(Number);
+      if(ya!==yb) return ya-yb; return ma-mb;
+    });
+    const ymValues = ymSorted.map(k=> mapYM.get(k)||0);
+    if(ymSorted.length){
+      el('#card-monthly').hidden=false;
+      makeLine(el('#chartMonthly'), ymSorted, ymValues);
+      el('#legend-monthly').innerHTML = `<span class="pill">集計対象: ${COLS.ym}（1行=1件）</span>`;
+    }
+
+    // クレーム種類
+    if(mapType.size){
+      el('#card-type').hidden=false;
+      const tEntries = [...mapType.entries()].sort((a,b)=> b[1]-a[1]);
+      makeBar(el('#chartType'), tEntries.map(x=>x[0]), tEntries.map(x=>x[1]), {horizontal:false});
+    }
+
+    // 顧客 TOP10
+    if(mapCust.size){
+      el('#card-customer').hidden=false;
+      const top = topN(mapCust.entries(), 10);
+      makeBar(el('#chartCustomer'), top.map(x=>x[0]), top.map(x=>x[1]), {horizontal:true});
+    }
+
+    // 部署 TOP10
+    if(mapDept.size){
+      el('#card-dept').hidden=false;
+      const top = topN(mapDept.entries(), 10);
+      makeBar(el('#chartDept'), top.map(x=>x[0]), top.map(x=>x[1]), {horizontal:true});
+    }
+
+    el('#detect').textContent = `列マッピング: 年月=${COLS.ym}、クレーム種類=${COLS.type}、顧客名=${COLS.customer}、部署=${COLS.dept}`;
+  }
+
+  async function main(){
+    try{
+      const data = await loadCSV();
+      render(data);
+    }catch(err){
+      console.error(err);
+      const warn=document.createElement('div');
+      warn.style.cssText='max-width:1120px;margin:12px auto 0;padding:12px 16px;border:1px solid #ef4444;background:#fff1f2;border-radius:12px;color:#991b1b;font-size:13px';
+      warn.textContent='CSVの取得に失敗しました。公開設定やURLをご確認ください。';
       document.body.insertBefore(warn, document.body.children[1]);
     }
   }
 
-  window.addEventListener('load', mainLoad);
+  window.addEventListener('load', main);
 })();
 </script>
 
