@@ -653,5 +653,86 @@
   })();
 })();
 </script>
+<script id="matrix-mode-final">
+// --- Matrix (Year/Month x Item) parser to match your sheet exactly ---
+(function(){
+  const CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkHKcql0V0V2rD6VMmbCCib5djCj74e3beh3krOSplI7pWQvFDGK-54UOCh3sCGZHSxkjIK9gHxz7j/pub?gid=1162640324&single=true&output=csv&t=' + Date.now();
+  const hasChart = () => !document.querySelector('#card-monthly')?.hidden;
+  function int(v){ const n = Number(String(v).replace(/[^0-9.-]/g,'')); return Number.isFinite(n)? n: NaN; }
+  const isMonth = (v)=>{ const n=int(v); return n>=1 && n<=12; };
+  const isYear  = (v)=>{ const n=int(v); return n>=1900 && n<=2100; };
+
+  // Convert Papa rows (array of arrays) from a matrix like:
+  //  [ ..., '2025','2025',...'2026','2026' ]
+  //  ['年/月', 6,7,8,...,1,2,3,...]
+  //  ['シャトルガード', 2,1,...]
+  // into tidy records: {ym:'2025-06', item:'シャトルガード', value:2}
+  function parseMatrix(data){
+    const rec=[]; const ymOrder=[]; const seenYM=new Set();
+    for(let r=0; r<data.length-2; r++){
+      const row = data[r];
+      const next = data[r+1];
+      // detect header pair (years + months) or single months row preceded by years
+      const monthsRow = (String(row[0]).includes('年/月') || row.slice(1).filter(isMonth).length>=5)? row :
+                        (String(next?.[0]).includes('年/月') || (next && next.slice(1).filter(isMonth).length>=5)? next : null);
+      const yearsRow  = monthsRow===row? data[r-1] : row;
+      if(!monthsRow) continue;
+      // build column mapping col -> {y,m}
+      const ymAtCol = {};
+      let curYear = null; let startCol = 1;
+      for(let c=startCol; c<monthsRow.length; c++){
+        const m = int(monthsRow[c]); const yCell = yearsRow? yearsRow[c]: null; const yCandidate = isYear(yCell)? int(yCell): null; if(!Number.isFinite(m) || m<1 || m>12) continue; if(yCandidate) curYear = yCandidate; if(!curYear) continue; const ym = `${curYear}-${String(m).padStart(2,'0')}`; ymAtCol[c] = ym; if(!seenYM.has(ym)){ seenYM.add(ym); ymOrder.push(ym); }
+      }
+      if(Object.keys(ymAtCol).length<5) continue; // not a real block
+      // read item rows until a blank line or next header
+      let rr = (monthsRow===row? r+1 : r+2);
+      while(rr < data.length){
+        const a = data[rr];
+        const label = (a[0]||'').toString().trim();
+        if(!label || /^(合計|小計)$/i.test(label) || String(label).includes('年/月')) break;
+        let touched=false;
+        for(const cStr in ymAtCol){ const c=Number(cStr); const v=a[c]; const num=int(v); if(Number.isFinite(num) && num!==0){ rec.push({ ym: ymAtCol[c], item: label, value: num }); touched=true; } }
+        if(!touched && !a.slice(1).some(x=> String(x).trim()!=='')) break; // stop at empty block
+        rr++;
+      }
+      r = rr; // skip ahead
+    }
+    return {records:rec, ymOrder};
+  }
+
+  function drawFromRecords(records, ymOrder){
+    if(!records.length) return false;
+    const monthly=new Map(); const perItem=new Map();
+    for(const {ym,item,value} of records){ monthly.set(ym,(monthly.get(ym)||0)+value); perItem.set(item,(perItem.get(item)||0)+value); }
+    // prepare DOM: clear old charts
+    document.querySelectorAll('#cards section.card').forEach(s=> s.hidden=true);
+    const monthLabels = ymOrder; const monthValues = monthLabels.map(ym=> monthly.get(ym)||0);
+    // show monthly
+    document.querySelector('#card-monthly').hidden=false;
+    new Chart(document.querySelector('#chartMonthly'), { type:'line', data:{ labels: monthLabels.map(s=> s.replace('-', '/')), datasets:[{ data: monthValues, fill:true, tension:.25}] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{grid:{display:false}}, y:{beginAtZero:true, grid:{color:'#eee'}} } } });
+    document.querySelector('#legend-monthly').innerHTML = `<span class="pill">集計対象: 年/月 × 項目（矩形表）</span>`;
+    // item top10
+    const top = [...perItem.entries()].sort((a,b)=> b[1]-a[1]).slice(0,10);
+    if(top.length){ document.querySelector('#card-category').hidden=false; document.querySelector('#category-title').textContent='項目別（TOP10）'; new Chart(document.querySelector('#chartCategory'), { type:'bar', data:{ labels: top.map(x=>x[0]), datasets:[{ data: top.map(x=>x[1])}] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, datalabels:{ anchor:'end', align:'end', formatter:v=> v, rotation:-90 } }, scales:{ x:{grid:{display:false}}, y:{beginAtZero:true, grid:{color:'#eee'}} } } }); }
+    // hide customer card (not applicable)
+    document.querySelector('#card-customer').hidden = true;
+    const det = document.querySelector('#detect'); if(det) det.textContent = 'モード: 年/月×項目のマトリクスを検出して可視化（シート順: ' + monthLabels.join(' → ') + '）';
+    // hide error banners if any
+    document.querySelectorAll('div').forEach(d=>{ if(d.textContent && /JSONP|取得に失敗/.test(d.textContent)) d.style.display='none'; });
+    return true;
+  }
+
+  async function run(){
+    try{
+      const out = await new Promise((resolve,reject)=> Papa.parse(CSV, {download:true, header:false, skipEmptyLines:true, complete: r=> resolve(r.data), error: reject}));
+      const {records, ymOrder} = parseMatrix(out);
+      if(records.length){ drawFromRecords(records, ymOrder); }
+    }catch(e){ console.warn('Matrix mode failed', e); }
+  }
+
+  // Only run if charts already drawn seem inconsistent OR user wants exact matrix order
+  window.addEventListener('load', run);
+})();
+</script>
 </body>
 </html>
