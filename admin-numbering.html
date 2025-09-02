@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin Penomoran Form (Kensa)</title>
+<style>
+  :root{--bg:#f6f7f9;--card:#fff;--ink:#111;--muted:#667085;--line:#e5e7eb;--pri:#2563eb}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,Segoe UI,Arial}
+  header{position:sticky;top:0;background:rgba(255,255,255,.8);backdrop-filter:saturate(180%) blur(10px);
+    border-bottom:1px solid var(--line);padding:10px 14px;display:flex;gap:10px;align-items:center}
+  header b{font-size:16px}
+  .wrap{max-width:1100px;margin:18px auto;padding:0 14px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  input[type="text"],select,textarea{padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;width:100%}
+  textarea{min-height:72px;resize:vertical}
+  button{padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer}
+  button.primary{background:var(--pri);border-color:var(--pri);color:#fff}
+  button.ghost{background:#fff}
+  button.danger{border-color:#ef4444;color:#ef4444}
+  .grid{display:grid;grid-template-columns:1.2fr 2fr;gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 4px 10px rgba(0,0,0,.04)}
+  .list{display:grid;gap:10px}
+  .row{display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px}
+  .row .meta{display:flex;gap:10px;align-items:baseline}
+  .row small{color:var(--muted)}
+  .row .actions{display:flex;gap:6px}
+  .hint{color:var(--muted);font-size:12px}
+  .kv{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pill{display:inline-block;padding:.2rem .5rem;border:1px solid var(--line);border-radius:999px;background:#fff;color:#111}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .hr{height:1px;background:var(--line);margin:10px 0}
+  .footer{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+  .warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:8px 10px;border-radius:10px}
+  .ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;padding:8px 10px;border-radius:10px}
+  .muted{color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <b>Admin Penomoran Form</b>
+  <span class="muted">• Kensa Portal</span>
+  <span style="flex:1"></span>
+  <button id="btn-export">Export JSON</button>
+  <button id="btn-import">Import JSON</button>
+  <button id="btn-reset-all" class="danger">Reset Semua Local Data</button>
+</header>
+
+<div class="wrap">
+  <div class="toolbar">
+    <input id="q" type="text" placeholder="Cari form (id/nama)..." />
+    <button id="btn-add" class="primary">Tambah Form</button>
+    <span class="hint">Token: <span class="mono">{YY} {YYYY} {MM} {DD} {YYMM} {YYYYMM} {YYYYMMDD} {FORMID} {PREFIX} {COUNTER[:n]} {ZUBAN4} {ZUBAN6} {ZUBAN8}</span></span>
+  </div>
+
+  <div class="grid">
+    <!-- kiri: daftar -->
+    <div class="card">
+      <div class="list" id="list"></div>
+    </div>
+
+    <!-- kanan: editor -->
+    <div class="card">
+      <div class="kv">
+        <label>Form ID<br><input id="f-id" type="text" placeholder="mis. 330380v" /></label>
+        <label>Nama Form (opsional)<br><input id="f-name" type="text" placeholder="X軸 330380V" /></label>
+      </div>
+      <div class="kv">
+        <label>Prefix (opsional)<br><input id="f-prefix" type="text" placeholder="mis. SL / X / Y" /></label>
+        <label>Reset Counter per<br>
+          <select id="f-cycle">
+            <option value="NONE">Tidak reset</option>
+            <option value="YEAR">Tahun (YYYY)</option>
+            <option value="MONTH">Bulan (YYMM)</option>
+            <option value="DAY">Hari (YYYYMMDD)</option>
+          </select>
+        </label>
+      </div>
+      <label>Pattern (wajib, harus mengandung COUNTER)<br>
+        <input id="f-pattern" class="mono" type="text" placeholder="contoh: SL{YYMM}-{COUNTER:3}" />
+      </label>
+      <div class="kv">
+        <label>Catatan (opsional)<br><textarea id="f-notes" placeholder="Deskripsi pembuatan nomor…"></textarea></label>
+        <label>Contoh Context (JSON) untuk Preview<br>
+          <textarea id="f-ctx" class="mono" placeholder='{"zuban":"H0900-0053-07-1"}'></textarea>
+        </label>
+      </div>
+      <div class="kv">
+        <label>Counter Saat Ini<br><input id="f-counter" type="text" inputmode="numeric" placeholder="0" /></label>
+        <label>Nilai Siklus Terakhir<br><input id="f-last" type="text" placeholder="(auto)" /></label>
+      </div>
+
+      <div class="footer">
+        <button id="btn-preview">Preview</button>
+        <button id="btn-bump">+1 (Test Increment, simpan)</button>
+        <button id="btn-save" class="primary">Simpan</button>
+        <button id="btn-delete" class="danger">Hapus Skema</button>
+        <span id="status" class="muted"></span>
+      </div>
+
+      <div id="msg" style="margin-top:10px"></div>
+      <div class="hr"></div>
+      <div class="hint">Tips: untuk form yang prefix-nya dari 図番, pakai token <span class="mono">{ZUBAN4}</span> / <span class="mono">{ZUBAN6}</span> di pattern,
+        lalu berikan <span class="mono">{ zuban: "H0900-..." }</span> saat memanggil di halaman form.</div>
+    </div>
+  </div>
+
+  <p class="hint" style="margin-top:12px">
+    Contoh form yang bisa kamu input: <span class="pill">2825-20</span> <span class="pill">2035-20</span> <span class="pill">2023-20</span>
+    <span class="pill">330380v</span> <span class="pill">330580v</span> <span class="pill">2742-20</span> <span class="pill">3596-70</span> <span class="pill">3555-71</span>
+  </p>
+</div>
+
+<input id="uploader" type="file" accept="application/json" hidden />
+
+<script>
+/* =========================
+   Util & Data Layer
+========================= */
+const STORE_KEY = 'kensa::numbering::schemes';   // kumpulan skema
+const NS = 'kensa';                               // namespace umum
+
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+function todayParts() {
+  const d = new Date();
+  const YYYY = String(d.getFullYear());
+  const YY = YYYY.slice(-2);
+  const MM = String(d.getMonth()+1).padStart(2,'0');
+  const DD = String(d.getDate()).padStart(2,'0');
+  return {YYYY, YY, MM, DD,
+          YYMM: YY + MM,
+          YYYYMM: YYYY + MM,
+          YYYYMMDD: YYYY + MM + DD};
+}
+function pad(n, w){ n=String(n); return n.length>=w? n : ('0'.repeat(w-n.length)+n); }
+function safeJSON(s, fallback){ try { return JSON.parse(s); } catch { return fallback; } }
+function clone(o){ return JSON.parse(JSON.stringify(o||{})); }
+
+function loadAll(){
+  return safeJSON(localStorage.getItem(STORE_KEY)||'[]', []);
+}
+function saveAll(list){
+  localStorage.setItem(STORE_KEY, JSON.stringify(list));
+}
+function findById(list, id){ return list.find(x => x.id === id); }
+
+function cycleValue(cycle){
+  const t = todayParts();
+  return cycle === 'YEAR' ? t.YYYY
+       : cycle === 'MONTH' ? t.YYMM
+       : cycle === 'DAY' ? t.YYYYMMDD
+       : ''; // NONE
+}
+
+function digitsOf(str, take){ return (String(str||'').match(/\d+/g)||['']).join('').slice(0,take||0) }
+
+/* ============== Pattern Renderer ============== */
+function renderPattern(pattern, opts){
+  const t = todayParts();
+  const ctx = opts?.context || {};
+  const prefix = opts?.prefix || '';
+  const formId = opts?.formId || '';
+  let counter = Number(opts?.counter||0);
+  let counterDigits = 3;
+
+  // parse {COUNTER:n}
+  const m = pattern.match(/\{COUNTER(?::(\d+))?\}/i);
+  if (m) counterDigits = m[1] ? Number(m[1]) : counterDigits;
+
+  // replace tokens
+  let out = pattern
+    .replace(/\{YYYY\}/g, t.YYYY)
+    .replace(/\{YY\}/g, t.YY)
+    .replace(/\{MM\}/g, t.MM)
+    .replace(/\{DD\}/g, t.DD)
+    .replace(/\{YYMM\}/g, t.YYMM)
+    .replace(/\{YYYYMMDD\}/g, t.YYYYMMDD)
+    .replace(/\{YYYYMM\}/g, t.YYYYMM)
+    .replace(/\{FORMID\}/g, formId)
+    .replace(/\{PREFIX\}/g, prefix)
+    .replace(/\{ZUBAN4\}/g, digitsOf(ctx.zuban,4))
+    .replace(/\{ZUBAN6\}/g, digitsOf(ctx.zuban,6))
+    .replace(/\{ZUBAN8\}/g, digitsOf(ctx.zuban,8))
+    .replace(/\{COUNTER(?::\d+)?\}/ig, pad(counter+1, counterDigits));
+
+  if (!/\{COUNTER/i.test(pattern)) {
+    throw new Error('Pattern harus mengandung {COUNTER} atau {COUNTER:n}');
+  }
+  return out;
+}
+
+/* ============== Runtime-like helpers (dipakai admin preview) ============== */
+function ensureCycleAndMaybeReset(s){
+  const nowKey = cycleValue(s.cycle);
+  if (s.cycle !== 'NONE' && s.lastCycle !== nowKey) {
+    s.counter = 0;
+    s.lastCycle = nowKey;
+  }
+  return s;
+}
+
+/* =========================
+   UI Logic
+========================= */
+const state = {
+  list: [],
+  activeId: null
+};
+
+function blankScheme(){
+  return {
+    id: '', name: '',
+    prefix: '',
+    pattern: 'SL{YYMM}-{COUNTER:3}',
+    cycle: 'MONTH',                 // NONE / YEAR / MONTH / DAY
+    counter: 0,
+    lastCycle: '',                 // diisi otomatis saat jalan
+    notes: '',
+    sampleContext: { zuban: '' }
+  };
+}
+
+function renderList(){
+  const q = ($('#q').value || '').trim().toLowerCase();
+  const host = $('#list');
+  host.innerHTML = '';
+  const rows = state.list
+    .filter(x => !q || x.id.toLowerCase().includes(q) || (x.name||'').toLowerCase().includes(q))
+    .sort((a,b)=>a.id.localeCompare(b.id));
+  if (!rows.length) {
+    host.innerHTML = '<div class="warn">Belum ada skema. Klik <b>Tambah Form</b>.</div>';
+    return;
+  }
+  for (const s of rows){
+    const r = document.createElement('div');
+    r.className = 'row';
+    const preview = (()=>{ try{
+      const tmp = ensureCycleAndMaybeReset(clone(s));
+      return renderPattern(tmp.pattern, { prefix: tmp.prefix, counter: tmp.counter, formId: tmp.id, context: tmp.sampleContext||{} });
+    }catch(e){ return '⚠️ ' + e.message; }})();
+    r.innerHTML = `
+      <div class="meta">
+        <b>${s.id}</b> <small>${s.name||''}</small>
+        <span class="pill mono">${s.pattern}</span>
+        <small class="muted">reset: ${s.cycle}, counter: ${s.counter}, last: ${s.lastCycle||'-'}</small>
+      </div>
+      <div class="actions">
+        <span class="muted">preview:</span>
+        <span class="mono">${preview}</span>
+        <button data-edit="${s.id}">Edit</button>
+        <button class="danger" data-del="${s.id}">Hapus</button>
+      </div>`;
+    host.appendChild(r);
+  }
+  // events
+  host.querySelectorAll('button[data-edit]').forEach(btn=>{
+    btn.onclick = ()=> loadIntoEditor(btn.dataset.edit);
+  });
+  host.querySelectorAll('button[data-del]').forEach(btn=>{
+    btn.onclick = ()=> deleteScheme(btn.dataset.del);
+  });
+}
+
+function loadIntoEditor(id){
+  const s = findById(state.list, id) || blankScheme();
+  state.activeId = s.id || '';
+  $('#f-id').value = s.id || '';
+  $('#f-name').value = s.name || '';
+  $('#f-prefix').value = s.prefix || '';
+  $('#f-pattern').value = s.pattern || '';
+  $('#f-cycle').value = s.cycle || 'NONE';
+  $('#f-counter').value = String(s.counter ?? 0);
+  $('#f-last').value = s.lastCycle || '';
+  $('#f-notes').value = s.notes || '';
+  $('#f-ctx').value = JSON.stringify(s.sampleContext||{}, null, 2);
+  $('#status').textContent = s.id ? 'Editing ' + s.id : 'Baru';
+  $('#msg').innerHTML = '';
+}
+
+function collectFromEditor(){
+  const s = blankScheme();
+  s.id = $('#f-id').value.trim();
+  s.name = $('#f-name').value.trim();
+  s.prefix = $('#f-prefix').value;
+  s.pattern = $('#f-pattern').value.trim();
+  s.cycle = $('#f-cycle').value;
+  s.counter = Number($('#f-counter').value||0);
+  s.lastCycle = ($('#f-last').value||'').trim();
+  s.notes = $('#f-notes').value;
+  s.sampleContext = safeJSON($('#f-ctx').value||'{}', {});
+  if (!s.id) throw new Error('Form ID wajib diisi');
+  if (!/\{COUNTER/i.test(s.pattern)) throw new Error('Pattern harus mengandung {COUNTER}');
+  return s;
+}
+
+function saveFromEditor(){
+  try{
+    const s = collectFromEditor();
+    // auto set lastCycle kalau kosong
+    if (!s.lastCycle && s.cycle !== 'NONE') s.lastCycle = cycleValue(s.cycle);
+    const idx = state.list.findIndex(x=>x.id===s.id);
+    if (idx>=0) state.list[idx] = s; else state.list.push(s);
+    saveAll(state.list);
+    renderList();
+    loadIntoEditor(s.id);
+    flashMsg('ok','Tersimpan.');
+  }catch(e){
+    flashMsg('warn', e.message);
+  }
+}
+
+function deleteScheme(id){
+  if (!confirm('Hapus skema untuk '+id+' ?')) return;
+  state.list = state.list.filter(x=>x.id!==id);
+  saveAll(state.list);
+  renderList();
+  if (state.activeId===id) loadIntoEditor('');
+}
+
+function previewFromEditor(){
+  try{
+    const s = collectFromEditor();
+    const tmp = ensureCycleAndMaybeReset(clone(s));
+    const out = renderPattern(tmp.pattern, { prefix: tmp.prefix, counter: tmp.counter, formId: tmp.id, context: tmp.sampleContext||{} });
+    flashMsg('ok','Preview: <b class="mono">'+out+'</b>');
+  }catch(e){
+    flashMsg('warn', e.message);
+  }
+}
+
+function bumpFromEditor(){
+  try{
+    const s = collectFromEditor();
+    ensureCycleAndMaybeReset(s);
+    const out = renderPattern(s.pattern, { prefix: s.prefix, counter: s.counter, formId: s.id, context: s.sampleContext||{} });
+    s.counter += 1;
+    const idx = state.list.findIndex(x=>x.id===s.id);
+    if (idx>=0) state.list[idx] = s; else state.list.push(s);
+    saveAll(state.list);
+    renderList();
+    loadIntoEditor(s.id);
+    flashMsg('ok','Issued: <b class="mono">'+out+'</b> (counter → '+s.counter+')');
+  }catch(e){
+    flashMsg('warn', e.message);
+  }
+}
+
+function flashMsg(kind, html){
+  const box = $('#msg');
+  box.className = kind==='ok' ? 'ok' : 'warn';
+  box.innerHTML = html;
+}
+
+function resetAllLocal(){
+  if (!confirm('Hapus SEMUA data local yang terkait penomoran (schemes, counters)?')) return;
+  // hapus semua kunci yang mengandung "kensa::numbering" atau skema lama
+  for (const k of Object.keys(localStorage)){
+    if (/^kensa::numbering/i.test(k) || /kensa::/i.test(k) && /doc|bunsho|seed|counter|sequence|cache/.test(k)){
+      localStorage.removeItem(k);
+    }
+  }
+  state.list = [];
+  saveAll(state.list);
+  renderList();
+  loadIntoEditor('');
+  flashMsg('ok','Semua data dibersihkan.');
+}
+
+function exportJSON(){
+  const data = JSON.stringify(state.list, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'kensa-numbering-schemes.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importJSONFile(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const arr = JSON.parse(reader.result);
+      if (!Array.isArray(arr)) throw new Error('Format tidak valid');
+      state.list = arr;
+      saveAll(state.list);
+      renderList();
+      loadIntoEditor(arr[0]?.id||'');
+      flashMsg('ok','Import sukses.');
+    }catch(e){
+      flashMsg('warn','Gagal import: '+e.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function bootstrap(){
+  state.list = loadAll();
+  renderList();
+  loadIntoEditor(state.list[0]?.id || '');
+
+  $('#btn-add').onclick = () => loadIntoEditor('');
+  $('#btn-save').onclick = saveFromEditor;
+  $('#btn-delete').onclick = ()=> {
+    const id = $('#f-id').value.trim();
+    if (id) deleteScheme(id);
+  };
+  $('#btn-preview').onclick = previewFromEditor;
+  $('#btn-bump').onclick = bumpFromEditor;
+  $('#btn-reset-all').onclick = resetAllLocal;
+  $('#btn-export').onclick = exportJSON;
+  $('#btn-import').onclick = () => $('#uploader').click();
+  $('#uploader').addEventListener('change', e => {
+    const f = e.target.files?.[0]; if (f) importJSONFile(f);
+    e.target.value = '';
+  });
+  $('#q').addEventListener('input', renderList);
+
+  // keyboard: Ctrl+S save, Ctrl+Enter bump
+  document.addEventListener('keydown', (e)=>{
+    if (e.ctrlKey && e.key.toLowerCase()==='s'){ e.preventDefault(); saveFromEditor(); }
+    if (e.ctrlKey && e.key==='Enter'){ e.preventDefault(); bumpFromEditor(); }
+  });
+}
+bootstrap();
+</script>
+</body>
+</html>
