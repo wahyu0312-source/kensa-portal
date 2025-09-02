@@ -86,56 +86,46 @@
   </section>
 </main>
 
-<!-- libs -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-
 <script>
 /* ===================== CONFIG ===================== */
-// Ganti ke CSV Pivot kamu kalau perlu:
+// CSV Pivot (boleh diganti ke URL kamu):
 const CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=865157145&single=true&output=csv";
 
-// nama kolom (fuzzy matching, agar header pivot berubah pun aman)
 const COL_HINTS = {
   month: /^(年月|月|month)/i,
-  dept: /(部署|部門)/,
+  dept : /(部署|部門)/,
   total: /(grand\s*total|合計)/i,
-  // jenis / クレーム種類 (ambil semua kolom selain month/dept/total sebagai “tipe”)
 };
 
-/* ===================== Helpers ===================== */
 Chart.register(ChartDataLabels);
+
 const S = s => String(s ?? "").trim();
-const toNum = v => {
-  const n = parseFloat(String(v).replace(/,/g, ""));
-  return Number.isFinite(n) ? n : 0;
-};
+const toNum = v => { const n = parseFloat(String(v).replace(/,/g,"")); return Number.isFinite(n)?n:0; };
 const monthMap = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
 
 function parseCSV(text){
-  // CSV robust (quote-aware)
   const out=[], row=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/gy;
   text=text.replace(/\r\n?/g,"\n"); let m;
   for(let i=0;i<text.length;){
     re.lastIndex=i; m=re.exec(text); if(!m) break;
-    let cell=m[1];
-    if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
+    let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
     row.push(cell); i=re.lastIndex;
     if(m[2]==="\n"||m[2]===""){ out.push(row.slice()); row.length=0; }
   }
   return out.filter(r => r.length && r.some(c => S(c)!==""));
 }
 
-function findIndexes(header){
-  const map={}; header.forEach((h,i)=>map[S(h)]=i);
+function findIndexesIn(header){
   const find = re => header.findIndex(h => re.test(S(h)));
   const idx = {
     month: find(COL_HINTS.month),
-    dept:  find(COL_HINTS.dept),
+    dept : find(COL_HINTS.dept),
     total: find(COL_HINTS.total),
   };
-  const typeIdx = [];
+  const typeIdx=[];
   header.forEach((h,i)=>{
     if(i===idx.month||i===idx.dept||i===idx.total) return;
     typeIdx.push({name:S(h)||`種類${i+1}`, i});
@@ -143,214 +133,157 @@ function findIndexes(header){
   return {idx, typeIdx};
 }
 
-function parseMonthCell(v){
-  const t=S(v);
-  if(!t) return {y:null,m:null, label:""};
-  // format pivot biasanya "Jun" / "2025 Jun" / "2025-06"
-  const m1 = t.match(/(\d{4}).?(\d{1,2})/);
-  if(m1) return {y:+m1[1], m:+m1[2], label:`${m1[1]}-${String(m1[2]).padStart(2,"0")}`};
-
-  const mm = t.slice(0,3).toLowerCase();
-  if(mm in monthMap){
-    const y = (new Date()).getFullYear();
-    return {y:y, m:monthMap[mm], label:`${y}-${String(monthMap[mm]).padStart(2,"0")}`};
+function detectStructure(arr){
+  // cari baris header terbaik (abaikan "Sum of 件" di baris pertama)
+  let best=null;
+  for(let r=0;r<Math.min(10,arr.length);r++){
+    const header=arr[r];
+    const {idx, typeIdx} = findIndexesIn(header);
+    const score = (idx.dept>=0?2:0) + (idx.month>=0?2:0) + typeIdx.length; // bobot dept/month
+    if(!best || score>best.score) best={r, header, idx, typeIdx, score};
+    if(idx.dept>=0 && (idx.month>=0 || typeIdx.length>0)) break; // sudah cukup
   }
+  const header = best.header;
+  const body   = arr.slice(best.r+1).filter(row=>row.some(c=>S(c)!==""));
+  return {header, rows:body, idx:best.idx, typeIdx:best.typeIdx};
+}
+
+function parseMonthCell(v){
+  const t=S(v); if(!t) return {y:null,m:null,label:""};
+  const m1=t.match(/(\d{4}).?(\d{1,2})/); // 2025-06 / 2025 6
+  if(m1) return {y:+m1[1], m:+m1[2], label:`${m1[1]}-${String(m1[2]).padStart(2,"0")}`};
+  const mm=t.slice(0,3).toLowerCase();
+  if(monthMap[mm]){ const y=(new Date()).getFullYear(); return {y, m:monthMap[mm], label:`${y}-${String(monthMap[mm]).padStart(2,"0")}`}; }
   return {y:null,m:null,label:t};
 }
+const isSubtotal = v => /total|合計/i.test(S(v));
 
-function isSubtotalMonth(v){ return /total/i.test(S(v)); }
-function isSubtotalDept(v){ return /total|合計/i.test(S(v)); }
+let RAW = {header:[],rows:[],idx:null,typeIdx:[]};
+let charts = {dept:null,type:null,deptTop:null};
 
-/* ===================== State ===================== */
-let RAW = { header:[], rows:[], idx:null, typeIdx:[] };
-let charts = { dept:null, type:null, deptTop:null };
-
-function palette(n, alpha=0.85){
-  const baseLight=['#93c5fd','#a5b4fc','#fda4af','#fdba74','#86efac','#67e8f9','#f5d0fe','#c4b5fd','#fecaca','#fde68a','#bbf7d0','#bae6fd'];
-  const baseDark =['#60a5fa','#818cf8','#fca5a5','#fbbf24','#4ade80','#22d3ee','#f0abfc','#a78bfa','#f87171','#fde047','#86efac','#93c5fd'];
-  const dark = document.documentElement.getAttribute('data-theme')==='dark';
-  const base = dark ? baseDark : baseLight;
-  const toRGBA = (hex,a)=> {
-    const h=hex.replace('#',''); const b=parseInt(h,16);
-    return `rgba(${(b>>16)&255},${(b>>8)&255},${b&255},${a})`;
-  };
-  return Array.from({length:n},(_,i)=>toRGBA(base[i%base.length],alpha));
+function palette(n, a=0.85){
+  const light=['#93c5fd','#a5b4fc','#fda4af','#fdba74','#86efac','#67e8f9','#f5d0fe','#c4b5fd','#fecaca','#fde68a','#bbf7d0','#bae6fd'];
+  const dark = ['#60a5fa','#818cf8','#fca5a5','#fbbf24','#4ade80','#22d3ee','#f0abfc','#a78bfa','#f87171','#fde047','#86efac','#93c5fd'];
+  const useDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const base=useDark?dark:light;
+  const toRGBA=(hex,a)=>{const h=hex.replace('#','');const b=parseInt(h,16);return`rgba(${(b>>16)&255},${(b>>8)&255},${b&255},${a})`};
+  return Array.from({length:n},(_,i)=>toRGBA(base[i%base.length],a));
 }
-
 function applyThemeDefaults(){
   const st=getComputedStyle(document.documentElement);
-  const grid=st.getPropertyValue('--grid').trim()||'#e5e7eb';
-  const ink =st.getPropertyValue('--ink').trim()||'#0f172a';
-  Chart.defaults.color = ink;
-  Chart.defaults.borderColor = grid;
+  Chart.defaults.color = st.getPropertyValue('--ink').trim()||'#0f172a';
+  Chart.defaults.borderColor = st.getPropertyValue('--grid').trim()||'#e5e7eb';
   Chart.defaults.font.family='system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif';
 }
 
-/* ===================== Aggregation ===================== */
-function aggregate(filters){
-  const {year, month} = filters;
+function aggregate({year,month}){
   const {rows, idx, typeIdx} = RAW;
-
-  // totals
-  const deptTotals = new Map();  // 部署 => 件数
-  const typeTotals = new Map();  // 種類名 => 件数
+  const deptTotals=new Map(), typeTotals=new Map();
 
   for(const r of rows){
-    const monthCell = RAW.header[idx.month]!=null ? r[idx.month] : "";
-    const deptCell  = RAW.header[idx.dept]!=null ? r[idx.dept]  : "";
-    if(isSubtotalMonth(monthCell) || isSubtotalDept(deptCell)) continue;
+    const monthCell = idx.month!=null && idx.month>=0 ? r[idx.month] : "";
+    const deptCell  = idx.dept !=null && idx.dept >=0 ? r[idx.dept ] : "";
+    if(isSubtotal(monthCell) || isSubtotal(deptCell)) continue;
 
     const {y,m} = parseMonthCell(monthCell);
     if(year && y && y!==year) continue;
     if(month && m && m!==month) continue;
 
-    // hitung jumlah baris ini
     let rowTotal = 0;
-    if(idx.total!=null){
-      rowTotal = toNum(r[idx.total]);
-    }else{
-      for(const t of typeIdx) rowTotal += toNum(r[t.i]);
-    }
+    if(idx.total!=null && idx.total>=0) rowTotal = toNum(r[idx.total]);
+    else for(const t of typeIdx) rowTotal += toNum(r[t.i]);
 
-    // akumulasi per departemen
-    const key = S(deptCell)||"不明";
-    deptTotals.set(key, (deptTotals.get(key)||0) + rowTotal);
+    const deptKey=S(deptCell)||"不明";
+    deptTotals.set(deptKey,(deptTotals.get(deptKey)||0)+rowTotal);
 
-    // akumulasi per jenis
     for(const t of typeIdx){
-      const val = toNum(r[t.i]);
-      typeTotals.set(t.name, (typeTotals.get(t.name)||0) + val);
+      const val=toNum(r[t.i]);
+      typeTotals.set(t.name,(typeTotals.get(t.name)||0)+val);
     }
   }
-
-  // urut dan siap-plot
-  const deptArr = [...deptTotals.entries()].sort((a,b)=>b[1]-a[1]);
-  const typeArr = [...typeTotals.entries()].sort((a,b)=>b[1]-a[1]);
-
+  const deptArr=[...deptTotals.entries()].sort((a,b)=>b[1]-a[1]);
+  const typeArr=[...typeTotals.entries()].sort((a,b)=>b[1]-a[1]);
   return {
-    dept: { labels: deptArr.map(d=>d[0]), data: deptArr.map(d=>d[1]) },
-    type: { labels: typeArr.map(d=>d[0]), data: typeArr.map(d=>d[1]) },
-    // TOP 12 departemen
-    deptTop: { labels: deptArr.slice(0,12).map(d=>d[0]), data: deptArr.slice(0,12).map(d=>d[1]) },
+    dept:{labels:deptArr.map(d=>d[0]),data:deptArr.map(d=>d[1])},
+    type:{labels:typeArr.map(d=>d[0]),data:typeArr.map(d=>d[1])},
+    deptTop:{labels:deptArr.slice(0,12).map(d=>d[0]),data:deptArr.slice(0,12).map(d=>d[1])},
   };
 }
 
-/* ===================== Rendering ===================== */
 function renderCharts(agg){
   applyThemeDefaults();
-  const orient = document.getElementById('selOrient').value; // 'v' | 'h'
-  const indexAxis = (orient==='h') ? 'y' : 'x';
+  const orient=document.getElementById('selOrient').value;
+  const indexAxis = (orient==='h')?'y':'x';
 
-  // Dept
-  const ctx1 = document.getElementById('chartDept').getContext('2d');
+  const cfg = (labels,data)=>({
+    type:'bar',
+    data:{labels,datasets:[{label:'件数',data,backgroundColor:palette(data.length),borderWidth:1,maxBarThickness:28}]},
+    options:{
+      indexAxis, maintainAspectRatio:false,
+      plugins:{legend:{display:false},datalabels:{anchor:'end',align:(orient==='h'?'right':'top'),formatter:v=>v}},
+      scales:indexAxis==='y'
+        ? {x:{beginAtZero:true,ticks:{precision:0}}, y:{grid:{display:false}}}
+        : {y:{beginAtZero:true,ticks:{precision:0}}, x:{grid:{display:false}}}
+    }
+  });
+
   charts.dept && charts.dept.destroy();
-  charts.dept = new Chart(ctx1,{
-    type:'bar',
-    data:{ labels: agg.dept.labels,
-      datasets:[{ label:'件数', data: agg.dept.data,
-        backgroundColor: palette(agg.dept.data.length), borderWidth:1, maxBarThickness:28 }]},
-    options:{
-      indexAxis, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, datalabels:{ anchor:'end', align:(orient==='h'?'right':'top'), formatter: v=>v }},
-      scales: indexAxis==='y'?{
-        x:{ beginAtZero:true, ticks:{ precision:0 }}, y:{ grid:{display:false}}
-      }:{
-        y:{ beginAtZero:true, ticks:{ precision:0 }}, x:{ grid:{display:false}}
-      }
-    }
-  });
-
-  // Type
-  const ctx2 = document.getElementById('chartType').getContext('2d');
   charts.type && charts.type.destroy();
-  charts.type = new Chart(ctx2,{
-    type:'bar',
-    data:{ labels: agg.type.labels,
-      datasets:[{ label:'件数', data: agg.type.data,
-        backgroundColor: palette(agg.type.data.length), borderWidth:1, maxBarThickness:28 }]},
-    options:{
-      indexAxis, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, datalabels:{ anchor:'end', align:(orient==='h'?'right':'top'), formatter: v=>v }},
-      scales: indexAxis==='y'?{
-        x:{ beginAtZero:true, ticks:{ precision:0 }}, y:{ grid:{display:false}}
-      }:{
-        y:{ beginAtZero:true, ticks:{ precision:0 }}, x:{ grid:{display:false}}
-      }
-    }
-  });
-
-  // Dept TOP
-  const ctx3 = document.getElementById('chartDeptTop').getContext('2d');
   charts.deptTop && charts.deptTop.destroy();
-  charts.deptTop = new Chart(ctx3,{
-    type:'bar',
-    data:{ labels: agg.deptTop.labels,
-      datasets:[{ label:'件数', data: agg.deptTop.data,
-        backgroundColor: palette(agg.deptTop.data.length), borderWidth:1, maxBarThickness:28 }]},
-    options:{
-      indexAxis, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, datalabels:{ anchor:'end', align:(orient==='h'?'right':'top'), formatter: v=>v }},
-      scales: indexAxis==='y'?{
-        x:{ beginAtZero:true, ticks:{ precision:0 }}, y:{ grid:{display:false}}
-      }:{
-        y:{ beginAtZero:true, ticks:{ precision:0 }}, x:{ grid:{display:false}}
-      }
-    }
-  });
+
+  charts.dept   = new Chart(document.getElementById('chartDept'),   cfg(agg.dept.labels, agg.dept.data));
+  charts.type   = new Chart(document.getElementById('chartType'),   cfg(agg.type.labels, agg.type.data));
+  charts.deptTop= new Chart(document.getElementById('chartDeptTop'),cfg(agg.deptTop.labels, agg.deptTop.data));
 }
 
-/* ===================== Load & UI ===================== */
+function renderFromUI(){
+  const y=parseInt(document.getElementById('selYear').value||"");
+  const m=parseInt(document.getElementById('selMonth').value||"");
+  const agg=aggregate({year:isNaN(y)?null:y, month:isNaN(m)?null:m});
+  renderCharts(agg);
+}
+
 async function loadData(){
-  const btn = document.getElementById('btnRefresh'); const old=btn.textContent;
+  const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
   btn.textContent='Loading...'; btn.disabled=true;
   try{
-    const res = await fetch(CSV_URL + '&_ts=' + Date.now(), {cache:'no-store'});
-    const text = await res.text();
-    const arr = parseCSV(text);
+    const res=await fetch(CSV_URL+'&_ts='+Date.now(),{cache:'no-store'});
+    const text=await res.text();
+    const arr=parseCSV(text);
     if(!arr.length) throw new Error('CSV empty');
 
-    const header = arr[0];
-    const body   = arr.slice(1);
-    const {idx, typeIdx} = findIndexes(header);
-    RAW = { header, rows: body, idx, typeIdx };
+    const det=detectStructure(arr);
+    RAW=det;
 
-    // isi dropdown year & month dari data
-    const yearSet = new Set(), monthSet = new Set();
-    for(const r of body){
-      const {y,m} = parseMonthCell(idx.month!=null ? r[idx.month] : "");
+    // build filters
+    const yearSet=new Set(), monthSet=new Set();
+    for(const r of RAW.rows){
+      if(RAW.idx.month==null||RAW.idx.month<0) continue;
+      const {y,m}=parseMonthCell(r[RAW.idx.month]);
       if(y) yearSet.add(y);
       if(m) monthSet.add(m);
     }
-    const years  = [...yearSet].sort((a,b)=>a-b);
-    const months = [...monthSet].sort((a,b)=>a-b);
+    const years=[...yearSet].sort((a,b)=>a-b);
+    const months=[...monthSet].sort((a,b)=>a-b);
 
-    const selYear  = document.getElementById('selYear');
-    const selMonth = document.getElementById('selMonth');
-    selYear.innerHTML  = `<option value="">All</option>` + years.map(y=>`<option value="${y}">${y}</option>`).join('');
-    selMonth.innerHTML = `<option value="">All</option>` + months.map(m=>`<option value="${m}">${m}</option>`).join('');
+    const selYear=document.getElementById('selYear');
+    const selMonth=document.getElementById('selMonth');
+    selYear.innerHTML = `<option value="">All</option>` + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    selMonth.innerHTML= `<option value="">All</option>` + months.map(m=>`<option value="${m}">${m}</option>`).join('');
 
-    document.getElementById('note').textContent =
-      `source: Pivot CSV（${new URL(CSV_URL).searchParams.get('gid')||'gid'}）`;
+    document.getElementById('note').textContent=`source Pivot CSV（${new URL(CSV_URL).searchParams.get('gid')||'gid'}）`;
 
     renderFromUI();
   }catch(e){
     console.error(e);
-    document.getElementById('note').textContent = '読み込み失敗：公開設定 / CSV を確認してください。';
-    // render kosong (supaya canvas bersih)
-    renderCharts({dept:{labels:[],data:[]}, type:{labels:[],data:[]}, deptTop:{labels:[],data:[]}});
+    document.getElementById('note').textContent='読み込み失敗：公開設定 / CSV を確認してください。';
+    renderCharts({dept:{labels:[],data:[]},type:{labels:[],data:[]},deptTop:{labels:[],data:[]}});
   }finally{
     btn.textContent=old; btn.disabled=false;
   }
 }
 
-function renderFromUI(){
-  const year  = parseInt(document.getElementById('selYear').value||"");
-  const month = parseInt(document.getElementById('selMonth').value||"");
-  const agg = aggregate({year:isNaN(year)?null:year, month:isNaN(month)?null:month});
-  renderCharts(agg);
-}
-
-/* ===================== Events ===================== */
+/* events */
 document.getElementById('btnRefresh').addEventListener('click', loadData);
 document.getElementById('selYear').addEventListener('change', renderFromUI);
 document.getElementById('selMonth').addEventListener('change', renderFromUI);
@@ -361,12 +294,11 @@ document.getElementById('btnReset').addEventListener('click', ()=>{
   document.getElementById('selOrient').value="v";
   renderFromUI();
 });
-document.getElementById('chkDark').addEventListener('change', (e)=>{
+document.getElementById('chkDark').addEventListener('change',(e)=>{
   document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light');
   renderFromUI();
 });
 
-/* init */
 window.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>
