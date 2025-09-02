@@ -1,60 +1,44 @@
 <!doctype html>
 <html lang="ja" data-theme="light">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>品質情報（グラフ｜ピボットCSV）</title>
-  <style>
-    :root{
-      --bg1:#eef2ff; --bg2:#f8fafc;
-      --card:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
-      --accent:#2563eb; --shadow:0 30px 60px rgba(15,23,42,.08); --radius:18px;
-      --grid:#e5e7eb;
-    }
-    [data-theme="dark"]{
-      --bg1:#0b1220; --bg2:#0b1220;
-      --card:#0f172a; --ink:#e5e7eb; --muted:#94a3b8; --border:#1f2937; --grid:#223044;
-      --accent:#60a5fa; --shadow:none;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; color:var(--ink);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
-      background:
-        radial-gradient(1200px 600px at -10% -10%, #c7d2fe33 0%, transparent 60%),
-        radial-gradient(900px 500px at 110% 0%, #bae6fd33 0%, transparent 55%),
-        linear-gradient(120deg,var(--bg1),var(--bg2));
-    }
-    header{position:sticky;top:0;z-index:5;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
-    [data-theme="dark"] header{background:#0f172acc}
-    .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
-    .row{display:flex;justify-content:space-between;align-items:center;gap:16px}
-    nav a{margin-left:16px;text-decoration:none;color:var(--accent);font-weight:700}
-    main{max-width:1200px;margin:26px auto;padding:0 20px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
-    .toolbar,.filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .btn,select{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--ink)}
-    .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    .chart-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;min-height:360px;display:flex;align-items:center;justify-content:center}
-    .chart-box.wide{grid-column:1/-1}
-    .note{font-size:12px;color:var(--muted);margin-top:6px}
-    .banner{margin-bottom:12px;padding:10px 12px;background:#fff8e1;border:1px solid #fde68a;border-radius:10px;color:#8a6d00}
-    .footer{margin:18px 0;text-align:center;font-size:12px;color:var(--muted)}
-    @media (max-width:900px){ .chart-grid{grid-template-columns:1fr} }
-  </style>
-
-  <!-- libs -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>品質情報（グラフ｜ピボットCSV）</title>
+<style>
+  :root{--bg1:#eef2ff;--bg2:#f8fafc;--card:#fff;--ink:#0f172a;--muted:#64748b;--border:#e5e7eb;--accent:#2563eb;--shadow:0 30px 60px rgba(15,23,42,.08);--radius:18px;--grid:#e5e7eb}
+  [data-theme="dark"]{--bg1:#0b1220;--bg2:#0b1220;--card:#0f172a;--ink:#e5e7eb;--muted:#94a3b8;--border:#1f2937;--grid:#223044;--accent:#60a5fa;--shadow:none}
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;background:
+    radial-gradient(1200px 600px at -10% -10%, #c7d2fe33 0%, transparent 60%),
+    radial-gradient(900px 500px at 110% 0%, #bae6fd33 0%, transparent 55%),
+    linear-gradient(120deg,var(--bg1),var(--bg2))}
+  header{position:sticky;top:0;z-index:5;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+  [data-theme="dark"] header{background:#0f172acc}
+  .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:16px}
+  main{max-width:1200px;margin:26px auto;padding:0 20px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+  .filters,.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btn,select{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--ink)}
+  .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chart-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;min-height:360px;display:flex;align-items:center;justify-content:center}
+  .chart-box.wide{grid-column:1/-1}
+  .note{font-size:12px;color:var(--muted);margin-top:6px}
+  .banner{margin-bottom:12px;padding:10px 12px;background:#fff8e1;border:1px solid #fde68a;border-radius:10px;color:#8a6d00}
+  .footer{margin:18px 0;text-align:center;font-size:12px;color:var(--muted)}
+  @media (max-width:900px){.chart-grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <header>
   <div class="wrap row">
     <strong>品質情報（グラフ｜ピボットCSV）</strong>
-    <nav>
-      <a href="./index.html">ホーム</a>
-    </nav>
+    <div class="toolbar">
+      <button id="btnRefresh" class="btn">Refresh now</button>
+      <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px">
+        <input id="chkDark" type="checkbox"> Dark
+      </label>
+    </div>
   </div>
 </header>
 
@@ -63,23 +47,16 @@
     <div id="msg" class="banner" style="display:none"></div>
 
     <section class="card" style="margin-bottom:16px">
-      <div class="row" style="justify-content:space-between;gap:12px">
+      <div class="row" style="justify-content:space-between">
         <h3 style="margin:0">出荷検査 — グラフ</h3>
-        <div class="toolbar">
-          <button id="btnRefresh" class="btn">Refresh now</button>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
-            <input id="chkDark" type="checkbox"> Dark
-          </label>
-        </div>
       </div>
-
       <div class="filters" style="margin-top:8px">
         <label style="font-size:12px;color:var(--muted)">月:</label>
         <select id="selMonth" class="btn"></select>
 
         <label style="font-size:12px;color:var(--muted)">向き:</label>
         <select id="selOrient" class="btn">
-          <option value="v">Vertical</option>
+          <option value="v" selected>Vertical</option>
           <option value="h">Horizontal</option>
         </select>
 
@@ -101,26 +78,23 @@
   </div>
 </main>
 
-<script>
-/* ========= CONFIG ========= */
-// Ganti ke link CSV “Publish to the web” punyamu (pivot).
-const CSV_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=865157145&single=true&output=csv";
+<!-- libs -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
-/* ========= Helpers ========= */
+<script>
+/* ========== CONFIG ========== */
+// Pakai link CSV “Publish to the web” (pivot) yang kamu kirim:
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=865157145&single=true&output=csv";
+
+/* ========== Helpers ========== */
 Chart.register(ChartDataLabels);
-const S = v => String(v ?? "").trim();
-const N = v => {
-  const t = S(v).replace(/,/g,"");
-  const n = parseFloat(t);
-  return isNaN(n) ? 0 : n;
-};
+const S=v=>String(v??"").trim();
+const N=v=>{const t=S(v).replace(/,/g,"");const n=parseFloat(t);return isNaN(n)?0:n;};
 
 function parseCSV(text){
-  // CSV parser aman utk kutip ganda
   const out=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/gy;
-  let m,row=[];
-  text=text.replace(/\r\n?/g,"\n");
+  let m,row=[]; text=text.replace(/\r\n?/g,"\n");
   for(let i=0;i<text.length;){
     re.lastIndex=i; m=re.exec(text); if(!m) break;
     let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
@@ -129,202 +103,199 @@ function parseCSV(text){
   }
   return out;
 }
+function showMsg(t){const b=document.getElementById('msg');b.textContent=t;b.style.display='block';}
+function clearMsg(){const b=document.getElementById('msg');b.textContent="";b.style.display='none';}
+function setDark(on){document.documentElement.setAttribute('data-theme', on?'dark':'light'); render();}
 
-function showMsg(t){ const b=document.getElementById('msg'); b.textContent=t; b.style.display='block'; }
-function clearMsg(){ const b=document.getElementById('msg'); b.textContent=""; b.style.display='none'; }
-function setDark(on){
-  document.documentElement.setAttribute('data-theme', on?'dark':'light');
-  render(); // re-render agar warna grid/teks ikut tema
-}
+/* ========== State ========== */
+let rows=[], header=[], headerRow=-1;
+let idxMonth=-1, idxDept=-1, typeCols=[];
+let charts={dept:null,type:null,deptTop:null};
 
-/* ========= State ========= */
-let rawRows=[];
-let header=[], idxMonth=-1, idxDept=-1, typeCols=[]; // typeCols = [{name, idx}, ...]
-let charts={dept:null, type:null, deptTop:null};
-
-/* ========= Load & detect header ========= */
+/* ========== Load ========== */
 async function load(){
   try{
     clearMsg();
-    const btn=document.getElementById('btnRefresh'); btn.disabled=true; btn.textContent="Loading...";
-    const res=await fetch(CSV_URL + "&_ts=" + Date.now(), {cache:"no-store"});
-    if(!res.ok) throw new Error("HTTP " + res.status);
+    const btn=document.getElementById('btnRefresh'); btn.disabled=true; btn.textContent='Loading...';
+    const res=await fetch(CSV_URL + '&_ts=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
     const text=await res.text();
-    const rows=parseCSV(text);
-    if(!rows.length) throw new Error("CSV empty");
+    rows=parseCSV(text);
+    if(!rows.length) throw new Error('CSV empty');
 
-    // Cari baris header yang mengandung '部署' dan '月' / 'Month'
-    const hIdx = rows.findIndex(r => r.some(c=>/部署/.test(S(c))) && r.some(c=>/(月|Month)/i.test(S(c))));
-    if(hIdx<0) throw new Error("Header not found (部署 / 月)");
-    header = rows[hIdx];
-    rawRows = rows.slice(hIdx+1);
-
-    // indeks
-    idxMonth = header.findIndex(c => /(月|Month)/i.test(S(c)));
-    idxDept  = header.findIndex(c => /部署/.test(S(c)));
-    if(idxMonth<0 || idxDept<0) throw new Error("Columns '年月/月/Month' or '部署' not found");
-
-    // kolom jenis (クレーム種類) = dari setelah 部署 sampai sebelum Grand Total (jika ada)
-    const gtIndex = header.findIndex(c => /Grand\s*Total/i.test(S(c)));
-    const lastCol = (gtIndex>idxDept) ? gtIndex : header.length;
-    typeCols = [];
-    for(let i=idxDept+1;i<lastCol;i++){
-      const name=S(header[i]);
-      if(name) typeCols.push({name, idx:i});
+    detectHeader();
+    if(idxMonth<0 || idxDept<0 || !typeCols.length){
+      showMsg('ピボットCSV（年月/Month・部署/部署名・クレーム種類列）が見当たりません。ヘッダーの表記を確認してください。');
+      btn.disabled=false; btn.textContent='Refresh now';
+      render(); // will clear charts
+      return;
     }
-    if(!typeCols.length) throw new Error("Columns for クレーム種類 not found");
 
-    // Buat daftar bulan
-    const monthSet = new Set();
-    for(const r of rawRows){
-      const m=S(r[idxMonth]);
-      if(!m || /total/i.test(m)) continue; // skip total rows
+    // build month list
+    const monthSet=new Set();
+    for(const r of rows.slice(headerRow+1)){
+      const m=S(r[idxMonth]); if(!m || /total/i.test(m)) continue;
       monthSet.add(m);
     }
-    const selMonth=document.getElementById('selMonth');
-    selMonth.innerHTML = `<option value="ALL">All</option>` + [...monthSet].map(m=>`<option value="${m}">${m}</option>`).join("");
-    selMonth.value="ALL";
+    const sel=document.getElementById('selMonth');
+    sel.innerHTML = `<option value="ALL">All</option>` + [...monthSet].map(m=>`<option value="${m}">${m}</option>`).join('');
+    sel.value='ALL';
 
     render();
-    btn.disabled=false; btn.textContent="Refresh now";
-  }catch(err){
-    console.error(err);
-    showMsg("読み込みに失敗しました: " + err.message + " ／ 公開設定(公開/Publish to the web)とURLを確認してください。");
-    document.getElementById('btnRefresh').disabled=false;
-    document.getElementById('btnRefresh').textContent="Refresh now";
+    btn.disabled=false; btn.textContent='Refresh now';
+  }catch(e){
+    console.error(e);
+    showMsg('読み込みに失敗しました: ' + e.message + ' ／ URLと公開設定(Publish to the web)をご確認ください。');
+    const btn=document.getElementById('btnRefresh'); btn.disabled=false; btn.textContent='Refresh now';
   }
 }
 
-/* ========= Aggregate from pivot rows ========= */
-function aggregate(monthPick){
-  const byDept = new Map();   // 部署 合計(全種類)
-  const byType = new Map();   // 種類 合計(全部署)
+/* ========== Robust header detection ========== */
+function detectHeader(){
+  header=[]; headerRow=-1; idxMonth=-1; idxDept=-1; typeCols=[];
 
-  const isTotalRow = (m, d) => /total/i.test(m) || /total/i.test(d) || /grand/i.test(d);
+  const isMonthHdr = v=>/(年月|Month|月(\s|$))/i.test(S(v));
+  const isDeptHdr  = v=>/(部署名?|部門)/.test(S(v));
+  const looksType  = v=>/(クレーム|改善|依頼|票|報告|件)/.test(S(v)) && !isDeptHdr(v) && !isMonthHdr(v) && !/total/i.test(S(v));
 
-  for(const r of rawRows){
-    const m = S(r[idxMonth]);
-    const d = S(r[idxDept]);
-    if(!m || !d) continue;
-    if(isTotalRow(m,d)) continue; // skip subtotal/grand total
+  // cari baris yang punya minimal 2 sinyal header
+  headerRow = rows.findIndex(r=>{
+    const h=r.map(S);
+    const hasMonth = h.some(isMonthHdr);
+    const hasDept  = h.some(isDeptHdr);
+    const hasType  = h.some(looksType);
+    return (hasMonth&&hasDept) || (hasDept&&hasType) || (hasMonth&&hasType);
+  });
+  if(headerRow<0) headerRow = 0;
 
-    if(monthPick!=="ALL" && m!==monthPick) continue;
+  header = rows[headerRow].map(S);
 
-    // Hitung jumlah per jenis & per departemen
-    let rowSum = 0;
-    for(const t of typeCols){
-      const v = N(r[t.idx]);
-      if(v>0){
-        byType.set(t.name, (byType.get(t.name)||0) + v);
-        rowSum += v;
-      }
-    }
-    if(rowSum>0){
-      byDept.set(d, (byDept.get(d)||0) + rowSum);
+  // indeks kolom
+  idxMonth = header.findIndex(isMonthHdr);
+  idxDept  = header.findIndex(isDeptHdr);
+
+  // range kolom “jenis” → dari setelah dept sampai sebelum Grand Total (kalau ada)
+  const gtIndex = header.findIndex(c=>/Grand\s*Total/i.test(S(c)));
+  const lastCol = (gtIndex>idxDept)?gtIndex:header.length;
+
+  typeCols=[];
+  for(let i=0;i<header.length;i++){
+    const nm=S(header[i]);
+    if(i===idxMonth || i===idxDept) continue;
+    if(i>=0 && i<lastCol && (looksType(nm) || (idxMonth>=0 && idxDept>=0 && i>idxDept))){
+      typeCols.push({name:nm, idx:i});
     }
   }
+  // buang yang kosong
+  typeCols = typeCols.filter(t=>S(t.name)!=="");
+}
 
-  // urutkan
-  const sortDesc = (a,b)=>b[1]-a[1];
+/* ========== Aggregate ========== */
+function aggregate(monthPick){
+  const byDept=new Map();
+  const byType=new Map();
+
+  const start = headerRow+1;
+  for(let i=start;i<rows.length;i++){
+    const r=rows[i];
+    const m=S(r[idxMonth]); const d=S(r[idxDept]);
+    if(!m || !d) continue;
+    if(/total/i.test(m) || /total/i.test(d) || /grand/i.test(d)) continue;
+    if(monthPick!=='ALL' && m!==monthPick) continue;
+
+    let sum=0;
+    for(const t of typeCols){
+      const v=N(r[t.idx]); if(v>0){
+        byType.set(t.name, (byType.get(t.name)||0)+v);
+        sum+=v;
+      }
+    }
+    if(sum>0) byDept.set(d, (byDept.get(d)||0)+sum);
+  }
+
+  const sortDesc=(a,b)=>b[1]-a[1];
   const deptArr=[...byDept.entries()].sort(sortDesc);
   const typeArr=[...byType.entries()].sort(sortDesc);
 
   return {
-    dept: { labels: deptArr.map(x=>x[0]), data: deptArr.map(x=>x[1]) },
-    type: { labels: typeArr.map(x=>x[0]), data: typeArr.map(x=>x[1]) },
-    deptTop: (()=> {
-      const top = deptArr.slice(0, 10);
-      return { labels: top.map(x=>x[0]), data: top.map(x=>x[1]) };
-    })()
+    dept:{labels:deptArr.map(x=>x[0]), data:deptArr.map(x=>x[1])},
+    type:{labels:typeArr.map(x=>x[0]), data:typeArr.map(x=>x[1])},
+    deptTop:(()=>{const t=deptArr.slice(0,10);return{labels:t.map(x=>x[0]),data:t.map(x=>x[1])}})()
   };
 }
 
-/* ========= Render charts ========= */
+/* ========== Render ========== */
 function render(){
-  if(!rawRows.length || idxMonth<0 || idxDept<0 || !typeCols.length) return;
+  // bersihkan kalau header belum ada
+  if(idxMonth<0 || idxDept<0 || !typeCols.length){
+    destroyAll(); return;
+  }
 
-  const monthPick=document.getElementById('selMonth').value || "ALL";
-  const orient=document.getElementById('selOrient').value || "v";
+  const monthPick=document.getElementById('selMonth').value || 'ALL';
+  const orient=document.getElementById('selOrient').value || 'v';
   const isH = (orient==='h');
 
-  const agg = aggregate(monthPick);
+  const agg=aggregate(monthPick);
 
-  const themeInk = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#0f172a';
-  const themeGrid= getComputedStyle(document.documentElement).getPropertyValue('--grid').trim()||'#e5e7eb';
+  const st=getComputedStyle(document.documentElement);
+  const themeInk=st.getPropertyValue('--ink').trim()||'#0f172a';
+  const themeGrid=st.getPropertyValue('--grid').trim()||'#e5e7eb';
 
-  const baseOptions = (title)=>({
-    indexAxis: isH ? 'y' : 'x',
-    responsive:true,
-    maintainAspectRatio:false,
-    plugins:{
-      legend:{display:false},
-      title:{display:true,text:title,color:themeInk},
-      datalabels:{
-        color:themeInk, anchor:'end', align: isH?'right':'top',
-        formatter:(v)=> (v>0? v : '')
-      },
-      tooltip:{ callbacks:{ label:(ctx)=> ` ${ctx.parsed[isH?'x':'y']}` } }
+  const baseOptions=title=>({
+    indexAxis:isH?'y':'x',
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},title:{display:true,text:title,color:themeInk},
+      datalabels:{color:themeInk,anchor:'end',align:isH?'right':'top',formatter:v=>v>0?v:''},
+      tooltip:{callbacks:{label:ctx=>' '+ctx.parsed[isH?'x':'y']}}
     },
-    scales: isH ? {
-      x:{ beginAtZero:true, grid:{color:themeGrid} },
-      y:{ grid:{display:false} }
-    } : {
-      y:{ beginAtZero:true, grid:{color:themeGrid} },
-      x:{ grid:{display:false} }
-    }
+    scales:isH?{x:{beginAtZero:true,grid:{color:themeGrid}},y:{grid:{display:false}}}
+               :{y:{beginAtZero:true,grid:{color:themeGrid}},x:{grid:{display:false}}}
   });
 
-  const colors = (n)=>{
-    const baseLight=['#93c5fd','#a5b4fc','#fda4af','#fdba74','#86efac','#67e8f9','#f5d0fe','#c4b5fd','#fecaca','#fde68a','#bbf7d0','#bae6fd'];
-    const baseDark =['#60a5fa','#818cf8','#fca5a5','#fbbf24','#4ade80','#22d3ee','#f0abfc','#a78bfa','#f87171','#fde047','#86efac','#93c5fd'];
-    const dark = document.documentElement.getAttribute('data-theme')==='dark';
-    const base = dark?baseDark:baseLight;
-    return Array.from({length:n},(_,i)=>base[i%base.length]);
+  const palette=(n)=>{
+    const L=['#93c5fd','#a5b4fc','#fda4af','#fdba74','#86efac','#67e8f9','#f5d0fe','#c4b5fd','#fecaca','#fde68a','#bbf7d0','#bae6fd'];
+    const D=['#60a5fa','#818cf8','#fca5a5','#fbbf24','#4ade80','#22d3ee','#f0abfc','#a78bfa','#f87171','#fde047','#86efac','#93c5fd'];
+    const dark=document.documentElement.getAttribute('data-theme')==='dark';
+    const base=dark?D:L; return Array.from({length:n},(_,i)=>base[i%base.length]);
   };
 
-  // Dept chart
-  if(charts.dept) charts.dept.destroy();
-  charts.dept = new Chart(document.getElementById('cDept').getContext('2d'), {
+  destroyAll();
+  charts.dept=new Chart(document.getElementById('cDept'),{
     type:'bar',
-    data:{ labels: agg.dept.labels,
-      datasets:[{label:'件数', data: agg.dept.data, backgroundColor: colors(agg.dept.data.length)}]},
-    options: baseOptions(`部署別（件数）｜月: ${monthPick}`)
+    data:{labels:agg.dept.labels,datasets:[{label:'件数',data:agg.dept.data,backgroundColor:palette(agg.dept.data.length)}]},
+    options:baseOptions(`部署別（件数）｜月: ${monthPick}`)
   });
-
-  // Type chart
-  if(charts.type) charts.type.destroy();
-  charts.type = new Chart(document.getElementById('cType').getContext('2d'), {
+  charts.type=new Chart(document.getElementById('cType'),{
     type:'bar',
-    data:{ labels: agg.type.labels,
-      datasets:[{label:'件数', data: agg.type.data, backgroundColor: colors(agg.type.data.length)}]},
-    options: baseOptions(`種類別（件数）｜月: ${monthPick}`)
+    data:{labels:agg.type.labels,datasets:[{label:'件数',data:agg.type.data,backgroundColor:palette(agg.type.data.length)}]},
+    options:baseOptions(`種類別（件数）｜月: ${monthPick}`)
   });
-
-  // Dept TOP10
-  if(charts.deptTop) charts.deptTop.destroy();
-  charts.deptTop = new Chart(document.getElementById('cDeptTop').getContext('2d'), {
+  charts.deptTop=new Chart(document.getElementById('cDeptTop'),{
     type:'bar',
-    data:{ labels: agg.deptTop.labels,
-      datasets:[{label:'件数', data: agg.deptTop.data, backgroundColor: colors(agg.deptTop.data.length)}]},
-    options: baseOptions(`部署別 TOP10（件数）｜月: ${monthPick}`)
+    data:{labels:agg.deptTop.labels,datasets:[{label:'件数',data:agg.deptTop.data,backgroundColor:palette(agg.deptTop.data.length)}]},
+    options:baseOptions(`部署別 TOP10（件数）｜月: ${monthPick}`)
   });
 
   document.getElementById('footNote').textContent =
-    `データ源: Google Sheets (Publish to the web CSV) ／ 月(${monthPick})・部署列とクレーム種類列を集計。Subtotal/Grand Totalは自動除外。`;
+    `ヘッダー行: ${headerRow+1}行目 ／ 月列: ${idxMonth+1} ／ 部署列: ${idxDept+1} ／ 種類列: ${typeCols.length}列（Grand Total等は除外）`;
 }
 
-/* ========= Events ========= */
+function destroyAll(){
+  for(const k of Object.keys(charts)){ if(charts[k]){ charts[k].destroy(); charts[k]=null; } }
+}
+
+/* ========== Events ========== */
 document.getElementById('btnRefresh').addEventListener('click', load);
 document.getElementById('selMonth').addEventListener('change', render);
 document.getElementById('selOrient').addEventListener('change', render);
 document.getElementById('btnReset').addEventListener('click', ()=>{
-  document.getElementById('selMonth').value="ALL";
-  document.getElementById('selOrient').value="v";
+  const sel=document.getElementById('selMonth'); if(sel.options.length) sel.value='ALL';
+  document.getElementById('selOrient').value='v';
   render();
 });
 document.getElementById('chkDark').addEventListener('change', e=> setDark(e.target.checked));
 
-/* ========= Start ========= */
+/* ========== Start ========== */
 load();
 </script>
 </body>
