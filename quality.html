@@ -2,304 +2,375 @@
 <html lang="ja" data-theme="light">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>品質情報（グラフ｜ピボットCSV）</title>
 <style>
   :root{
-    --bg1:#eef2ff; --bg2:#f8fafc;
+    --bg1:#f8fafc; --bg2:#eef2ff;
     --card:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
-    --accent:#2563eb; --shadow:0 30px 60px rgba(15,23,42,.08); --radius:16px;
-    --grid:#e5e7eb;
+    --accent:#2563eb; --radius:18px; --grid:#e5e7eb;
   }
   [data-theme="dark"]{
     --bg1:#0b1220; --bg2:#0b1220;
-    --card:#0f172a; --ink:#e5e7eb; --muted:#94a3b8; --border:#1f2937;
-    --accent:#60a5fa; --shadow:none; --grid:#223044;
+    --card:#0f172a; --ink:#e5e7eb; --muted:#94a3b8; --border:#1f2937; --grid:#223044;
+    --accent:#60a5fa;
   }
   *{box-sizing:border-box}
   body{
-    margin:0;color:var(--ink);
+    margin:0; color:var(--ink);
     font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
     background:
-      radial-gradient(1200px 600px at -10% -10%, #c7d2fe33 0%, transparent 60%),
+      radial-gradient(900px 500px at -10% -10%, #c7d2fe33 0%, transparent 60%),
       radial-gradient(900px 500px at 110% 0%, #bae6fd33 0%, transparent 55%),
       linear-gradient(120deg,var(--bg1),var(--bg2));
+    min-height:100vh;
   }
-  header{position:sticky;top:0;z-index:10;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+  header{position:sticky; top:0; z-index:10; background:#ffffffcc; backdrop-filter:blur(10px); border-bottom:1px solid var(--border)}
   [data-theme="dark"] header{background:#0f172acc}
-  .wrap{max-width:1200px;margin:0 auto;padding:10px 18px;display:flex;gap:12px;align-items:center;justify-content:space-between}
-  .btn{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--ink);cursor:pointer}
-  .small{font-size:12px;color:var(--muted)}
-  main{max-width:1200px;margin:22px auto;padding:0 18px}
-  .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
-  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-  select.btn{appearance:none;padding-right:26px;background-image:
-    linear-gradient(45deg,transparent 50%,#64748b 50%),
-    linear-gradient(135deg,#64748b 50%,transparent 50%);
-    background-position:calc(100% - 18px) calc(1em - 2px),calc(100% - 13px) calc(1em - 2px);
-    background-size:5px 5px;background-repeat:no-repeat}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .box{background:var(--card);border:1px solid var(--border);border-radius:16px;min-height:360px;padding:12px;display:flex;align-items:center;justify-content:center}
+  .wrap{max-width:1200px; margin:0 auto; padding:12px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px}
+  .brand{display:flex; align-items:center; gap:10px}
+  .brand strong{font-size:14px}
+  .controls{display:flex; gap:8px; align-items:center}
+  .btn{padding:8px 10px; border:1px solid var(--border); background:var(--card); color:var(--ink); border-radius:10px; cursor:pointer}
+  .btn[disabled]{opacity:.6; cursor:not-allowed}
+  .small{font-size:12px; color:var(--muted)}
+  main{max-width:1200px; margin:18px auto; padding:0 18px}
+  .notice{background:#fff7ed; color:#9a3412; border:1px solid #fed7aa; border-radius:10px; padding:10px 12px; margin-bottom:10px}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px}
+  .filterbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px}
+  select.btn{appearance:none; padding-right:26px; background:
+    linear-gradient(45deg,transparent 50%,#64748b 50%) calc(100% - 18px) calc(1em - 2px)/5px 5px no-repeat,
+    linear-gradient(135deg,#64748b 50%,transparent 50%) calc(100% - 13px) calc(1em - 2px)/5px 5px no-repeat}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  .box{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; min-height:360px; display:flex; align-items:center}
   .box.wide{grid-column:1/-1}
-  canvas{width:100%!important;height:320px!important}
-  @media (max-width:980px){.grid{grid-template-columns:1fr}}
+  .box canvas{width:100%!important; height:320px!important}
+  @media (max-width:900px){ .grid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
 <header>
   <div class="wrap">
-    <div style="display:flex;align-items:center;gap:10px">
-      <strong>品質情報（グラフ｜ピボットCSV）</strong>
-      <span id="note" class="small"></span>
-    </div>
-    <div class="row">
-      <button id="btnRefresh" class="btn">Refresh now</button>
-      <label class="small" style="display:flex;align-items:center;gap:6px"><input id="chkDark" type="checkbox">Dark</label>
+    <div class="brand"><strong>品質情報（グラフ｜ピボットCSV）</strong></div>
+    <div class="controls">
+      <button id="btnRefresh" class="btn" type="button">Refresh now</button>
+      <label class="small" style="display:flex;align-items:center;gap:6px">
+        <input id="chkDark" type="checkbox"> Dark
+      </label>
     </div>
   </div>
 </header>
 
 <main>
-  <section class="panel" style="margin-bottom:14px">
-    <div class="row">
+  <div id="notice" class="notice" style="display:none"></div>
+
+  <section class="card">
+    <div class="filterbar">
       <label class="small">年:</label>
-      <select id="selYear" class="btn"></select>
+      <select id="selYear" class="btn"><option value="ALL">All</option></select>
 
       <label class="small">月:</label>
-      <select id="selMonth" class="btn"></select>
+      <select id="selMonth" class="btn"><option value="ALL">All</option></select>
+
+      <label class="small">Top件数:</label>
+      <select id="selTop" class="btn">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+      </select>
 
       <label class="small">向き:</label>
       <select id="selOrient" class="btn">
-        <option value="v">Vertical</option>
+        <option value="v" selected>Vertical</option>
         <option value="h">Horizontal</option>
       </select>
 
-      <button id="btnReset" class="btn">Reset</button>
-      <span class="small" id="hint">※ ピボットの行「Total／Grand Total」は自動で除外</span>
+      <button id="btnReset" class="btn" type="button">Reset</button>
     </div>
-  </section>
 
-  <section class="grid">
-    <div class="box"><canvas id="chartDept" aria-label="部署別（件数）"></canvas></div>
-    <div class="box"><canvas id="chartType" aria-label="種類別（件数）"></canvas></div>
-    <div class="box wide"><canvas id="chartDeptTop" aria-label="部署別 TOP（件数）"></canvas></div>
+    <div class="grid">
+      <div class="box"><canvas id="chartDept"></canvas></div>
+      <div class="box"><canvas id="chartType"></canvas></div>
+      <div class="box wide"><canvas id="chartDeptTop"></canvas></div>
+    </div>
   </section>
 </main>
 
+<!-- libs -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
 <script>
-/* ===================== CONFIG ===================== */
-// CSV Pivot (boleh diganti ke URL kamu):
-const CSV_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=865157145&single=true&output=csv";
+/* ====================== CONFIG ====================== */
+// Ganti link ini dengan link publish-to-web (CSV) yang kamu pakai
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=865157145&single=true&output=csv";
 
-const COL_HINTS = {
-  month: /^(年月|月|month)/i,
-  dept : /(部署|部門)/,
-  total: /(grand\s*total|合計)/i,
-};
+/* =================== UTIL / PARSER ================== */
+const S = v => String(v ?? '').trim();
 
-Chart.register(ChartDataLabels);
-
-const S = s => String(s ?? "").trim();
-const toNum = v => { const n = parseFloat(String(v).replace(/,/g,"")); return Number.isFinite(n)?n:0; };
-const monthMap = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
-
+// parser CSV sederhana (kutip ganda didukung)
 function parseCSV(text){
-  const out=[], row=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/gy;
-  text=text.replace(/\r\n?/g,"\n"); let m;
-  for(let i=0;i<text.length;){
-    re.lastIndex=i; m=re.exec(text); if(!m) break;
-    let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-    row.push(cell); i=re.lastIndex;
-    if(m[2]==="\n"||m[2]===""){ out.push(row.slice()); row.length=0; }
+  const out=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/gy;
+  let row=[], m; text=text.replace(/\r\n?/g,"\n");
+  while((m=re.exec(text))){
+    let cell=m[1];
+    if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
+    row.push(cell);
+    if(m[2]==="\n"||m[2]===""){ if(row.length && row.some(c=>S(c)!=="")) out.push(row); row=[]; }
   }
-  return out.filter(r => r.length && r.some(c => S(c)!==""));
+  return out;
 }
 
-function findIndexesIn(header){
-  const find = re => header.findIndex(h => re.test(S(h)));
-  const idx = {
-    month: find(COL_HINTS.month),
-    dept : find(COL_HINTS.dept),
-    total: find(COL_HINTS.total),
-  };
-  const typeIdx=[];
-  header.forEach((h,i)=>{
-    if(i===idx.month||i===idx.dept||i===idx.total) return;
-    typeIdx.push({name:S(h)||`種類${i+1}`, i});
-  });
-  return {idx, typeIdx};
+function showNotice(msg){
+  const n=document.getElementById('notice');
+  n.textContent=msg; n.style.display='block';
+}
+function hideNotice(){ document.getElementById('notice').style.display='none'; }
+
+/* ============ HEADER DETECTION (Pivot) ============== */
+/** Cari baris header yg mengandung 「部署」. */
+function findHeaderRow(rows){
+  const idx = rows.findIndex(r => r.some(c => /部署|Department/i.test(S(c))));
+  return idx >= 0 ? idx : 0;
 }
 
-function detectStructure(arr){
-  // cari baris header terbaik (abaikan "Sum of 件" di baris pertama)
-  let best=null;
-  for(let r=0;r<Math.min(10,arr.length);r++){
-    const header=arr[r];
-    const {idx, typeIdx} = findIndexesIn(header);
-    const score = (idx.dept>=0?2:0) + (idx.month>=0?2:0) + typeIdx.length; // bobot dept/month
-    if(!best || score>best.score) best={r, header, idx, typeIdx, score};
-    if(idx.dept>=0 && (idx.month>=0 || typeIdx.length>0)) break; // sudah cukup
-  }
-  const header = best.header;
-  const body   = arr.slice(best.r+1).filter(row=>row.some(c=>S(c)!==""));
-  return {header, rows:body, idx:best.idx, typeIdx:best.typeIdx};
+/* ====== COLOR PALETTE (adapt to light/dark) ========= */
+const PALETTE_LIGHT = ['#93c5fd','#a5b4fc','#fda4af','#fdba74','#86efac','#67e8f9','#f5d0fe','#c4b5fd','#fecaca','#fde68a','#bbf7d0','#bae6fd'];
+const PALETTE_DARK  = ['#60a5fa','#818cf8','#fca5a5','#fbbf24','#4ade80','#22d3ee','#f0abfc','#a78bfa','#f87171','#fde047','#86efac','#93c5fd'];
+const hexToRgba=(hex,a=0.85)=>{const h=hex.replace('#','');const b=parseInt(h,16);return`rgba(${(b>>16)&255},${(b>>8)&255},${b&255},${a})`};
+const isDark = () => document.documentElement.getAttribute('data-theme')==='dark';
+function softPalette(n){
+  const base = isDark()?PALETTE_DARK:PALETTE_LIGHT;
+  return Array.from({length:n},(_,i)=>hexToRgba(base[i%base.length], isDark()?0.75:0.85));
+}
+function applyChartDefaults(){
+  Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#0f172a';
+  Chart.defaults.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--grid').trim() || '#e5e7eb';
+  Chart.defaults.font.family = 'system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif';
 }
 
-function parseMonthCell(v){
-  const t=S(v); if(!t) return {y:null,m:null,label:""};
-  const m1=t.match(/(\d{4}).?(\d{1,2})/); // 2025-06 / 2025 6
-  if(m1) return {y:+m1[1], m:+m1[2], label:`${m1[1]}-${String(m1[2]).padStart(2,"0")}`};
-  const mm=t.slice(0,3).toLowerCase();
-  if(monthMap[mm]){ const y=(new Date()).getFullYear(); return {y, m:monthMap[mm], label:`${y}-${String(monthMap[mm]).padStart(2,"0")}`}; }
-  return {y:null,m:null,label:t};
-}
-const isSubtotal = v => /total|合計/i.test(S(v));
+/* =================== STATE ========================== */
+let cached = { header:[], rows:[], idx:{}, monthKey:'', yearKey:'', deptKey:'', typeKeys:[] };
+let charts = { dept:null, type:null, deptTop:null };
 
-let RAW = {header:[],rows:[],idx:null,typeIdx:[]};
-let charts = {dept:null,type:null,deptTop:null};
+/* ====== LOAD & NORMALIZE FROM PIVOT CSV ============= */
+async function load(){
+  hideNotice();
+  const btn = document.getElementById('btnRefresh');
+  const old = btn.textContent; btn.textContent = 'Loading...'; btn.disabled = true;
 
-function palette(n, a=0.85){
-  const light=['#93c5fd','#a5b4fc','#fda4af','#fdba74','#86efac','#67e8f9','#f5d0fe','#c4b5fd','#fecaca','#fde68a','#bbf7d0','#bae6fd'];
-  const dark = ['#60a5fa','#818cf8','#fca5a5','#fbbf24','#4ade80','#22d3ee','#f0abfc','#a78bfa','#f87171','#fde047','#86efac','#93c5fd'];
-  const useDark=document.documentElement.getAttribute('data-theme')==='dark';
-  const base=useDark?dark:light;
-  const toRGBA=(hex,a)=>{const h=hex.replace('#','');const b=parseInt(h,16);return`rgba(${(b>>16)&255},${(b>>8)&255},${b&255},${a})`};
-  return Array.from({length:n},(_,i)=>toRGBA(base[i%base.length],a));
-}
-function applyThemeDefaults(){
-  const st=getComputedStyle(document.documentElement);
-  Chart.defaults.color = st.getPropertyValue('--ink').trim()||'#0f172a';
-  Chart.defaults.borderColor = st.getPropertyValue('--grid').trim()||'#e5e7eb';
-  Chart.defaults.font.family='system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif';
-}
-
-function aggregate({year,month}){
-  const {rows, idx, typeIdx} = RAW;
-  const deptTotals=new Map(), typeTotals=new Map();
-
-  for(const r of rows){
-    const monthCell = idx.month!=null && idx.month>=0 ? r[idx.month] : "";
-    const deptCell  = idx.dept !=null && idx.dept >=0 ? r[idx.dept ] : "";
-    if(isSubtotal(monthCell) || isSubtotal(deptCell)) continue;
-
-    const {y,m} = parseMonthCell(monthCell);
-    if(year && y && y!==year) continue;
-    if(month && m && m!==month) continue;
-
-    let rowTotal = 0;
-    if(idx.total!=null && idx.total>=0) rowTotal = toNum(r[idx.total]);
-    else for(const t of typeIdx) rowTotal += toNum(r[t.i]);
-
-    const deptKey=S(deptCell)||"不明";
-    deptTotals.set(deptKey,(deptTotals.get(deptKey)||0)+rowTotal);
-
-    for(const t of typeIdx){
-      const val=toNum(r[t.i]);
-      typeTotals.set(t.name,(typeTotals.get(t.name)||0)+val);
-    }
-  }
-  const deptArr=[...deptTotals.entries()].sort((a,b)=>b[1]-a[1]);
-  const typeArr=[...typeTotals.entries()].sort((a,b)=>b[1]-a[1]);
-  return {
-    dept:{labels:deptArr.map(d=>d[0]),data:deptArr.map(d=>d[1])},
-    type:{labels:typeArr.map(d=>d[0]),data:typeArr.map(d=>d[1])},
-    deptTop:{labels:deptArr.slice(0,12).map(d=>d[0]),data:deptArr.slice(0,12).map(d=>d[1])},
-  };
-}
-
-function renderCharts(agg){
-  applyThemeDefaults();
-  const orient=document.getElementById('selOrient').value;
-  const indexAxis = (orient==='h')?'y':'x';
-
-  const cfg = (labels,data)=>({
-    type:'bar',
-    data:{labels,datasets:[{label:'件数',data,backgroundColor:palette(data.length),borderWidth:1,maxBarThickness:28}]},
-    options:{
-      indexAxis, maintainAspectRatio:false,
-      plugins:{legend:{display:false},datalabels:{anchor:'end',align:(orient==='h'?'right':'top'),formatter:v=>v}},
-      scales:indexAxis==='y'
-        ? {x:{beginAtZero:true,ticks:{precision:0}}, y:{grid:{display:false}}}
-        : {y:{beginAtZero:true,ticks:{precision:0}}, x:{grid:{display:false}}}
-    }
-  });
-
-  charts.dept && charts.dept.destroy();
-  charts.type && charts.type.destroy();
-  charts.deptTop && charts.deptTop.destroy();
-
-  charts.dept   = new Chart(document.getElementById('chartDept'),   cfg(agg.dept.labels, agg.dept.data));
-  charts.type   = new Chart(document.getElementById('chartType'),   cfg(agg.type.labels, agg.type.data));
-  charts.deptTop= new Chart(document.getElementById('chartDeptTop'),cfg(agg.deptTop.labels, agg.deptTop.data));
-}
-
-function renderFromUI(){
-  const y=parseInt(document.getElementById('selYear').value||"");
-  const m=parseInt(document.getElementById('selMonth').value||"");
-  const agg=aggregate({year:isNaN(y)?null:y, month:isNaN(m)?null:m});
-  renderCharts(agg);
-}
-
-async function loadData(){
-  const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
-  btn.textContent='Loading...'; btn.disabled=true;
   try{
-    const res=await fetch(CSV_URL+'&_ts='+Date.now(),{cache:'no-store'});
-    const text=await res.text();
-    const arr=parseCSV(text);
+    const res = await fetch(CSV_URL + '&_ts=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    const arr = parseCSV(text);
     if(!arr.length) throw new Error('CSV empty');
 
-    const det=detectStructure(arr);
-    RAW=det;
+    // cari header row (baris yang mengandung 「部署」)
+    const hRow = findHeaderRow(arr);
+    const header = arr[hRow].map(S);
+    const dataRows = arr.slice(hRow+1);
 
-    // build filters
-    const yearSet=new Set(), monthSet=new Set();
-    for(const r of RAW.rows){
-      if(RAW.idx.month==null||RAW.idx.month<0) continue;
-      const {y,m}=parseMonthCell(r[RAW.idx.month]);
-      if(y) yearSet.add(y);
-      if(m) monthSet.add(m);
+    // mapping kolom
+    const idxMonth = header.findIndex(h => /(月|Month)/i.test(h));       // e.g. "年/月 - Month" atau "月"
+    const idxDept  = header.findIndex(h => /(部署|部門|Department)/i.test(h));
+    const typeIdxs = header.map((h,i)=>({name:S(h),i}))
+      .filter(o => o.i>idxDept && S(o.name)!=='' && !/Total|合計/i.test(o.name));
+
+    if(idxDept<0 || typeIdxs.length===0){
+      throw new Error('Header tidak cocok. Pastikan kolom 「部署」 dan kolom jenisクレーム ada.');
     }
-    const years=[...yearSet].sort((a,b)=>a-b);
-    const months=[...monthSet].sort((a,b)=>a-b);
 
-    const selYear=document.getElementById('selYear');
-    const selMonth=document.getElementById('selMonth');
-    selYear.innerHTML = `<option value="">All</option>` + years.map(y=>`<option value="${y}">${y}</option>`).join('');
-    selMonth.innerHTML= `<option value="">All</option>` + months.map(m=>`<option value="${m}">${m}</option>`).join('');
+    // Buat daftar record terstruktur: {year, month, dept, types:{name:value}}
+    const recs = [];
+    for(const r of dataRows){
+      const dept = S(r[idxDept]);
+      const mval = idxMonth>=0 ? S(r[idxMonth]) : '';   // bisa "Jun", "Jul", "2025/06" dll
+      if(!dept) continue;
+      // Skip subtotal/grand total
+      if(/Total|合計/i.test(mval) || /Total|合計/i.test(dept)) continue;
 
-    document.getElementById('note').textContent=`source Pivot CSV（${new URL(CSV_URL).searchParams.get('gid')||'gid'}）`;
+      const types = {};
+      for(const t of typeIdxs){
+        const v = Number(String(r[t.i] ?? '').replace(/,/g,'').trim()) || 0;
+        types[t.name] = (types[t.name]||0) + v;
+      }
+      recs.push({month:mval, dept, types});
+    }
 
-    renderFromUI();
-  }catch(e){
-    console.error(e);
-    document.getElementById('note').textContent='読み込み失敗：公開設定 / CSV を確認してください。';
-    renderCharts({dept:{labels:[],data:[]},type:{labels:[],data:[]},deptTop:{labels:[],data:[]}});
+    // Kumpulkan year/month unik (kalau nilai bulan memuat tahun, coba ekstrak)
+    const monthSet = new Set(); const yearSet = new Set();
+    for(const x of recs){
+      // coba ekstrak 4-digit tahun
+      const ym = x.month;
+      const yMatch = ym.match(/(20\d{2})/);
+      if(yMatch) yearSet.add(yMatch[1]);
+      // normalisasi bulan (Jun, 2025/06, 2025-06, etc.)
+      let mNorm = ym;
+      const mOnly = ym.match(/(?:^|[^\d])(1[0-2]|0?[1-9])(?:[^\d]|$)/);
+      if(mOnly) mNorm = (mOnly[1].length===1 ? '0'+mOnly[1] : mOnly[1]); // "06"
+      monthSet.add(mNorm || ym || ''); // jaga-jaga
+    }
+
+    cached = {
+      header,
+      rows: recs,
+      idx:{ idxMonth, idxDept, typeIdxs },
+      monthKey: idxMonth>=0 ? header[idxMonth] : '',
+      yearKey: [...yearSet][0] ? 'Year' : '',  // opsional
+      deptKey: header[idxDept],
+      typeKeys: typeIdxs.map(t=>t.name),
+      months: [...monthSet].filter(Boolean).sort()
+    };
+
+    // isi dropdown Year & Month
+    const selYear = document.getElementById('selYear');
+    const selMonth = document.getElementById('selMonth');
+    selYear.innerHTML = `<option value="ALL">All</option>` + [...yearSet].sort().map(y=>`<option value="${y}">${y}</option>`).join('');
+    selMonth.innerHTML = `<option value="ALL">All</option>` + cached.months.map(m=>`<option value="${m}">${m}</option>`).join('');
+
+    render();
+  }catch(err){
+    console.error(err);
+    showNotice('読み込みに失敗しました。CSVの公開設定 / 構成（ヘッダー）をご確認ください。' + '  (' + err.message + ')');
   }finally{
-    btn.textContent=old; btn.disabled=false;
+    btn.textContent = old; btn.disabled = false;
   }
 }
 
-/* events */
-document.getElementById('btnRefresh').addEventListener('click', loadData);
-document.getElementById('selYear').addEventListener('change', renderFromUI);
-document.getElementById('selMonth').addEventListener('change', renderFromUI);
-document.getElementById('selOrient').addEventListener('change', renderFromUI);
-document.getElementById('btnReset').addEventListener('click', ()=>{
-  document.getElementById('selYear').value="";
-  document.getElementById('selMonth').value="";
-  document.getElementById('selOrient').value="v";
-  renderFromUI();
+/* ================== AGGREGATION ===================== */
+function currentFilters(){
+  return {
+    year: document.getElementById('selYear').value,
+    month: document.getElementById('selMonth').value,
+    topN: parseInt(document.getElementById('selTop').value,10) || 10,
+    horiz: document.getElementById('selOrient').value === 'h'
+  };
+}
+
+function aggregateByDept(rows, monthPick){
+  const map = new Map();
+  for(const r of rows){
+    if(monthPick!=='ALL'){
+      // cocokkan jika string bulan yang ternormalisasi muncul di r.month
+      if(!r.month.includes(monthPick)) continue;
+    }
+    const sum = Object.values(r.types).reduce((a,b)=>a+b,0);
+    map.set(r.dept, (map.get(r.dept)||0)+sum);
+  }
+  const arr = [...map.entries()].sort((a,b)=>b[1]-a[1]);
+  return arr;
+}
+
+function aggregateByType(rows, monthPick){
+  const map = new Map();
+  for(const r of rows){
+    if(monthPick!=='ALL'){
+      if(!r.month.includes(monthPick)) continue;
+    }
+    for(const [k,v] of Object.entries(r.types)){
+      map.set(k, (map.get(k)||0)+v);
+    }
+  }
+  return [...map.entries()].sort((a,b)=>b[1]-a[1]);
+}
+
+/* ===================== RENDER ======================= */
+function render(){
+  applyChartDefaults();
+  const { rows, typeKeys } = cached;
+  if(!rows || !rows.length){
+    showNotice('表示できるデータがありません（空のCSVかも）。');
+    return;
+  }
+  const f = currentFilters();
+
+  // Dept aggregation
+  const deptArr = aggregateByDept(rows, f.month);
+  const deptTop = deptArr.slice(0, f.topN);
+  const deptLabels = deptTop.map(d=>d[0]);
+  const deptValues = deptTop.map(d=>d[1]);
+
+  // Type aggregation
+  const typeArr = aggregateByType(rows, f.month);
+  const typeLabels = typeArr.map(d=>d[0]);
+  const typeValues = typeArr.map(d=>d[1]);
+
+  const colorsDept = softPalette(deptValues.length);
+  const colorsType = softPalette(typeValues.length);
+
+  const commonPlugins = {
+    legend:{display:false},
+    datalabels:{
+      display:(ctx)=> (ctx.dataset.data[ctx.dataIndex] > 0),
+      anchor:'end', align:f.horiz?'right':'top', clamp:true, formatter:(v)=>v
+    },
+    tooltip:{ callbacks:{ label:(ctx)=> `件数: ${ctx.parsed[f.horiz?'x':'y']}` } }
+  };
+
+  // Chart 1: 部署別
+  if(charts.dept) charts.dept.destroy();
+  charts.dept = new Chart(document.getElementById('chartDept').getContext('2d'), {
+    type:'bar',
+    data:{ labels:deptLabels, datasets:[{ label:'件数', data:deptValues, backgroundColor:colorsDept, borderColor:colorsDept, borderWidth:1, maxBarThickness:28 }]},
+    options:{
+      indexAxis: f.horiz ? 'y' : 'x',
+      maintainAspectRatio:false,
+      plugins:{ ...commonPlugins, title:{display:true, text:`部署別（件数）｜月=${f.month==='ALL'?'All':f.month}`}},
+      scales: f.horiz ? { x:{beginAtZero:true}, y:{grid:{display:false}} } : { y:{beginAtZero:true}, x:{grid:{display:false}} }
+    },
+    plugins:[ChartDataLabels]
+  });
+
+  // Chart 2: 種類別
+  if(charts.type) charts.type.destroy();
+  charts.type = new Chart(document.getElementById('chartType').getContext('2d'), {
+    type:'bar',
+    data:{ labels:typeLabels, datasets:[{ label:'件数', data:typeValues, backgroundColor:colorsType, borderColor:colorsType, borderWidth:1, maxBarThickness:28 }]},
+    options:{
+      indexAxis: f.horiz ? 'y' : 'x',
+      maintainAspectRatio:false,
+      plugins:{ ...commonPlugins, title:{display:true, text:`種類別（件数）｜月=${f.month==='ALL'?'All':f.month}`}},
+      scales: f.horiz ? { x:{beginAtZero:true}, y:{grid:{display:false}} } : { y:{beginAtZero:true}, x:{grid:{display:false}} }
+    },
+    plugins:[ChartDataLabels]
+  });
+
+  // Chart 3: 部署別 TOP
+  if(charts.deptTop) charts.deptTop.destroy();
+  charts.deptTop = new Chart(document.getElementById('chartDeptTop').getContext('2d'), {
+    type:'bar',
+    data:{ labels:deptLabels, datasets:[{ label:'件数（TOP）', data:deptValues, backgroundColor:colorsDept, borderColor:colorsDept, borderWidth:1, maxBarThickness:28 }]},
+    options:{
+      indexAxis: f.horiz ? 'y' : 'x',
+      maintainAspectRatio:false,
+      plugins:{ ...commonPlugins, title:{display:true, text:`部署別 TOP（件数）｜月=${f.month==='ALL'?'All':f.month}｜Top=${f.topN}`}},
+      scales: f.horiz ? { x:{beginAtZero:true}, y:{grid:{display:false}} } : { y:{beginAtZero:true}, x:{grid:{display:false}} }
+    },
+    plugins:[ChartDataLabels]
+  });
+}
+
+/* =================== EVENTS ========================= */
+document.getElementById('btnRefresh').addEventListener('click', load);
+['selYear','selMonth','selTop','selOrient'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', render);
 });
-document.getElementById('chkDark').addEventListener('change',(e)=>{
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  document.getElementById('selYear').value='ALL';
+  document.getElementById('selMonth').value='ALL';
+  document.getElementById('selTop').value='10';
+  document.getElementById('selOrient').value='v';
+  render();
+});
+document.getElementById('chkDark').addEventListener('change', e=>{
   document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light');
-  renderFromUI();
+  render();
 });
 
-window.addEventListener('DOMContentLoaded', loadData);
+/* ==================== INIT ========================== */
+window.addEventListener('DOMContentLoaded', load);
 </script>
 </body>
 </html>
