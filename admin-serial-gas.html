@@ -6,7 +6,7 @@
 <style>
   :root{--b:#e5e7eb;--ink:#111;--pri:#2563eb}
   body{font:14px/1.4 system-ui,Segoe UI,Arial;margin:0;background:#f7f7f8;color:#111}
-  header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--b);padding:10px 12px;display:flex;gap:8px;align-items:center}
+  header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--b);padding:10px 12px;display:flex;gap:8px;align-items:center;z-index:10}
   header b{font-size:16px}
   main{max-width:1100px;margin:16px auto;padding:0 12px}
   .row{display:grid;grid-template-columns:240px 1fr 100px 120px 250px;gap:8px;align-items:center;padding:10px;border:1px solid var(--b);border-radius:10px;background:#fff;margin-bottom:8px}
@@ -31,37 +31,52 @@
     <div>Prefix</div><div>Nama/Deskripsi</div><div>桁数</div><div>次番号</div><div>Aksi</div>
   </div>
   <div id="list"></div>
-  <p><small class="muted">Catatan: daftar prefix disimpan lokal. Operasi <span class="pill mono">setNext / setDigits</span> langsung ke GAS.</small></p>
+  <p><small class="muted">Catatan: daftar prefix disimpan lokal. Operasi <span class="pill mono">setNext / setDigits / nextSuffix</span> langsung ke GAS.</small></p>
 </main>
 <input id="file" type="file" accept="application/json" hidden>
 <script>
-const APP_NS = 'okuma46';
+/* ===== Konfigurasi ===== */
+const APP_NS = 'okuma46'; // (opsional) tidak dipakai di UI ini
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxWxAa_dWQNoUPhWnkw3P22jgeW4vb44Z5ISuUyUWsAAroFzzE6iIVWMIpqqio6E5OgqA/exec';
 const STORE = 'kensa::admin::prefixList';
+const PREFIX_MUST_MATCH = /.+::.+/; // contoh: 2742-20::2742- / 330580v::XR3305- / 3555-71tomei::355571-
 
+/* ===== Util ===== */
 const $ = s => document.querySelector(s);
 const listEl = $('#list');
-
 function load(){ try{return JSON.parse(localStorage.getItem(STORE)||'[]')}catch{return[]} }
 function save(arr){ localStorage.setItem(STORE, JSON.stringify(arr)); }
-function pad(n,w){n=String(n);return n.length>=w?n:'0'.repeat(w-n.length)+n;}
+function pad(n,w){ n=String(n); return n.length>=w?n:'0'.repeat(w-n.length)+n; }
+function toast(t,ok=true){
+  const x = document.createElement('div');
+  x.textContent = t;
+  x.style = `position:fixed;right:14px;bottom:14px;background:${ok?'#111':'#b91c1c'};color:#fff;padding:10px 12px;border-radius:10px;opacity:.96;z-index:9999`;
+  document.body.appendChild(x); setTimeout(()=>x.remove(),1800);
+}
 
+/* ===== API ===== */
 async function api(body){
-  const r = await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
+  if(!GAS_URL || /YOUR_WEB_APP_URL_HERE/i.test(GAS_URL)) throw new Error('GAS URL belum diset.');
+  const r = await fetch(GAS_URL,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify(body)
+  });
   if(!r.ok) throw new Error('HTTP '+r.status);
   return r.json();
 }
-const getInfo = prefix => api({action:'getInfo',prefix});
-const setNext = (prefix,next) => api({action:'setNext',prefix,next});
-const setDigits = (prefix,digits) => api({action:'setDigits',prefix,digits});
-const nextSuffix = prefix => api({action:'nextSuffix',prefix}); // hati2: ini MENGINCREMENT
+const getInfo   = prefix          => api({action:'getInfo',   prefix});
+const setNext   = (prefix,next)   => api({action:'setNext',   prefix, next});
+const setDigits = (prefix,digits) => api({action:'setDigits', prefix, digits});
+const nextSuffix= prefix          => api({action:'nextSuffix',prefix}); // WARNING: increments server counter
 
+/* ===== UI Row ===== */
 function rowTemplate(it,index){
   const id = 'r'+index;
   const div = document.createElement('div');
   div.className = 'row'; div.id = id;
   div.innerHTML = `
-    <input class="mono pfx" value="${it.prefix||''}" placeholder="contoh: okuma46::Y282520-" />
+    <input class="mono pfx" value="${it.prefix||''}" placeholder="contoh: 2742-20::2742- / 330580v::XR3305- / 3555-71tomei::355571-" />
     <input class="name" value="${it.name||''}" placeholder="Nama form / catatan" />
     <input class="digits" type="number" min="1" max="8" step="1" value="${it.digits||''}" />
     <input class="next" type="number" min="0" step="1" value="${it.next||''}" />
@@ -69,59 +84,100 @@ function rowTemplate(it,index){
       <button class="info">Info</button>
       <button class="setDigits">Set桁</button>
       <button class="setNext">Set次</button>
-      <button class="issue danger" title="テスト用。実行するとサーバ側カウンタが進みます。">Issue</button>
+      <button class="issue" title="テスト用。実行するとサーバ側カウンタが進みます。">Issue</button>
       <button class="del">Hapus</button>
     </div>`;
-  // hooks
+
+  // Helper: validasi prefix
+  const getPrefix = ()=>{
+    const p = div.querySelector('.pfx').value.trim();
+    if(!p){ alert('Prefix kosong'); return null; }
+    if(!PREFIX_MUST_MATCH.test(p)){ alert('Format prefix harus "APP_NS::SERIAL_PREFIX"'); return null; }
+    return p;
+  };
+
+  // ---- Actions ----
   div.querySelector('.info').onclick = async ()=>{
-    const p = div.querySelector('.pfx').value.trim(); if(!p) return alert('Prefix kosong');
+    const p = getPrefix(); if(!p) return;
     try{
       const info = await getInfo(p); // {digits,next}
       div.querySelector('.digits').value = (info?.digits ?? '');
       div.querySelector('.next').value   = (info?.next ?? '');
-      toast(`Info: 桁=${info?.digits ?? '-'} 次=${info?.next ?? '-'}`);
-    }catch(e){ alert('Gagal getInfo: '+(e.message||e)); }
+      toast(`Info: 桁=${info?.digits ?? '-'} / 次=${info?.next ?? '-'}`);
+    }catch(e){ toast('Gagal getInfo: '+(e.message||e), false); }
   };
+
   div.querySelector('.setDigits').onclick = async ()=>{
-    const p = div.querySelector('.pfx').value.trim(); const d = parseInt(div.querySelector('.digits').value||'0',10);
-    if(!p) return alert('Prefix kosong'); if(!(d>=1&&d<=8)) return alert('桁数は1〜8で');
-    try{ await setDigits(p,d); toast('桁数を設定しました'); }catch(e){ alert('Gagal setDigits: '+(e.message||e)); }
+    const p = getPrefix(); if(!p) return;
+    const d = parseInt(div.querySelector('.digits').value||'0',10);
+    if(!(d>=1&&d<=8)) return alert('桁数は1〜8で');
+    try{
+      await setDigits(p,d);
+      // refresh dari server
+      const info = await getInfo(p);
+      div.querySelector('.digits').value = (info?.digits ?? d);
+      div.querySelector('.next').value   = (info?.next ?? div.querySelector('.next').value);
+      toast('桁数を設定しました');
+    }catch(e){ toast('Gagal setDigits: '+(e.message||e), false); }
   };
+
   div.querySelector('.setNext').onclick = async ()=>{
-    const p = div.querySelector('.pfx').value.trim(); const n = parseInt(div.querySelector('.next').value||'0',10);
-    if(!p) return alert('Prefix kosong'); if(!(n>=0)) return alert('次番号に整数を入力してください');
-    try{ await setNext(p,n); toast('次番号を設定しました'); }catch(e){ alert('Gagal setNext: '+(e.message||e)); }
+    const p = getPrefix(); if(!p) return;
+    const n = parseInt(div.querySelector('.next').value||'0',10);
+    if(!Number.isFinite(n) || n<0) return alert('次番号に0以上の整数を入力してください');
+    if(!confirm(`次番号を ${n} に設定しますか？`)) return;
+    try{
+      await setNext(p,n);
+      const info = await getInfo(p); // sync tampilan
+      div.querySelector('.digits').value = (info?.digits ?? div.querySelector('.digits').value);
+      div.querySelector('.next').value   = (info?.next ?? n);
+      toast('次番号を設定しました');
+    }catch(e){ toast('Gagal setNext: '+(e.message||e), false); }
   };
+
   div.querySelector('.issue').onclick = async ()=>{
-    const p = div.querySelector('.pfx').value.trim(); if(!p) return alert('Prefix kosong');
+    const p = getPrefix(); if(!p) return;
     if(!confirm('本当に発番しますか？（サーバのカウンタが進みます）')) return;
     try{
-      const r = await nextSuffix(p); // {suffix:number}
-      const d = parseInt(div.querySelector('.digits').value||'0',10) || (await getInfo(p)).digits || 3;
-      const sfx = String(r?.suffix ?? '').replace(/[^\d]/g,'');
-      toast(`Issued: ${p}${pad(sfx,d)}`);
-      div.querySelector('.next').value = String(parseInt(sfx,10)); // 表示を合わせる
-    }catch(e){ alert('Gagal issue: '+(e.message||e)); }
+      const r = await nextSuffix(p); // {suffix:number} — issued number
+      // Cari digits dari input atau server
+      let d = parseInt(div.querySelector('.digits').value||'0',10);
+      if(!Number.isFinite(d) || d<=0){
+        const infoD = await getInfo(p);
+        d = infoD?.digits || 3;
+      }
+      const sfxIssued = String(r?.suffix ?? '').replace(/[^\d]/g,'');
+      toast(`Issued: ${p}${pad(sfxIssued,d)}`);
+      // Sinkronkan tampilan dengan server (next sudah bertambah di server)
+      const info = await getInfo(p);
+      div.querySelector('.digits').value = (info?.digits ?? d);
+      div.querySelector('.next').value   = (info?.next ?? (parseInt(sfxIssued,10)+1));
+    }catch(e){ toast('Gagal issue: '+(e.message||e), false); }
   };
+
   div.querySelector('.del').onclick = ()=>{
-    const arr = load().filter((_,i)=>i!==index); save(arr); render();
+    const arr = load().filter((_,i)=>i!==index);
+    save(arr); render();
   };
-  // simpan perubahan teks
+
+  // Simpan perubahan field ke localStorage
   ['pfx','name','digits','next'].forEach(cls=>{
     div.querySelector('.'+cls).addEventListener('change', ()=>{
       const arr = load();
       arr[index] = {
         prefix: div.querySelector('.pfx').value.trim(),
-        name: div.querySelector('.name').value.trim(),
+        name:   div.querySelector('.name').value.trim(),
         digits: parseInt(div.querySelector('.digits').value||'') || '',
-        next: parseInt(div.querySelector('.next').value||'') || ''
+        next:   parseInt(div.querySelector('.next').value||'')   || ''
       };
       save(arr);
     });
   });
+
   return div;
 }
 
+/* ===== Render list ===== */
 function render(){
   listEl.innerHTML='';
   const arr = load();
@@ -133,39 +189,47 @@ function render(){
   arr.forEach((it,i)=> listEl.appendChild(rowTemplate(it,i)));
 }
 
-function toast(t){
-  const x = document.createElement('div');
-  x.textContent = t; x.style = 'position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:10px 12px;border-radius:10px;opacity:.96;z-index:9999';
-  document.body.appendChild(x); setTimeout(()=>x.remove(),1800);
-}
-
+/* ===== Toolbar ===== */
 document.getElementById('add').onclick = ()=>{
   const arr = load(); arr.push({ prefix:'', name:'' }); save(arr); render();
 };
+
 document.getElementById('refresh').onclick = async ()=>{
   const arr = load();
   for(let i=0;i<arr.length;i++){
-    if(!arr[i].prefix) continue;
+    const p = (arr[i].prefix||'').trim();
+    if(!p) continue;
     try{
-      const info = await getInfo(arr[i].prefix);
-      arr[i].digits = info?.digits ?? arr[i].digits;
-      arr[i].next   = info?.next ?? arr[i].next;
-    }catch(e){ /* ignore */ }
+      const info = await getInfo(p);
+      if(typeof info?.digits === 'number') arr[i].digits = info.digits;
+      if(typeof info?.next   === 'number') arr[i].next   = info.next;
+    }catch(e){ /* abaikan kesalahan per item */ }
   }
   save(arr); render();
 };
+
 document.getElementById('export').onclick = ()=>{
   const data = JSON.stringify(load(),null,2);
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data],{type:'application/json'}));
   a.download='kensa-admin-prefixes.json'; a.click(); URL.revokeObjectURL(a.href);
 };
+
 document.getElementById('import').onclick = ()=> document.getElementById('file').click();
+
 document.getElementById('file').addEventListener('change', e=>{
   const f = e.target.files?.[0]; if(!f) return;
-  const rd = new FileReader(); rd.onload = ()=>{ try{ const arr = JSON.parse(rd.result); if(Array.isArray(arr)){ save(arr); render(); } }catch{} };
+  const rd = new FileReader();
+  rd.onload = ()=>{
+    try{
+      const arr = JSON.parse(rd.result);
+      if(Array.isArray(arr)){ save(arr); render(); }
+      else toast('File tidak valid', false);
+    }catch{ toast('Gagal membaca file', false); }
+  };
   rd.readAsText(f); e.target.value='';
 });
 
+/* ===== Init ===== */
 render();
 </script>
 </html>
