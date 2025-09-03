@@ -81,6 +81,24 @@
   .marquee span{display:inline-block;padding-left:100%;animation:marquee 25s linear infinite}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
   .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:var(--muted);background:#f1f5f9;padding:4px 0;z-index:21}
+
+  /* --- 管理 dropdown --- */
+  .menubar{ position:relative }
+  .menu-btn{ padding:8px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer }
+  .menu{
+    position:absolute; top:110%; right:0; min-width:220px; background:#fff;
+    border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow);
+    padding:6px; display:none; z-index:100;
+  }
+  .menu.open{ display:block }
+  .menu .sec{ padding:6px 10px 4px; font-size:12px; color:#6b7280 }
+  .menu a, .menu button{
+    display:flex; align-items:center; gap:8px; width:100%;
+    padding:9px 10px; border:0; background:transparent; border-radius:8px; text-align:left; color:var(--ink);
+  }
+  .menu a{text-decoration:none}
+  .menu a:hover, .menu button:hover{ background:#f1f5f9 }
+  .sep{ height:1px; background:var(--border); margin:6px }
 </style>
 </head>
 <body>
@@ -101,6 +119,24 @@
       <button id="btnRefresh" class="btn" type="button">Refresh now</button>
       <button id="btnLive" class="btn" type="button">Live: Off</button>
       <span id="intervalInfo" class="small">Interval: 60s</span>
+
+      <!-- ▼ 管理 dropdown -->
+      <div class="menubar">
+        <button id="menuBtn" class="menu-btn" type="button">管理 ▾</button>
+        <div id="menu" class="menu" role="menu" aria-hidden="true">
+          <div class="sec">ナビ</div>
+          <a href="./" role="menuitem">🏠 トップ</a>
+          <a href="./forms.html" role="menuitem">📄 出荷検査成績書</a>
+          <a href="./quality.html" role="menuitem">📊 品質情報</a>
+          <a href="./admin-prefix.html" role="menuitem">🛠️ Admin Prefix</a>
+
+          <div class="sep"></div>
+          <div class="sec">操作</div>
+          <button id="m-refresh" role="menuitem">🔄 Refresh</button>
+          <button id="m-live" role="menuitem">🟢 Live 切替</button>
+        </div>
+      </div>
+      <!-- ▲ 管理 dropdown -->
     </div>
   </div>
 </header>
@@ -432,6 +468,34 @@
   });
 
   window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
+</script>
+
+<!-- 管理 menu logic -->
+<script>
+  const _menuBtn = document.getElementById('menuBtn');
+  const _menu    = document.getElementById('menu');
+
+  function closeMenu(){
+    _menu?.classList.remove('open');
+    _menu?.setAttribute('aria-hidden','true');
+  }
+  _menuBtn?.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    _menu.classList.toggle('open');
+    _menu.setAttribute('aria-hidden', _menu.classList.contains('open') ? 'false' : 'true');
+  });
+  document.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
+
+  // Operasi via tombol asli
+  document.getElementById('m-refresh')?.addEventListener('click', ()=>{
+    closeMenu();
+    document.getElementById('btnRefresh')?.click();
+  });
+  document.getElementById('m-live')?.addEventListener('click', ()=>{
+    closeMenu();
+    document.getElementById('btnLive')?.click();
+  });
 </script>
 </body>
 </html>
