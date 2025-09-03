@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kensa: Admin Serial (GAS)</title>
+<style>
+  :root{--b:#e5e7eb;--ink:#111;--pri:#2563eb;--danger:#dc2626}
+  body{font:14px/1.4 system-ui,Segoe UI,Arial;margin:0;background:#f7f7f8;color:#111}
+  header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--b);padding:10px 12px;display:flex;gap:8px;align-items:center;z-index:10}
+  header b{font-size:16px}
+  main{max-width:1100px;margin:16px auto;padding:0 12px}
+  .row{display:grid;grid-template-columns:280px 1fr 90px 120px 300px;gap:8px;align-items:center;padding:10px;border:1px solid var(--b);border-radius:10px;background:#fff;margin-bottom:8px}
+  .hdr{background:#fafafa;font-weight:600}
+  input,button{padding:8px 10px;border:1px solid var(--b);border-radius:8px;background:#fff}
+  button.primary{background:var(--pri);border-color:var(--pri);color:#fff}
+  button.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+  .pill{display:inline-block;padding:2px 8px;border:1px solid var(--b);border-radius:999px}
+  small.muted{color:#6b7280}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+</style>
+<body>
+<header>
+  <b>Admin Serial (GAS)</b>
+  <span style="flex:1"></span>
+  <div class="toolbar">
+    <button id="add">Tambah Prefix</button>
+    <button id="refresh">Refresh Semua</button>
+    <button id="export">Export</button>
+    <button id="import">Import</button>
+    <!-- opsional: contoh cepat -->
+    <button id="seed" title="Tambahkan contoh prefix yang umum dipakai">+ Contoh</button>
+  </div>
+</header>
+
+<main>
+  <div class="row hdr">
+    <div>Prefix（APP_NS::SERIAL_PREFIX）</div>
+    <div>Nama/Deskripsi</div>
+    <div>桁数</div>
+    <div>次番号</div>
+    <div>Aksi</div>
+  </div>
+  <div id="list"></div>
+  <p><small class="muted">
+    Catatan: daftar prefix disimpan lokal (browser ini). Operasi
+    <span class="pill mono">getInfo / setNext / setDigits / nextSuffix</span> langsung ke GAS.
+  </small></p>
+</main>
+
+<input id="file" type="file" accept="application/json" hidden>
+
+<script>
+/* ==== KONFIG ==== */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxWxAa_dWQNoUPhWnkw3P22jgeW4vb44Z5ISuUyUWsAAroFzzE6iIVWMIpqqio6E5OgqA/exec';
+const STORE = 'kensa::admin::prefixList';
+
+/* ==== UTIL ==== */
+const $ = s => document.querySelector(s);
+const listEl = $('#list');
+
+function load(){ try{return JSON.parse(localStorage.getItem(STORE)||'[]')}catch{return[]} }
+function save(arr){ localStorage.setItem(STORE, JSON.stringify(arr)); }
+function pad(n,w){n=String(n);return n.length>=w?n:'0'.repeat(w-n.length)+n;}
+function toast(t, ms=1800){
+  const x = document.createElement('div');
+  x.textContent=t;
+  x.style='position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:10px 12px;border-radius:10px;opacity:.96;z-index:9999';
+  document.body.appendChild(x); setTimeout(()=>x.remove(),ms);
+}
+
+/* ==== API GAS ==== */
+async function api(body){
+  const r = await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+const getInfo   = prefix           => api({action:'getInfo',prefix});
+const setNext   = (prefix,next)    => api({action:'setNext',prefix,next});
+const setDigits = (prefix,digits)  => api({action:'setDigits',prefix,digits});
+const nextSuffix= prefix           => api({action:'nextSuffix',prefix}); // warning: INCREMENT
+
+/* ==== UI ==== */
+function rowTemplate(it,index){
+  const id = 'r'+index;
+  const div = document.createElement('div');
+  div.className = 'row'; div.id = id;
+  div.innerHTML = `
+    <input class="mono pfx" value="${it.prefix||''}" placeholder="contoh: 2742-20::2742-" />
+    <input class="name" value="${it.name||''}" placeholder="Nama form / catatan" />
+    <input class="digits" type="number" min="1" max="8" step="1" value="${it.digits||''}" />
+    <input class="next" type="number" min="0" step="1" value="${it.next||''}" />
+    <div>
+      <button class="info">Info</button>
+      <button class="setDigits">Set桁</button>
+      <button class="setNext">Set次</button>
+      <button class="issue danger" title="テスト用。実行するとサーバ側カウンタが進みます。">Issue</button>
+      <button class="del">Hapus</button>
+    </div>`;
+
+  // actions
+  div.querySelector('.info').onclick = async ()=>{
+    const p = div.querySelector('.pfx').value.trim(); if(!p) return alert('Prefix kosong');
+    try{
+      const info = await getInfo(p); // {digits,next}
+      div.querySelector('.digits').value = (info?.digits ?? '');
+      div.querySelector('.next').value   = (info?.next ?? '');
+      toast(`Info: 桁=${info?.digits ?? '-'} / 次=${info?.next ?? '-'}`);
+    }catch(e){ alert('Gagal getInfo: '+(e.message||e)); }
+  };
+  div.querySelector('.setDigits').onclick = async ()=>{
+    const p = div.querySelector('.pfx').value.trim();
+    const d = parseInt(div.querySelector('.digits').value||'0',10);
+    if(!p) return alert('Prefix kosong');
+    if(!(d>=1&&d<=8)) return alert('桁数は1〜8で');
+    try{ await setDigits(p,d); toast('桁数を設定しました'); }catch(e){ alert('Gagal setDigits: '+(e.message||e)); }
+  };
+  div.querySelector('.setNext').onclick = async ()=>{
+    const p = div.querySelector('.pfx').value.trim();
+    const n = parseInt(div.querySelector('.next').value||'0',10);
+    if(!p) return alert('Prefix kosong');
+    if(!(n>=0)) return alert('次番号に整数を入力してください');
+    try{ await setNext(p,n); toast('次番号を設定しました'); }catch(e){ alert('Gagal setNext: '+(e.message||e)); }
+  };
+  div.querySelector('.issue').onclick = async ()=>{
+    const p = div.querySelector('.pfx').value.trim(); if(!p) return alert('Prefix kosong');
+    if(!confirm('本当に発番しますか？（サーバのカウンタが進みます）')) return;
+    try{
+      const r = await nextSuffix(p); // {suffix:number}
+      // ambil digits dari kolom (atau dari server kalau kosong)
+      let d = parseInt(div.querySelector('.digits').value||'0',10);
+      if(!d){ try{ d = (await getInfo(p)).digits || 3; }catch{} }
+      const sfx = String(r?.suffix ?? '').replace(/[^\d]/g,'');
+      toast(`Issued: ${p}${pad(sfx,d)}`);
+      div.querySelector('.next').value = String(parseInt(sfx,10)); // sinkron tampilan
+    }catch(e){ alert('Gagal issue: '+(e.message||e)); }
+  };
+  div.querySelector('.del').onclick = ()=>{
+    const arr = load().filter((_,i)=>i!==index); save(arr); render();
+  };
+
+  // persist perubahan teks ke localStorage
+  ['pfx','name','digits','next'].forEach(cls=>{
+    div.querySelector('.'+cls)?.addEventListener('change', ()=>{
+      const arr = load();
+      arr[index] = {
+        prefix: div.querySelector('.pfx').value.trim(),
+        name: div.querySelector('.name').value.trim(),
+        digits: parseInt(div.querySelector('.digits').value||'') || '',
+        next: parseInt(div.querySelector('.next').value||'') || ''
+      };
+      save(arr);
+    });
+  });
+
+  return div;
+}
+
+function render(){
+  listEl.innerHTML='';
+  const arr = load();
+  if(!arr.length){
+    const d = document.createElement('div'); d.className='row';
+    d.innerHTML = '<small class="muted">Daftar kosong. Klik “Tambah Prefix”.</small>';
+    listEl.appendChild(d); return;
+  }
+  arr.forEach((it,i)=> listEl.appendChild(rowTemplate(it,i)));
+}
+
+/* ==== Toolbar ==== */
+document.getElementById('add').onclick = ()=>{
+  const arr = load(); arr.push({ prefix:'', name:'' }); save(arr); render();
+};
+document.getElementById('refresh').onclick = async ()=>{
+  const arr = load();
+  for(let i=0;i<arr.length;i++){
+    if(!arr[i].prefix) continue;
+    try{
+      const info = await getInfo(arr[i].prefix);
+      arr[i].digits = info?.digits ?? arr[i].digits;
+      arr[i].next   = info?.next ?? arr[i].next;
+    }catch(e){ /* ignore */ }
+  }
+  save(arr); render();
+};
+document.getElementById('export').onclick = ()=>{
+  const data = JSON.stringify(load(),null,2);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data],{type:'application/json'}));
+  a.download='kensa-admin-prefixes.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+document.getElementById('import').onclick = ()=> document.getElementById('file').click();
+document.getElementById('file').addEventListener('change', e=>{
+  const f = e.target.files?.[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ()=>{
+    try{
+      const arr = JSON.parse(rd.result);
+      if(Array.isArray(arr)){ save(arr); render(); toast('Import sukses'); }
+      else alert('Format tidak dikenali');
+    }catch{ alert('Gagal parse file'); }
+  };
+  rd.readAsText(f); e.target.value='';
+});
+
+/* seed contoh (opsional) — bisa dihapus bila tidak perlu */
+document.getElementById('seed').onclick = ()=>{
+  const arr = load();
+  const samples = [
+    { prefix:'2742-20::2742-', name:'Okuma MU6300V (2742-20)' },
+    { prefix:'2743-20::2743-', name:'Okuma MU6300V (2743-20)' },
+    { prefix:'359670X3150V::Y355571-', name:'Tomei WY-150VX3 (図番→Y+digits-)' },
+    { prefix:'3555-71tomei::355571-', name:'Tomei NTY3-100V' },
+    { prefix:'330580v::XR3305-', name:'Okuma MB-80V (XR3305-*)' },
+  ];
+  // hindari duplikasi prefix
+  const have = new Set(arr.map(x=>x.prefix));
+  samples.forEach(s=>{ if(!have.has(s.prefix)) arr.push(s); });
+  save(arr); render(); toast('Contoh prefix ditambahkan');
+};
+
+render();
+</script>
+</html>
