@@ -60,6 +60,8 @@
     </div>
     <div class="toolbar">
       <button id="btnAdd" class="btn">＋ Tambah Prefix</button>
+      <button id="btnSample" class="btn">＋ Contoh</button>
+      <button id="btnSync" class="btn">Sync Server</button>
       <button id="btnRefresh" class="btn">Refresh Semua</button>
       <button id="btnExport" class="btn">Export</button>
       <button id="btnImport" class="btn">Import</button>
@@ -86,7 +88,7 @@
     </div>
     <div id="list" class="list"></div>
     <div class="hint">
-      Catatan: daftar prefix ini disimpan lokal (localStorage). Operasi <b>Info / Set桁 / Set次 / Issue</b> mengakses GAS:
+      Daftar prefix disimpan **lokal** di browser (localStorage). Operasi <b>Info / Set桁 / Set次 / Issue</b> memanggil GAS:
       <code id="gasUrlShow"></code>.
     </div>
   </section>
@@ -96,11 +98,8 @@
 
 <script>
 /* ================== KONFIG ================== */
-// URL GAS (sudah diisi sesuai permintaan)
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxWxAa_dWQNoUPhWnkw3P22jgeW4vb44Z5ISuUyUWsAAroFzzE6iIVWMIpqqio6E5OgqA/exec';
-
-// key penyimpanan local
-const STORE = 'ADMIN_PREFIX_LIST_V2';
+const STORE   = 'ADMIN_PREFIX_LIST_V2';
 
 /* ================ UTIL & API ================ */
 const S = v => String(v ?? '').trim();
@@ -108,7 +107,7 @@ const S = v => String(v ?? '').trim();
 async function api(payload){
   const r = await fetch(GAS_URL, {
     method:'POST',
-    headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // simple request (tanpa preflight)
+    headers:{ 'Content-Type':'text/plain;charset=utf-8' },
     body: JSON.stringify(payload),
     redirect:'follow'
   });
@@ -130,6 +129,51 @@ function loadStore(){
 }
 function saveStore(arr){ localStorage.setItem(STORE, JSON.stringify(arr)); }
 function toast(msg){ try{ console.log(msg); }catch(e){} alert(msg); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+function escapeAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
+
+/* ================ SAMPLE / SYNC ================ */
+function defaultSamples(){
+  return [
+    { prefix:'2742-20::2742-',        label:'Okuma MU6300V (2742-20)', digits:4 },
+    { prefix:'2743-20::2743-',        label:'Okuma MU6300V (2743-20)', digits:4 },
+    { prefix:'359670X3156V::Y355571-',label:'Tomei WY-150VX3（図番→Y+digits-）' },
+    { prefix:'3555-7tomei::355571-',  label:'Tomei NTY3-100V', digits:4 },
+    { prefix:'330580V::XR3305-',      label:'Okuma MB-80V（XR3305-*）' },
+    { prefix:'okuma46::2825-',        label:'2825-20 MB46V', digits:4 },
+  ];
+}
+
+function seedIfEmpty(){
+  const data = loadStore();
+  if(data.length===0){
+    const samples = defaultSamples();
+    saveStore(samples);
+  }
+}
+
+async function syncFromServer(){
+  try{
+    const res = await api({ action:'listPrefixes' }); // {items:[{prefix,last,next,digits}]}
+    if(!res || !Array.isArray(res.items)){ toast('Tidak ada data dari server'); return; }
+    const local = loadStore();
+    // merge unik berdasarkan prefix
+    res.items.forEach(it=>{
+      if(!local.some(x=>x.prefix===it.prefix)){
+        local.push({ prefix: it.prefix, label:'(server)', digits: it.digits||'' });
+      }else{
+        // update digits jika kosong di lokal
+        const idx = local.findIndex(x=>x.prefix===it.prefix);
+        if(!local[idx].digits && it.digits) local[idx].digits = it.digits;
+      }
+    });
+    saveStore(local);
+    render();
+    toast(`Sync OK: ${res.items.length} item`);
+  }catch(e){
+    toast('Gagal sync: '+e.message);
+  }
+}
 
 /* ================ RENDER LIST ================ */
 function render(){
@@ -139,7 +183,7 @@ function render(){
   list.innerHTML = '';
 
   if(!data.length){
-    list.innerHTML = '<div class="row" style="justify-content:center;color:#64748b">Belum ada data. Klik “＋ Tambah Prefix”.</div>';
+    list.innerHTML = '<div class="row" style="justify-content:center;color:#64748b">Belum ada data. Klik “＋ Contoh” atau “Sync Server”.</div>';
     return;
   }
 
@@ -165,12 +209,10 @@ function render(){
     const inpNext   = row.querySelector('.inpNext');
     const inpDigits = row.querySelector('.inpDigits');
 
-    // simpan inline perubahan label/kolom input
     inpLabel.addEventListener('change', ()=>{ data[idx].label = S(inpLabel.value); saveStore(data); });
     inpNext.addEventListener('change',  ()=>{ data[idx].next  = S(inpNext.value);  saveStore(data); });
     inpDigits.addEventListener('change',()=>{ data[idx].digits= S(inpDigits.value);saveStore(data); });
 
-    // tombol Info
     row.querySelector('.btnInfo').addEventListener('click', async ()=>{
       try{
         const res = await api({ action:'getInfo', prefix: it.prefix });
@@ -179,7 +221,6 @@ function render(){
       }catch(e){ toast('Gagal getInfo: '+e.message); }
     });
 
-    // tombol Set桁
     row.querySelector('.btnDigits').addEventListener('click', async ()=>{
       const d = parseInt(inpDigits.value,10);
       if(!(d>=1 && d<=12)){ toast('Masukkan桁数 1..12'); return; }
@@ -189,7 +230,6 @@ function render(){
       }catch(e){ toast('Gagal setDigits: '+e.message); }
     });
 
-    // tombol Set次
     row.querySelector('.btnNext').addEventListener('click', async ()=>{
       const n = parseInt(inpNext.value,10);
       if(!(n>=1)){ toast('Masukkan 次番号 minimal 1'); return; }
@@ -199,15 +239,14 @@ function render(){
       }catch(e){ toast('Gagal setNext: '+e.message); }
     });
 
-    // tombol Issue (ambil nomor berikutnya dari server)
     row.querySelector('.btnIssue').addEventListener('click', async ()=>{
       try{
         const res = await api({ action:'nextSuffix', prefix: it.prefix });
-        alert(`Issued: ${String(res.suffix).padStart(parseInt(inpDigits.value||'0',10)||0,'0')}`);
+        const pad = parseInt(inpDigits.value||'0',10)||0;
+        alert(`Issued: ${String(res.suffix).padStart(pad,'0')}`);
       }catch(e){ toast('Gagal issue: '+e.message); }
     });
 
-    // tombol Hapus
     row.querySelector('.btnDel').addEventListener('click', ()=>{
       if(confirm(`Hapus prefix ini?\n${it.prefix}`)){
         data.splice(idx,1); saveStore(data); render();
@@ -215,9 +254,6 @@ function render(){
     });
   });
 }
-
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
-function escapeAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
 
 /* ================ AKSI TOOLBAR ================ */
 document.getElementById('btnAdd').addEventListener('click', ()=>{
@@ -230,17 +266,31 @@ document.getElementById('btnAdd').addEventListener('click', ()=>{
   saveStore(data); render();
 });
 
+document.getElementById('btnSample').addEventListener('click', ()=>{
+  const local = loadStore();
+  const merged = [...local];
+  defaultSamples().forEach(s=>{
+    if(!merged.some(x=>x.prefix===s.prefix)) merged.push(s);
+  });
+  saveStore(merged);
+  render();
+  toast('Contoh prefix ditambahkan.');
+});
+
+document.getElementById('btnSync').addEventListener('click', ()=>{ syncFromServer(); });
+
 document.getElementById('btnRefresh').addEventListener('click', async ()=>{
   const data = loadStore(); if(!data.length) return;
   try{
-    // ambil info semua prefix (serial)
     for(const it of data){
       try{
         const res = await api({ action:'getInfo', prefix: it.prefix });
-        // hanya tampilkan; field akan terisi bila kosong
         console.log(it.prefix, res);
+        if(res.digits && !it.digits){ it.digits = res.digits; }
       }catch(e){ console.warn('getInfo error', it.prefix, e); }
     }
+    saveStore(data);
+    render();
     toast('Refresh selesai (lihat console untuk detail).');
   }catch(e){ toast('Gagal refresh: '+e.message); }
 });
@@ -278,7 +328,6 @@ document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); })
 async function pingServer(){
   document.getElementById('gasUrlShow').textContent = GAS_URL;
   try{
-    // ping via GET hanya untuk tampilkan status (doGet di GAS akan membalas ok:true)
     const r = await fetch(GAS_URL, { method:'GET', redirect:'follow' });
     const txt = await r.text();
     const ok = /"ok"\s*:\s*true/.test(txt);
@@ -292,7 +341,11 @@ async function pingServer(){
   }
 }
 
-window.addEventListener('DOMContentLoaded', ()=>{ render(); pingServer(); });
+window.addEventListener('DOMContentLoaded', ()=>{
+  seedIfEmpty();   // ← auto isi contoh saat pertama kali
+  render();
+  pingServer();
+});
 </script>
 </body>
 </html>
