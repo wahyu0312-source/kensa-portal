@@ -66,7 +66,6 @@
       <button id="btnExport" class="btn">Export</button>
       <button id="btnImport" class="btn">Import</button>
 
-      <!-- dropdown 管理 kecil -->
       <div class="menubar">
         <button id="menuBtn" class="menu-btn" type="button">管理 ▾</button>
         <div id="menu" class="menu" role="menu" aria-hidden="true">
@@ -88,7 +87,7 @@
     </div>
     <div id="list" class="list"></div>
     <div class="hint">
-      Daftar prefix disimpan **lokal** di browser (localStorage). Operasi <b>Info / Set桁 / Set次 / Issue</b> memanggil GAS:
+      Daftar prefix disimpan <b>lokal</b> di browser (localStorage). Operasi <b>Info / Set桁 / Set次 / Issue / Hapus</b> memanggil GAS:
       <code id="gasUrlShow"></code>.
     </div>
   </section>
@@ -140,7 +139,7 @@ function defaultSamples(){
     { prefix:'359670X3156V::Y355571-',label:'Tomei WY-150VX3（図番→Y+digits-）' },
     { prefix:'3555-7tomei::355571-',  label:'Tomei NTY3-100V', digits:4 },
     { prefix:'330580V::XR3305-',      label:'Okuma MB-80V（XR3305-*）' },
-    { prefix:'okuma46::2825-',        label:'2825-20 MB46V', digits:4 },
+    { prefix:'mb46v::2825-',          label:'2825-20 MB46V', digits:4 }  /* match dengan form */
   ];
 }
 
@@ -162,7 +161,6 @@ async function syncFromServer(){
       if(!local.some(x=>x.prefix===it.prefix)){
         local.push({ prefix: it.prefix, label:'(server)', digits: it.digits||'' });
       }else{
-        // update digits jika kosong di lokal
         const idx = local.findIndex(x=>x.prefix===it.prefix);
         if(!local[idx].digits && it.digits) local[idx].digits = it.digits;
       }
@@ -242,22 +240,33 @@ function render(){
     row.querySelector('.btnIssue').addEventListener('click', async ()=>{
       try{
         const res = await api({ action:'nextSuffix', prefix: it.prefix });
-        const pad = parseInt(inpDigits.value||'0',10)||0;
+        let pad = parseInt(inpDigits.value||'0',10)||0;
+        if(!pad){
+          const info = await api({ action:'getInfo', prefix: it.prefix });
+          pad = parseInt(info.digits||'0',10)||0;
+          if(pad){ inpDigits.value = pad; data[idx].digits = pad; saveStore(data); }
+        }
         alert(`Issued: ${String(res.suffix).padStart(pad,'0')}`);
       }catch(e){ toast('Gagal issue: '+e.message); }
     });
 
-    row.querySelector('.btnDel').addEventListener('click', ()=>{
-      if(confirm(`Hapus prefix ini?\n${it.prefix}`)){
-        data.splice(idx,1); saveStore(data); render();
+    // HAPUS = server + lokal (permanent)
+    row.querySelector('.btnDel').addEventListener('click', async ()=>{
+      if(!confirm(`Hapus prefix ini di SERVER dan daftar lokal?\n${it.prefix}\n(counter & digits akan dihapus di server)`)) return;
+      try{
+        await api({ action:'deletePrefix', prefix: it.prefix }); // server
+      }catch(e){
+        if(!confirm('Gagal hapus di server ('+(e.message||e)+').\nTetap hapus dari daftar lokal?')) return;
       }
+      data.splice(idx,1); saveStore(data); render(); // lokal
+      toast('Dihapus.');
     });
   });
 }
 
 /* ================ AKSI TOOLBAR ================ */
 document.getElementById('btnAdd').addEventListener('click', ()=>{
-  const full = prompt('Masukkan FULL prefix (format: APP_NS::SERIAL_PREFIX)\ncontoh: okuma46::2825-');
+  const full = prompt('Masukkan FULL prefix (format: APP_NS::SERIAL_PREFIX)\ncontoh: mb46v::2825-');
   if(!full) return;
   const label = prompt('Label/Note (opsional):','');
   const data = loadStore();
@@ -285,13 +294,12 @@ document.getElementById('btnRefresh').addEventListener('click', async ()=>{
     for(const it of data){
       try{
         const res = await api({ action:'getInfo', prefix: it.prefix });
-        console.log(it.prefix, res);
         if(res.digits && !it.digits){ it.digits = res.digits; }
       }catch(e){ console.warn('getInfo error', it.prefix, e); }
     }
     saveStore(data);
     render();
-    toast('Refresh selesai (lihat console untuk detail).');
+    toast('Refresh selesai.');
   }catch(e){ toast('Gagal refresh: '+e.message); }
 });
 
@@ -342,7 +350,7 @@ async function pingServer(){
 }
 
 window.addEventListener('DOMContentLoaded', ()=>{
-  seedIfEmpty();   // ← auto isi contoh saat pertama kali
+  seedIfEmpty();
   render();
   pingServer();
 });
