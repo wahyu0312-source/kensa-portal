@@ -20,7 +20,10 @@
 <body class="bg-slate-50 text-slate-800">
   <header class="sticky-header bg-white/80 backdrop-blur border-b border-slate-200">
     <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
-      <h1 class="text-xl font-semibold">クレーム可視化</h1>
+      <a href="index.html" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-50">
+        <span>🏠</span><span>Home</span>
+      </a>
+      <h1 class="text-xl font-semibold ml-2">クレーム可視化</h1>
       <span class="text-sm text-slate-500">（年月・クレーム種類・機種名・部署）</span>
       <div class="ml-auto text-xs text-slate-500" id="lastLoaded"></div>
     </div>
@@ -150,7 +153,6 @@
       model: ["機種名","機種","型式","model"],
       dept: ["部署","部門","部課","部署名","department"],
     };
-
     function normalizeHeader(h){ return String(h||"").trim().toLowerCase().replace(/[\s_\-/]/g,""); }
     function autoMapHeaders(headers){
       const norm = headers.map(h=>({raw:h,n:normalizeHeader(h)}));
@@ -210,6 +212,15 @@
     let rawRows=[], headers=[], mapping={ym:"",type:"",model:"",dept:""};
     let chartYM, chartType, chartModel, chartDept, chartParetoType, chartPieDept;
 
+    // ======= Helpers =======
+    // wrap JP text into multi-line (for long クレーム種類 labels)
+    function wrapJP(text, max = 6) {
+      const s = String(text ?? "");
+      const lines = [];
+      for (let i = 0; i < s.length; i += max) lines.push(s.slice(i, i + max));
+      return lines;
+    }
+
     // ======= Rendering =======
     function renderPreview(rows, max=10){
       const head=$("#previewHead"), body=$("#previewBody"); head.innerHTML=""; body.innerHTML="";
@@ -258,11 +269,6 @@
       const ymLabels = ymCounts.map(([k])=>k);
       const ymData   = ymCounts.map(([,v])=>v);
 
-      // 種類
-      const typeCounts = countsBy(rows, r=>(r[mapping.type]||"").toString().trim());
-      const typeLabels = typeCounts.map(([k])=>k || "（未設定）");
-      const typeData   = typeCounts.map(([,v])=>v);
-
       // 機種
       const modelCounts = countsBy(rows, r=>(r[mapping.model]||"").toString().trim());
       const modelLabels = modelCounts.map(([k])=>k || "（未設定）");
@@ -272,10 +278,14 @@
       const deptCounts = countsBy(rows, r=>(r[mapping.dept]||"").toString().trim());
       const deptLabels = deptCounts.map(([k])=>k || "（未設定）");
       const deptData   = deptCounts.map(([,v])=>v);
-
-      // Colors for 部署
       const deptBG = deptLabels.map((l,i)=>colorForDept(l,true,i));
       const deptBD = deptLabels.map((l,i)=>colorForDept(l,false,i));
+
+      // ---- クレーム種類 (horizontal + wrapped labels) ----
+      const typeCounts = countsBy(rows, r => (r[mapping.type] || "").toString().trim());
+      const typeLabels = typeCounts.map(([k]) => k || "（未設定）");
+      const typeData   = typeCounts.map(([, v]) => v);
+      const typeLabelsWrapped = typeLabels.map(l => wrapJP(l, 6));
 
       // Re-render
       destroyCharts();
@@ -289,8 +299,19 @@
 
       chartYM = new Chart($("#chartYM"), { type:"bar", data:{ labels:ymLabels, datasets:[{ label:"件数", data:ymData }] }, options:commonOptions(false) });
 
-      const typeHorizontal = typeLabels.length > 6;
-      chartType = new Chart($("#chartType"), { type:"bar", data:{ labels:typeLabels, datasets:[{ label:"件数", data:typeData }] }, options:commonOptions(typeHorizontal) });
+      chartType = new Chart($("#chartType"), {
+        type:"bar",
+        data:{ labels:typeLabelsWrapped, datasets:[{ label:"件数", data:typeData }] },
+        options:{
+          responsive:true, maintainAspectRatio:false, animation:false, indexAxis:'y',
+          scales:{ y:{ beginAtZero:true, ticks:{ autoSkip:false } }, x:{ beginAtZero:true, ticks:{ precision:0 } } },
+          plugins:{
+            legend:{ display:false },
+            tooltip:{ callbacks:{ title:(items)=> typeLabels[items[0].dataIndex] || "" } },
+            datalabels:{ anchor:'end', align:'right', offset:4, formatter:v=>v, font:{ weight:'600' } }
+          }
+        }
+      });
 
       const modelHorizontal = modelLabels.length > 6;
       chartModel = new Chart($("#chartModel"), { type:"bar", data:{ labels:modelLabels, datasets:[{ label:"件数", data:modelData }] }, options:commonOptions(modelHorizontal) });
@@ -307,23 +328,19 @@
       const pairs = typeLabels.map((l,i)=>[l, typeData[i]]).sort((a,b)=>b[1]-a[1]);
       const pLabels = pairs.map(p=>p[0]);
       const pBars   = pairs.map(p=>p[1]);
-      let cum=0;
-      const pCumPct = pBars.map(v => (cum+=v, +(cum/totalType*100).toFixed(1)));
-
+      let cum=0; const pCumPct = pBars.map(v => (cum+=v, +(cum/totalType*100).toFixed(1)));
       chartParetoType = new Chart($("#chartParetoType"), {
         data: {
           labels: pLabels,
           datasets: [
-            { type:"bar", label:"件数", data:pBars, yAxisID:"y", datalabels:{ align:'end', anchor:'end' } },
-            { type:"line", label:"累積%", data:pCumPct, yAxisID:"y1", tension:0.3, pointRadius:3, borderDash:[], datalabels:{ align:'top', formatter:v=>v+'%' } }
+            { type:"bar",  label:"件数", data:pBars, yAxisID:"y", datalabels:{ align:'end', anchor:'end' } },
+            { type:"line", label:"累積%", data:pCumPct, yAxisID:"y1", tension:0.3, pointRadius:3, datalabels:{ align:'top', formatter:v=>v+'%' } }
           ]
         },
         options: {
           responsive:true, maintainAspectRatio:false, animation:false,
-          scales: {
-            y: { beginAtZero:true, ticks:{ precision:0 } },
-            y1: { position:"right", beginAtZero:true, min:0, max:100, ticks:{ callback:v=>v+'%' }, grid:{ drawOnChartArea:false } }
-          },
+          scales: { y: { beginAtZero:true, ticks:{ precision:0 } },
+                   y1:{ position:"right", beginAtZero:true, min:0, max:100, ticks:{ callback:v=>v+'%' }, grid:{ drawOnChartArea:false } } },
           plugins:{ legend:{ display:true } }
         }
       });
