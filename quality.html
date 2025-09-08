@@ -77,7 +77,7 @@
         <div class="chart-box"><canvas id="chartModel"></canvas></div>
       </div>
       <div class="bg-white rounded-2xl shadow p-4 flex flex-col">
-        <div class="flex items-center"):
+        <div class="flex items-center">
           <h3 class="text-base font-semibold">件数（部署）</h3>
           <button data-chart="dept" class="ml-auto text-xs px-2 py-1 rounded-lg border exportBtn">PNG保存</button>
         </div>
@@ -102,8 +102,29 @@
   <template id="optionTpl"><option></option></template>
 
   <script>
-    // ======= Consts =======
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=1070847733&single=true&output=csv";
+    // ======= CSV URL & Fallbacks =======
+    const DIRECT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=1070847733&single=true&output=csv";
+    function buildProxyUrls(url){
+      const noProto = url.replace(/^https?:\/\//, "");
+      return [
+        url,                                     // direct
+        `https://r.jina.ai/http://${noProto}`,   // CORS-friendly mirror
+        `https://cors.isomorphic-git.org/${url}` // fallback proxy
+      ];
+    }
+    async function fetchTextWithFallback(url){
+      const tries = buildProxyUrls(url);
+      let lastErr;
+      for (const u of tries){
+        try{
+          const res = await fetch(u, { mode: "cors" });
+          if(!res.ok) throw new Error(`HTTP ${res.status}`);
+          const text = await res.text();
+          if(text) return { url: u, text };
+        }catch(e){ lastErr = e; }
+      }
+      throw lastErr || new Error("Fetch failed");
+    }
 
     // ======= Utils =======
     const $ = (sel) => document.querySelector(sel);
@@ -260,7 +281,7 @@
       const f = currentFilters();
       return rows.filter((r) => {
         if (f.ym && normalizeYM(r[mapping.ym]) !== f.ym) return false;
-        if (f.type && r[mapping.type) !== f.type) return false;
+        if (f.type && r[mapping.type] !== f.type) return false;  // FIXED
         if (f.model && r[mapping.model] !== f.model) return false;
         if (f.dept && r[mapping.dept] !== f.dept) return false;
         return true;
@@ -281,31 +302,34 @@
     }
 
     function destroyCharts() {
-      [chartYM, chartType, chartModel, chartDept].forEach((ch) => {
-        if (ch) ch.destroy();
-      });
+      [chartYM, chartType, chartModel, chartDept].forEach((ch) => { if (ch) ch.destroy(); });
       chartYM = chartType = chartModel = chartDept = undefined;
     }
 
     function buildCharts() {
       const rows = applyFilters(rawRows);
 
+      // 年月
       const ymCounts = countsBy(rows, (r) => normalizeYM(r[mapping.ym]));
       const ymLabels = ymCounts.map(([k]) => k);
       const ymData = ymCounts.map(([, v]) => v);
 
+      // 種類
       const typeCounts = countsBy(rows, (r) => (r[mapping.type] || "").toString().trim());
       const typeLabels = typeCounts.map(([k]) => k || "（未設定）");
       const typeData = typeCounts.map(([, v]) => v);
 
+      // 機種
       const modelCounts = countsBy(rows, (r) => (r[mapping.model] || "").toString().trim());
       const modelLabels = modelCounts.map(([k]) => k || "（未設定）");
       const modelData = modelCounts.map(([, v]) => v);
 
+      // 部署
       const deptCounts = countsBy(rows, (r) => (r[mapping.dept] || "").toString().trim());
       const deptLabels = deptCounts.map(([k]) => k || "（未設定）");
       const deptData = deptCounts.map(([, v]) => v);
 
+      // 再描画
       destroyCharts();
 
       const commonOptions = (isHorizontal = false) => ({
@@ -329,7 +353,7 @@
         }
       });
 
-      Chart.register(ChartDataLabels);
+      try { Chart.register(ChartDataLabels); } catch(_) {}
 
       chartYM = new Chart(document.querySelector("#chartYM"), {
         type: "bar",
@@ -359,34 +383,27 @@
       });
     }
 
-    function applyMappingAndRender() {
-      refreshFilters();
-      buildCharts();
-    }
-
     async function loadCSV(url) {
+      document.querySelector("#lastLoaded").textContent = "読み込み中…";
       try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const text = await res.text();
+        const { url: used, text } = await fetchTextWithFallback(url);
         const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-        if (parsed.errors?.length) {
-          console.warn("PapaParse errors", parsed.errors);
-        }
+        if (parsed.errors?.length) console.warn("PapaParse errors", parsed.errors);
         rawRows = parsed.data;
         headers = parsed.meta.fields || Object.keys(rawRows[0] || {});
         renderPreview(rawRows);
-
         mapping = autoMapHeaders(headers);
-
-        applyMappingAndRender();
-        document.querySelector("#lastLoaded").textContent = `最終読込: ${new Date().toLocaleString()}`;
+        refreshFilters();
+        buildCharts();
+        document.querySelector("#lastLoaded").textContent =
+          `最終読込: ${new Date().toLocaleString()}（${used.includes("r.jina.ai") ? "proxy" : "direct"}）`;
       } catch (e) {
         console.error(e);
-        document.querySelector("#lastLoaded").textContent = "読み込み失敗: " + e.message;
+        document.querySelector("#lastLoaded").textContent = "読み込み失敗: " + (e?.message || e);
       }
     }
 
+    // Events
     ["#fYM", "#fType", "#fModel", "#fDept"].forEach((sel) =>
       document.querySelector(sel).addEventListener("change", buildCharts)
     );
@@ -396,16 +413,9 @@
       buildCharts();
     });
 
-    document.querySelectorAll(".exportBtn").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        const idMap = { ym: chartYM, type: chartType, model: chartModel, dept: chartDept };
-        const inst = idMap[btn.dataset.chart];
-        if (inst) downloadImageFromChart(inst, `chart-${btn.dataset.chart}.png`);
-      })
-    );
-
+    // 初期読み込み
     window.addEventListener("DOMContentLoaded", () => {
-      loadCSV(CSV_URL);
+      loadCSV(DIRECT_CSV);
     });
   </script>
 </body>
