@@ -8,12 +8,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Chart.js DataLabels plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <!-- Papa Parse for CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
-    /* スクロール時にヘッダー固定 */
     .sticky-header { position: sticky; top: 0; z-index: 20; }
-    /* キャンバス親に高さを与える */
     .chart-box { height: 360px; }
   </style>
 </head>
@@ -27,48 +27,6 @@
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
-    <!-- データソース -->
-    <section class="bg-white rounded-2xl shadow p-4">
-      <div class="flex flex-col lg:flex-row gap-3 items-start lg:items-end">
-        <div class="flex-1 w-full">
-          <label class="block text-sm font-medium mb-1" for="csvUrl">CSV URL</label>
-          <input id="csvUrl" type="url" class="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400"
-            value="https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=1070847733&single=true&output=csv" />
-        </div>
-        <button id="loadBtn" class="px-4 py-2 rounded-xl bg-sky-600 text-white hover:bg-sky-700 active:scale-[.99]">読み込み</button>
-        <button id="reloadBtn" class="px-4 py-2 rounded-xl bg-slate-700 text-white hover:bg-slate-800 active:scale-[.99]">再読込</button>
-        <div id="statusMsg" class="text-sm text-slate-500"></div>
-      </div>
-      <p class="text-xs text-slate-500 mt-2">Google スプレッドシートを <em>ウェブに公開 → CSV</em> に設定してください（CORS 対応済み）。</p>
-    </section>
-
-    <!-- カラムマッピング -->
-    <section class="bg-white rounded-2xl shadow p-4">
-      <h2 class="text-lg font-semibold mb-3">列マッピング（自動検出／変更可）</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div>
-          <label class="block text-sm font-medium mb-1" for="colYM">年月 列</label>
-          <select id="colYM" class="w-full border rounded-xl px-3 py-2"></select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1" for="colType">クレーム種類 列</label>
-          <select id="colType" class="w-full border rounded-xl px-3 py-2"></select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1" for="colModel">機種名 列</label>
-          <select id="colModel" class="w-full border rounded-xl px-3 py-2"></select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1" for="colDept">部署 列</label>
-          <select id="colDept" class="w-full border rounded-xl px-3 py-2"></select>
-        </div>
-      </div>
-      <div class="mt-3 flex gap-2">
-        <button id="applyMapping" class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">マッピングを適用</button>
-        <span id="rowCount" class="text-sm text-slate-500"></span>
-      </div>
-    </section>
-
     <!-- フィルタ -->
     <section class="bg-white rounded-2xl shadow p-4">
       <h2 class="text-lg font-semibold mb-3">フィルタ</h2>
@@ -119,7 +77,7 @@
         <div class="chart-box"><canvas id="chartModel"></canvas></div>
       </div>
       <div class="bg-white rounded-2xl shadow p-4 flex flex-col">
-        <div class="flex items-center">
+        <div class="flex items-center"):
           <h3 class="text-base font-semibold">件数（部署）</h3>
           <button data-chart="dept" class="ml-auto text-xs px-2 py-1 rounded-lg border exportBtn">PNG保存</button>
         </div>
@@ -127,7 +85,7 @@
       </div>
     </section>
 
-    <!-- プレビュー -->
+    <!-- プレビュー（任意） -->
     <section class="bg-white rounded-2xl shadow p-4">
       <details>
         <summary class="cursor-pointer select-none font-medium">データ数行プレビュー</summary>
@@ -144,7 +102,10 @@
   <template id="optionTpl"><option></option></template>
 
   <script>
-    // ======= Utility =======
+    // ======= Consts =======
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=1070847733&single=true&output=csv";
+
+    // ======= Utils =======
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
@@ -152,7 +113,7 @@
       ym: ["年月", "yearmonth", "year-month", "年月日", "ym"],
       type: ["クレーム種類", "クレーム種別", "クレーム", "種別", "claimtype"],
       model: ["機種名", "機種", "型式", "model"],
-      dept: ["部署", "部門", "部課", "部署名", "department"]
+      dept: ["部署", "部門", "部課", "部署名", "department"],
     };
 
     function normalizeHeader(h) {
@@ -161,11 +122,11 @@
     }
 
     function autoMapHeaders(headers) {
-      const norm = headers.map(h => ({ raw: h, n: normalizeHeader(h) }));
+      const norm = headers.map((h) => ({ raw: h, n: normalizeHeader(h) }));
       const pickFirst = (cands) => {
         for (const c of cands) {
           const n = normalizeHeader(c);
-          const f = norm.find(x => x.n.includes(n));
+          const f = norm.find((x) => x.n.includes(n));
           if (f) return f.raw;
         }
         return headers[0] || "";
@@ -182,18 +143,16 @@
       if (v == null) return "";
       let s = String(v).trim();
       if (!s) return "";
-      // 例: 2024-05, 2024/5, 2024年5月, 202405, 2024-05-31
-      // 年月日 → 年月へ
       const ymdMatch = s.match(/^(\d{4})[-\/.](\d{1,2})(?:[-\/.]\d{1,2})?$/);
       if (ymdMatch) {
         const y = ymdMatch[1];
-        const m = ymdMatch[2].padStart(2, '0');
+        const m = ymdMatch[2].padStart(2, "0");
         return `${y}-${m}`;
       }
       const jpMatch = s.match(/(\d{4})\s*年\s*(\d{1,2})\s*月?/);
       if (jpMatch) {
         const y = jpMatch[1];
-        const m = jpMatch[2].padStart(2, '0');
+        const m = jpMatch[2].padStart(2, "0");
         return `${y}-${m}`;
       }
       const yyyymm = s.match(/^(\d{4})(\d{2})(\d{0,2})?$/);
@@ -202,14 +161,13 @@
         const m = yyyymm[2];
         return `${y}-${m}`;
       }
-      // 既に YYYY-MM 形式？
       const ym = s.match(/^(\d{4})[-\/.](\d{1,2})$/);
       if (ym) {
         const y = ym[1];
-        const m = ym[2].padStart(2, '0');
+        const m = ym[2].padStart(2, "0");
         return `${y}-${m}`;
       }
-      return s; // そのまま
+      return s;
     }
 
     function countsBy(arr, keyFn) {
@@ -219,28 +177,28 @@
         if (!k) continue;
         map.set(k, (map.get(k) || 0) + 1);
       }
-      return Array.from(map.entries()).sort((a,b) => a[0] > b[0] ? 1 : -1);
+      return Array.from(map.entries()).sort((a, b) => (a[0] > b[0] ? 1 : -1));
     }
 
     function uniqueValues(arr, key) {
       const s = new Set();
-      arr.forEach(r => {
+      arr.forEach((r) => {
         const v = (r[key] ?? "").toString().trim();
         if (v) s.add(v);
       });
       return Array.from(s).sort();
     }
 
-    function fillSelect(sel, values, { withAll=true, labelAll='(すべて)' }={}) {
-      sel.innerHTML = '';
+    function fillSelect(sel, values, { withAll = true, labelAll = "(すべて)" } = {}) {
+      sel.innerHTML = "";
       if (withAll) {
-        const opt = document.createElement('option');
-        opt.value = '';
+        const opt = document.createElement("option");
+        opt.value = "";
         opt.textContent = labelAll;
         sel.appendChild(opt);
       }
       for (const v of values) {
-        const opt = document.createElement('option');
+        const opt = document.createElement("option");
         opt.value = v;
         opt.textContent = v;
         sel.appendChild(opt);
@@ -248,41 +206,41 @@
     }
 
     function downloadImageFromChart(chart, filename) {
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = chart.toBase64Image();
       a.download = filename;
       a.click();
     }
 
     // ======= State =======
-    let rawRows = []; // パース後の生データ（オブジェクト配列）
+    let rawRows = [];
     let headers = [];
-    let mapping = { ym: '', type: '', model: '', dept: '' };
+    let mapping = { ym: "", type: "", model: "", dept: "" };
 
     let chartYM, chartType, chartModel, chartDept;
 
     // ======= Rendering =======
     function renderPreview(rows, max = 10) {
-      const head = $('#previewHead');
-      const body = $('#previewBody');
-      head.innerHTML = '';
-      body.innerHTML = '';
+      const head = document.querySelector("#previewHead");
+      const body = document.querySelector("#previewBody");
+      head.innerHTML = "";
+      body.innerHTML = "";
       if (!rows.length) return;
-      const tr = document.createElement('tr');
-      headers.forEach(h => {
-        const th = document.createElement('th');
-        th.className = 'px-2 py-1 border text-left font-medium';
+      const tr = document.createElement("tr");
+      headers.forEach((h) => {
+        const th = document.createElement("th");
+        th.className = "px-2 py-1 border text-left font-medium";
         th.textContent = h;
         tr.appendChild(th);
       });
       head.appendChild(tr);
 
-      rows.slice(0, max).forEach(r => {
-        const trb = document.createElement('tr');
-        headers.forEach(h => {
-          const td = document.createElement('td');
-          td.className = 'px-2 py-1 border';
-          td.textContent = r[h] ?? '';
+      rows.slice(0, max).forEach((r) => {
+        const trb = document.createElement("tr");
+        headers.forEach((h) => {
+          const td = document.createElement("td");
+          td.className = "px-2 py-1 border";
+          td.textContent = r[h] ?? "";
           trb.appendChild(td);
         });
         body.appendChild(trb);
@@ -291,18 +249,18 @@
 
     function currentFilters() {
       return {
-        ym: $('#fYM').value,
-        type: $('#fType').value,
-        model: $('#fModel').value,
-        dept: $('#fDept').value,
+        ym: document.querySelector("#fYM").value,
+        type: document.querySelector("#fType").value,
+        model: document.querySelector("#fModel").value,
+        dept: document.querySelector("#fDept").value,
       };
     }
 
     function applyFilters(rows) {
       const f = currentFilters();
-      return rows.filter(r => {
+      return rows.filter((r) => {
         if (f.ym && normalizeYM(r[mapping.ym]) !== f.ym) return false;
-        if (f.type && r[mapping.type] !== f.type) return false;
+        if (f.type && r[mapping.type) !== f.type) return false;
         if (f.model && r[mapping.model] !== f.model) return false;
         if (f.dept && r[mapping.dept] !== f.dept) return false;
         return true;
@@ -311,19 +269,19 @@
 
     function refreshFilters() {
       const rows = rawRows;
-      const ymValues = Array.from(new Set(rows.map(r => normalizeYM(r[mapping.ym])).filter(Boolean))).sort();
+      const ymValues = Array.from(new Set(rows.map((r) => normalizeYM(r[mapping.ym])).filter(Boolean))).sort();
       const typeValues = uniqueValues(rows, mapping.type);
       const modelValues = uniqueValues(rows, mapping.model);
       const deptValues = uniqueValues(rows, mapping.dept);
 
-      fillSelect($('#fYM'), ymValues);
-      fillSelect($('#fType'), typeValues);
-      fillSelect($('#fModel'), modelValues);
-      fillSelect($('#fDept'), deptValues);
+      fillSelect(document.querySelector("#fYM"), ymValues);
+      fillSelect(document.querySelector("#fType"), typeValues);
+      fillSelect(document.querySelector("#fModel"), modelValues);
+      fillSelect(document.querySelector("#fDept"), deptValues);
     }
 
     function destroyCharts() {
-      [chartYM, chartType, chartModel, chartDept].forEach(ch => {
+      [chartYM, chartType, chartModel, chartDept].forEach((ch) => {
         if (ch) ch.destroy();
       });
       chartYM = chartType = chartModel = chartDept = undefined;
@@ -332,160 +290,122 @@
     function buildCharts() {
       const rows = applyFilters(rawRows);
 
-      // 年月
-      const ymCounts = countsBy(rows, r => normalizeYM(r[mapping.ym]));
+      const ymCounts = countsBy(rows, (r) => normalizeYM(r[mapping.ym]));
       const ymLabels = ymCounts.map(([k]) => k);
-      const ymData = ymCounts.map(([,v]) => v);
+      const ymData = ymCounts.map(([, v]) => v);
 
-      // 種類
-      const typeCounts = countsBy(rows, r => (r[mapping.type]||'').toString().trim());
-      const typeLabels = typeCounts.map(([k]) => k || '（未設定）');
-      const typeData = typeCounts.map(([,v]) => v);
+      const typeCounts = countsBy(rows, (r) => (r[mapping.type] || "").toString().trim());
+      const typeLabels = typeCounts.map(([k]) => k || "（未設定）");
+      const typeData = typeCounts.map(([, v]) => v);
 
-      // 機種
-      const modelCounts = countsBy(rows, r => (r[mapping.model]||'').toString().trim());
-      const modelLabels = modelCounts.map(([k]) => k || '（未設定）');
-      const modelData = modelCounts.map(([,v]) => v);
+      const modelCounts = countsBy(rows, (r) => (r[mapping.model] || "").toString().trim());
+      const modelLabels = modelCounts.map(([k]) => k || "（未設定）");
+      const modelData = modelCounts.map(([, v]) => v);
 
-      // 部署
-      const deptCounts = countsBy(rows, r => (r[mapping.dept]||'').toString().trim());
-      const deptLabels = deptCounts.map(([k]) => k || '（未設定）');
-      const deptData = deptCounts.map(([,v]) => v);
+      const deptCounts = countsBy(rows, (r) => (r[mapping.dept] || "").toString().trim());
+      const deptLabels = deptCounts.map(([k]) => k || "（未設定）");
+      const deptData = deptCounts.map(([, v]) => v);
 
-      // 再描画
       destroyCharts();
 
-      chartYM = new Chart($('#chartYM'), {
-        type: 'bar',
-        data: { labels: ymLabels, datasets: [{ label: '件数', data: ymData }] },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: { ticks: { maxRotation: 0, autoSkip: true } },
-            y: { beginAtZero: true, precision: 0 }
-          },
-          plugins: { legend: { display: false } }
+      const commonOptions = (isHorizontal = false) => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        indexAxis: isHorizontal ? 'y' : 'x',
+        scales: {
+          x: { ticks: { maxRotation: 0, autoSkip: true } },
+          y: { beginAtZero: true, ticks: { precision: 0 } },
+        },
+        plugins: {
+          legend: { display: false },
+          datalabels: {
+            anchor: 'end',
+            align: isHorizontal ? 'right' : 'top',
+            offset: 4,
+            formatter: (v) => v,
+            font: { weight: '600' }
+          }
         }
       });
 
-      chartType = new Chart($('#chartType'), {
-        type: 'bar',
-        data: { labels: typeLabels, datasets: [{ label: '件数', data: typeData }] },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: typeLabels.length > 6 ? 'y' : 'x',
-          scales: { y: { beginAtZero: true, precision: 0 } },
-          plugins: { legend: { display: false } }
-        }
+      Chart.register(ChartDataLabels);
+
+      chartYM = new Chart(document.querySelector("#chartYM"), {
+        type: "bar",
+        data: { labels: ymLabels, datasets: [{ label: "件数", data: ymData }] },
+        options: commonOptions(false)
       });
 
-      chartModel = new Chart($('#chartModel'), {
-        type: 'bar',
-        data: { labels: modelLabels, datasets: [{ label: '件数', data: modelData }] },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: modelLabels.length > 6 ? 'y' : 'x',
-          scales: { y: { beginAtZero: true, precision: 0 } },
-          plugins: { legend: { display: false } }
-        }
+      const typeHorizontal = typeLabels.length > 6;
+      chartType = new Chart(document.querySelector("#chartType"), {
+        type: "bar",
+        data: { labels: typeLabels, datasets: [{ label: "件数", data: typeData }] },
+        options: commonOptions(typeHorizontal)
       });
 
-      chartDept = new Chart($('#chartDept'), {
-        type: 'bar',
-        data: { labels: deptLabels, datasets: [{ label: '件数', data: deptData }] },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: deptLabels.length > 6 ? 'y' : 'x',
-          scales: { y: { beginAtZero: true, precision: 0 } },
-          plugins: { legend: { display: false } }
-        }
+      const modelHorizontal = modelLabels.length > 6;
+      chartModel = new Chart(document.querySelector("#chartModel"), {
+        type: "bar",
+        data: { labels: modelLabels, datasets: [{ label: "件数", data: modelData }] },
+        options: commonOptions(modelHorizontal)
+      });
+
+      const deptHorizontal = deptLabels.length > 6;
+      chartDept = new Chart(document.querySelector("#chartDept"), {
+        type: "bar",
+        data: { labels: deptLabels, datasets: [{ label: "件数", data: deptData }] },
+        options: commonOptions(deptHorizontal)
       });
     }
 
     function applyMappingAndRender() {
-      // フィルタの選択肢再構成 → グラフ再描画
       refreshFilters();
       buildCharts();
-      $('#rowCount').textContent = `${rawRows.length.toLocaleString()} 件`;
     }
 
-    // ======= Load CSV =======
     async function loadCSV(url) {
-      $('#statusMsg').textContent = '読み込み中…';
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const text = await res.text();
         const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
         if (parsed.errors?.length) {
-          console.warn('PapaParse errors', parsed.errors);
+          console.warn("PapaParse errors", parsed.errors);
         }
         rawRows = parsed.data;
         headers = parsed.meta.fields || Object.keys(rawRows[0] || {});
         renderPreview(rawRows);
 
-        // マッピング初期化
         mapping = autoMapHeaders(headers);
-        fillSelect($('#colYM'), headers, { withAll: false });
-        fillSelect($('#colType'), headers, { withAll: false });
-        fillSelect($('#colModel'), headers, { withAll: false });
-        fillSelect($('#colDept'), headers, { withAll: false });
-        $('#colYM').value = mapping.ym;
-        $('#colType').value = mapping.type;
-        $('#colModel').value = mapping.model;
-        $('#colDept').value = mapping.dept;
 
         applyMappingAndRender();
-        $('#statusMsg').textContent = '読み込み完了';
-        $('#lastLoaded').textContent = new Date().toLocaleString();
+        document.querySelector("#lastLoaded").textContent = `最終読込: ${new Date().toLocaleString()}`;
       } catch (e) {
         console.error(e);
-        $('#statusMsg').textContent = '読み込み失敗: ' + e.message;
+        document.querySelector("#lastLoaded").textContent = "読み込み失敗: " + e.message;
       }
     }
 
-    // ======= Events =======
-    $('#loadBtn').addEventListener('click', () => {
-      const url = $('#csvUrl').value.trim();
-      if (!url) return;
-      loadCSV(url);
-    });
+    ["#fYM", "#fType", "#fModel", "#fDept"].forEach((sel) =>
+      document.querySelector(sel).addEventListener("change", buildCharts)
+    );
 
-    $('#reloadBtn').addEventListener('click', () => {
-      const url = $('#csvUrl').value.trim();
-      if (!url) return;
-      loadCSV(url);
-    });
-
-    $('#applyMapping').addEventListener('click', () => {
-      mapping.ym = $('#colYM').value;
-      mapping.type = $('#colType').value;
-      mapping.model = $('#colModel').value;
-      mapping.dept = $('#colDept').value;
-      applyMappingAndRender();
-    });
-
-    $$('#fYM, #fType, #fModel, #fDept').forEach(sel => sel.addEventListener('change', buildCharts));
-
-    $('#clearFilters').addEventListener('click', () => {
-      $$('#fYM, #fType, #fModel, #fDept').forEach(sel => sel.value = '');
+    document.querySelector("#clearFilters").addEventListener("click", () => {
+      ["#fYM", "#fType", "#fModel", "#fDept"].forEach((sel) => (document.querySelector(sel).value = ""));
       buildCharts();
     });
 
-    $$('.exportBtn').forEach(btn => btn.addEventListener('click', () => {
-      const idMap = { ym: chartYM, type: chartType, model: chartModel, dept: chartDept };
-      const inst = idMap[btn.dataset.chart];
-      if (inst) downloadImageFromChart(inst, `chart-${btn.dataset.chart}.png`);
-    }));
+    document.querySelectorAll(".exportBtn").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const idMap = { ym: chartYM, type: chartType, model: chartModel, dept: chartDept };
+        const inst = idMap[btn.dataset.chart];
+        if (inst) downloadImageFromChart(inst, `chart-${btn.dataset.chart}.png`);
+      })
+    );
 
-    // 初期読み込み
-    window.addEventListener('DOMContentLoaded', () => {
-      const url = $('#csvUrl').value.trim();
-      if (url) loadCSV(url);
+    window.addEventListener("DOMContentLoaded", () => {
+      loadCSV(CSV_URL);
     });
   </script>
 </body>
