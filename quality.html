@@ -104,6 +104,18 @@
     // Chart.js DataLabels plugin register
     if (window.ChartDataLabels) { Chart.register(ChartDataLabels); }
 
+    // === Data sources ===
+    const GOOGLE_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=1070847733&single=true&output=csv';
+    const INLINE_CSV = `年月,クレーム種類,機種名,部署
+2024-01,社内クレーム,SG,製造
+2024-01,設計変更,SG,生産技術
+2024-02,社内クレーム,CV,製造
+2024-02,クレーム,SG,品質
+2024-03,設計変更,WB,設計
+2024-03,社内クレーム,SG,製造
+2024-04,クレーム,CV,品質
+`;
+
     // ======= Utility =======
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -378,7 +390,15 @@
         `https://corsproxy.io/?${encodeURIComponent(url)}`
       ];
       let text = null; let lastErr = null;
-      for (const u of urls) {
+      // Try local CSV in repo first (avoids CORS)
+      try {
+        const localRes = await fetch('data/claims.csv');
+        if (localRes.ok) {
+          const t0 = await localRes.text();
+          if (t0 && t0.trim()) text = t0;
+        }
+      } catch (_) { /* ignore */ }
+      for (const u of urls) { if (text) break;
         try {
           const res = await fetch(u);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
