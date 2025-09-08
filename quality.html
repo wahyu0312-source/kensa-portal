@@ -1,364 +1,446 @@
 <!doctype html>
 <html lang="ja" data-theme="light">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>品質情報（グラフ｜CSV）</title>
-<style>
-  :root{
-    --bg1:#eef2ff; --bg2:#f8fafc;
-    --card:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
-    --accent:#2563eb; --shadow:0 30px 60px rgba(15,23,42,.08); --radius:20px;
-    --grid:#e5e7eb;
-  }
-  [data-theme="dark"]{
-    --bg1:#0b1220; --bg2:#0b1220;
-    --card:#0f172a; --ink:#e5e7eb; --muted:#94a3b8; --border:#1f2937;
-    --accent:#60a5fa; --shadow:none; --grid:#223044;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0; color:var(--ink);
-    font-family: system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
-    background:
-      radial-gradient(1200px 600px at -10% -10%, #c7d2fe33 0%, transparent 60%),
-      radial-gradient(900px 500px at 110% 0%, #bae6fd33 0%, transparent 55%),
-      linear-gradient(120deg,var(--bg1),var(--bg2));
-  }
-  header{position:sticky;top:0;z-index:10;background:#ffffffcc;border-bottom:1px solid var(--border);backdrop-filter:blur(10px)}
-  [data-theme="dark"] header{background:#0f172acc}
-  .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
-  .row{display:flex;justify-content:space-between;align-items:center;gap:16px}
-  .controls{display:flex;gap:8px;align-items:center}
-  .btn{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--ink);cursor:pointer}
-  .btn[disabled]{opacity:.6;cursor:not-allowed}
-  .small{font-size:12px;color:var(--muted)}
-  main{max-width:1200px;margin:26px auto;padding:0 20px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
-  .card-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 12px}
-  .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  select.btn{appearance:none;padding-right:26px;background-image:
-    linear-gradient(45deg,transparent 50%,#64748b 50%),
-    linear-gradient(135deg,#64748b 50%,transparent 50%);background-position:
-    calc(100% - 18px) calc(1em - 2px), calc(100% - 13px) calc(1em - 2px);
-    background-size:5px 5px;background-repeat:no-repeat}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;min-height:380px;display:flex;align-items:center;justify-content:center}
-  .box.wide{grid-column:1/-1}
-  .box canvas{width:100%!important;height:330px!important}
-  @media (max-width:900px){.grid{grid-template-columns:1fr}}
-  .banner{padding:8px 12px;border:1px solid #f59e0b;background:#fef3c7;color:#78350f;border-radius:8px;margin-bottom:12px}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>クレーム可視化（年月・クレーム種類・機種名・部署）</title>
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Papa Parse for CSV -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    .sticky-header { position: sticky; top: 0; z-index: 20; }
+    .chart-box { height: 360px; }
+  </style>
 </head>
-<body>
-<header>
-  <div class="wrap row">
-    <strong>品質情報</strong>
-    <div class="controls">
-      <button id="btnRefresh" class="btn" type="button">Refresh now</button>
-      <label class="small" style="display:flex;align-items:center;gap:6px">
-        <input id="chkDark" type="checkbox"> Dark
-      </label>
+<body class="bg-slate-50 text-slate-800">
+  <header class="sticky-header bg-white/80 backdrop-blur border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
+      <h1 class="text-xl font-semibold">クレーム可視化</h1>
+      <span class="text-sm text-slate-500">（年月・クレーム種類・機種名・部署）</span>
+      <div class="ml-auto text-xs text-slate-500" id="lastLoaded"></div>
     </div>
-  </div>
-</header>
+  </header>
 
-<main>
-  <section class="card" style="margin-bottom:16px">
-    <div id="banner" class="banner" style="display:none"></div>
-    <div class="card-title">
-      <h2 style="margin:0">出荷検査 — グラフ</h2>
-      <div class="small">source: publish CSV</div>
-    </div>
-    <div class="filterbar" aria-label="フィルター">
-      <label class="small">年:</label>
-      <select id="selYear" class="btn"></select>
+  <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    <!-- 列マッピング -->
+    <section class="bg-white rounded-2xl shadow p-4">
+      <h2 class="text-lg font-semibold mb-3">列マッピング（自動検出／変更可）</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="colYM">年月 列</label>
+          <select id="colYM" class="w-full border rounded-xl px-3 py-2"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="colType">クレーム種類 列</label>
+          <select id="colType" class="w-full border rounded-xl px-3 py-2"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="colModel">機種名 列</label>
+          <select id="colModel" class="w-full border rounded-xl px-3 py-2"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="colDept">部署 列</label>
+          <select id="colDept" class="w-full border rounded-xl px-3 py-2"></select>
+        </div>
+      </div>
+      <div class="mt-3 flex gap-2 items-center">
+        <button id="applyMapping" class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">マッピングを適用</button>
+        <span id="rowCount" class="text-sm text-slate-500"></span>
+      </div>
+    </section>
 
-      <label class="small">月:</label>
-      <select id="selMonth" class="btn">
-        <option value="ALL">All</option>
-        <option value="01">1</option><option value="02">2</option><option value="03">3</option>
-        <option value="04">4</option><option value="05">5</option><option value="06">6</option>
-        <option value="07">7</option><option value="08">8</option><option value="09">9</option>
-        <option value="10">10</option><option value="11">11</option><option value="12">12</option>
-      </select>
+    <!-- フィルタ -->
+    <section class="bg-white rounded-2xl shadow p-4">
+      <h2 class="text-lg font-semibold mb-3">フィルタ</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="fYM">年月</label>
+          <select id="fYM" class="w-full border rounded-xl px-3 py-2"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="fType">クレーム種類</label>
+          <select id="fType" class="w-full border rounded-xl px-3 py-2"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="fModel">機種名</label>
+          <select id="fModel" class="w-full border rounded-xl px-3 py-2"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="fDept">部署</label>
+          <select id="fDept" class="w-full border rounded-xl px-3 py-2"></select>
+        </div>
+      </div>
+      <div class="mt-3 flex gap-2">
+        <button id="clearFilters" class="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300">フィルタ全解除</button>
+      </div>
+    </section>
 
-      <label class="small">向き:</label>
-      <select id="selOrient" class="btn">
-        <option value="v" selected>Vertical</option>
-        <option value="h">Horizontal</option>
-      </select>
+    <!-- Charts -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-white rounded-2xl shadow p-4 flex flex-col">
+        <div class="flex items-center">
+          <h3 class="text-base font-semibold">件数（年月）</h3>
+          <button data-chart="ym" class="ml-auto text-xs px-2 py-1 rounded-lg border exportBtn">PNG保存</button>
+        </div>
+        <div class="chart-box"><canvas id="chartYM"></canvas></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow p-4 flex flex-col">
+        <div class="flex items-center">
+          <h3 class="text-base font-semibold">件数（クレーム種類）</h3>
+          <button data-chart="type" class="ml-auto text-xs px-2 py-1 rounded-lg border exportBtn">PNG保存</button>
+        </div>
+        <div class="chart-box"><canvas id="chartType"></canvas></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow p-4 flex flex-col">
+        <div class="flex items-center">
+          <h3 class="text-base font-semibold">件数（機種名）</h3>
+          <button data-chart="model" class="ml-auto text-xs px-2 py-1 rounded-lg border exportBtn">PNG保存</button>
+        </div>
+        <div class="chart-box"><canvas id="chartModel"></canvas></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow p-4 flex flex-col">
+        <div class="flex items-center">
+          <h3 class="text-base font-semibold">件数（部署）</h3>
+          <button data-chart="dept" class="ml-auto text-xs px-2 py-1 rounded-lg border exportBtn">PNG保存</button>
+        </div>
+        <div class="chart-box"><canvas id="chartDept"></canvas></div>
+      </div>
+    </section>
 
-      <button id="btnReset" class="btn" type="button">Reset</button>
-    </div>
-    <div class="small" id="note">読み込み中…</div>
-  </section>
+    <!-- プレビュー -->
+    <section class="bg-white rounded-2xl shadow p-4">
+      <details>
+        <summary class="cursor-pointer select-none font-medium">データ数行プレビュー</summary>
+        <div class="overflow-x-auto mt-3">
+          <table id="previewTable" class="min-w-full text-sm border">
+            <thead class="bg-slate-100" id="previewHead"></thead>
+            <tbody id="previewBody"></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+  </main>
 
-  <section class="card" aria-label="チャート">
-    <div class="grid">
-      <div class="box"><canvas id="cDept"></canvas></div>
-      <div class="box"><canvas id="cType"></canvas></div>
-      <div class="box wide"><canvas id="cDeptTop"></canvas></div>
-    </div>
-  </section>
-</main>
+  <template id="optionTpl"><option></option></template>
 
-<!-- libs -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <script>
+    // ======= Utility =======
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-<script>
-/** ================== CONFIG ================== */
-/* Pakai link CSV publish yang kamu berikan */
-const PUBLISHED_CSV_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=1070847733&single=true&output=csv";
+    const requiredKeys = {
+      ym: ["年月", "yearmonth", "year-month", "年月日", "ym"],
+      type: ["クレーム種類", "クレーム種別", "クレーム", "種別", "claimtype"],
+      model: ["機種名", "機種", "型式", "model"],
+      dept: ["部署", "部門", "部課", "部署名", "department"]
+    };
 
-/** ================== HELPERS ================== */
-const S = v => String(v ?? "").trim();
-const intTick = v => Number.isInteger(v) ? v : "";
-function showBanner(msg){
-  const b = document.getElementById("banner");
-  b.textContent = msg;
-  b.style.display = msg ? "block" : "none";
-}
-function parseCSV(text){
-  // quick check HTML?
-  if (/^\s*</.test(text)) throw new Error("Google mengembalikan HTML, bukan CSV. Cek: Publish to the web & akses publik.");
-  const rows = [], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
-  text = text.replace(/\r\n?/g,"\n");
-  let m, row=[];
-  for (let i=0;i<text.length;){
-    re.lastIndex=i; m=re.exec(text); if(!m) break;
-    let cell=m[1];
-    if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-    row.push(cell); i=re.lastIndex;
-    if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
-  }
-  return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
-}
-function indexByName(header){
-  const map={}; header.forEach((h,i)=>map[S(h)]=i);
-  const find = names => { for(const n of names){ if(n in map) return map[n]; } return null; };
-  const fuzzy = re => { for(let i=0;i<header.length;i++){ if(re.test(S(header[i]))) return i; } return null; };
-  return {
-    idxDate : find(["出荷日","年月日","日付","Date"]) ?? fuzzy(/(日付|date)/i),
-    idxDept : find(["部署","部門","部"]) ?? fuzzy(/部署|部門|部\b/),
-    idxType : find(["クレーム種類","クレーム種別","種類"]) ?? fuzzy(/(クレーム|種|type)/i),
-  };
-}
-function parseDateFlexible(str){
-  const s=S(str);
-  // YYYY/MM/DD or YYYY-MM-DD
-  let m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
-  if(m) return new Date(+m[1], +m[2]-1, +m[3]);
-  // English "Monday, June 02, 2025"
-  const d=new Date(s);
-  return isNaN(d)?null:d;
-}
-function monthKey(d){ return String(d.getMonth()+1).padStart(2,"0"); }
-function getTheme(){
-  const cs=getComputedStyle(document.documentElement);
-  return {
-    ink: cs.getPropertyValue('--ink').trim()||'#0f172a',
-    grid: cs.getPropertyValue('--grid').trim()||'#e5e7eb'
-  };
-}
-function palette(n){
-  const base = ['#93c5fd','#a5b4fc','#fda4af','#fdba74','#86efac','#67e8f9','#f5d0fe','#c4b5fd','#fecaca','#fde68a','#bbf7d0','#bae6fd'];
-  return Array.from({length:n},(_,i)=>base[i%base.length]);
-}
-
-/** ================== STATE ================== */
-Chart.register(ChartDataLabels);
-let cached = {header:[], rows:[], idx:null};
-let charts = {dept:null, type:null, deptTop:null};
-
-/** ================== LOAD ================== */
-async function load(){
-  try{
-    showBanner("");
-    document.getElementById("note").textContent = "Loading...";
-    const btn = document.getElementById('btnRefresh'); btn.disabled=true;
-
-    const res = await fetch(PUBLISHED_CSV_URL + "&_ts=" + Date.now(), {cache:"no-store"});
-    if(!res.ok) throw new Error("HTTP "+res.status);
-    const text = await res.text();
-    const arr = parseCSV(text);
-    if(!arr.length) throw new Error("CSV kosong.");
-
-    const header = arr[0], rows = arr.slice(1);
-    const idx = indexByName(header);
-
-    if(idx.idxDate==null || idx.idxDept==null || idx.idxType==null){
-      throw new Error("Nama kolom wajib tidak ditemukan. Butuh: 年月日/日付(Date),  部署,  クレーム種類.");
+    function normalizeHeader(h) {
+      if (!h) return "";
+      return String(h).trim().toLowerCase().replace(/[\s_\-/]/g, "");
     }
 
-    // Build years for filter
-    const yearSet = new Set();
-    const cleanRows = [];
-    for(const r of rows){
-      const d = parseDateFlexible(r[idx.idxDate]);
-      if(!d || isNaN(d)) continue;
-      yearSet.add(d.getFullYear());
-      cleanRows.push(r);
+    function autoMapHeaders(headers) {
+      const norm = headers.map(h => ({ raw: h, n: normalizeHeader(h) }));
+      const pickFirst = (cands) => {
+        for (const c of cands) {
+          const n = normalizeHeader(c);
+          const f = norm.find(x => x.n.includes(n));
+          if (f) return f.raw;
+        }
+        return headers[0] || "";
+      };
+      return { ym: pickFirst(requiredKeys.ym), type: pickFirst(requiredKeys.type), model: pickFirst(requiredKeys.model), dept: pickFirst(requiredKeys.dept) };
     }
-    cached = {header, rows:cleanRows, idx};
 
-    const years = [...yearSet].sort();
-    const selYear = document.getElementById("selYear");
-    selYear.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join("");
-    selYear.value = years.at(-1) ?? new Date().getFullYear();
+    function normalizeYM(v) {
+      if (v == null) return "";
+      let s = String(v).trim();
+      if (!s) return "";
+      // 例: 2024-05, 2024/5, 2024年5月, 202405, 2024-05-31 → YYYY-MM
+      const ymdMatch = s.match(/^(\d{4})[-\/.](\d{1,2})(?:[-\/.]\d{1,2})?$/);
+      if (ymdMatch) {
+        const y = ymdMatch[1];
+        const m = ymdMatch[2].padStart(2, '0');
+        return `${y}-${m}`;
+      }
+      const jpMatch = s.match(/(\d{4})\s*年\s*(\d{1,2})\s*月?/);
+      if (jpMatch) {
+        const y = jpMatch[1];
+        const m = jpMatch[2].padStart(2, '0');
+        return `${y}-${m}`;
+      }
+      const yyyymm = s.match(/^(\d{4})(\d{2})(\d{0,2})?$/);
+      if (yyyymm) {
+        const y = yyyymm[1];
+        const m = yyyymm[2];
+        return `${y}-${m}`;
+      }
+      const ym = s.match(/^(\d{4})[-\/.](\d{1,2})$/);
+      if (ym) {
+        const y = ym[1];
+        const m = ym[2].padStart(2, '0');
+        return `${y}-${m}`;
+      }
+      return s;
+    }
 
-    render();
-    btn.disabled=false;
-    document.getElementById("note").textContent = "OK";
-  }catch(e){
-    console.error(e);
-    showBanner("Gagal membaca CSV. " + e.message + "  — Cek: Publish to the web (CSV), akses publik, tab & kolom.");
-    document.getElementById("note").textContent = "読み込み失敗";
-    document.getElementById('btnRefresh').disabled=false;
-  }
-}
+    function countsBy(arr, keyFn) {
+      const map = new Map();
+      for (const a of arr) {
+        const k = keyFn(a);
+        if (!k) continue;
+        map.set(k, (map.get(k) || 0) + 1);
+      }
+      return Array.from(map.entries()).sort((a,b) => a[0] > b[0] ? 1 : -1);
+    }
 
-/** ================== RENDER ================== */
-function render(){
-  if(!cached.rows?.length) return;
-  const year = document.getElementById("selYear").value;
-  const month = document.getElementById("selMonth").value;
-  const orient = document.getElementById("selOrient").value; // v|h
-  const {idxDate, idxDept, idxType} = cached.idx;
+    function uniqueValues(arr, key) {
+      const s = new Set();
+      arr.forEach(r => {
+        const v = (r[key] ?? "").toString().trim();
+        if (v) s.add(v);
+      });
+      return Array.from(s).sort();
+    }
 
-  // filter by period
-  const filtered = [];
-  for(const r of cached.rows){
-    const d = parseDateFlexible(r[idxDate]);
-    if(!d) continue;
-    if(String(d.getFullYear())!==String(year)) continue;
-    if(month!=="ALL" && monthKey(d)!==month) continue;
-    filtered.push(r);
-  }
-
-  const countMap = (arr, getter) => {
-    const m=new Map();
-    for(const r of arr){ const k=S(getter(r)); if(!k) continue; m.set(k,(m.get(k)||0)+1); }
-    return m;
-  };
-
-  const mpDept = countMap(filtered, r=>r[idxDept]);
-  const mpType = countMap(filtered, r=>r[idxType]);
-
-  // total TOP 10 dept (tahun terpilih, semua bulan)
-  const mpDeptTop = countMap(
-    cached.rows.filter(r => String(parseDateFlexible(r[idxDate])?.getFullYear())===String(year)),
-    r=>r[idxDept]
-  );
-
-  const toArrays = (mp, topN=null) => {
-    let arr=[...mp.entries()].sort((a,b)=>b[1]-a[1]);
-    if(topN) arr=arr.slice(0, topN);
-    return {labels:arr.map(a=>a[0]), data:arr.map(a=>a[1])};
-  };
-
-  const dept = toArrays(mpDept);
-  const typ  = toArrays(mpType);
-  const deptTop = toArrays(mpDeptTop, 10);
-
-  const theme=getTheme();
-  const idxAxis = orient==='h' ? 'y' : 'x';
-
-  // destroy old
-  charts.dept?.destroy(); charts.type?.destroy(); charts.deptTop?.destroy();
-
-  // Dept chart
-  charts.dept = new Chart(document.getElementById('cDept').getContext('2d'), {
-    type:'bar',
-    data:{ labels:dept.labels, datasets:[{label:'件数', data:dept.data, backgroundColor:palette(dept.data.length)}]},
-    options:{
-      indexAxis: idxAxis,
-      maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        title:{display:true, text:`部署別（件数）｜${year}年${month==='ALL'?' 全月':' '+parseInt(month,10)+'月'}`},
-        datalabels:{anchor:'end', align:orient==='h'?'right':'top', formatter:v=>v}
-      },
-      scales: orient==='h' ? {
-        x:{beginAtZero:true,ticks:{callback:intTick},grid:{color:theme.grid}},
-        y:{grid:{display:false}}
-      } : {
-        y:{beginAtZero:true,ticks:{callback:intTick},grid:{color:theme.grid}},
-        x:{grid:{display:false}}
+    function fillSelect(sel, values, { withAll=true, labelAll='(すべて)' }={}) {
+      sel.innerHTML = '';
+      if (withAll) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = labelAll;
+        sel.appendChild(opt);
+      }
+      for (const v of values) {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        sel.appendChild(opt);
       }
     }
-  });
 
-  // Type chart
-  charts.type = new Chart(document.getElementById('cType').getContext('2d'), {
-    type:'bar',
-    data:{ labels:typ.labels, datasets:[{label:'件数', data:typ.data, backgroundColor:palette(typ.data.length)}]},
-    options:{
-      indexAxis: idxAxis,
-      maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        title:{display:true, text:`種類別（件数）｜${year}年${month==='ALL'?' 全月':' '+parseInt(month,10)+'月'}`},
-        datalabels:{anchor:'end', align:orient==='h'?'right':'top', formatter:v=>v}
-      },
-      scales: orient==='h' ? {
-        x:{beginAtZero:true,ticks:{callback:intTick},grid:{color:theme.grid}},
-        y:{grid:{display:false}}
-      } : {
-        y:{beginAtZero:true,ticks:{callback:intTick},grid:{color:theme.grid}},
-        x:{grid:{display:false}}
+    function downloadImageFromChart(chart, filename) {
+      const a = document.createElement('a');
+      a.href = chart.toBase64Image();
+      a.download = filename;
+      a.click();
+    }
+
+    // ======= State =======
+    let rawRows = [];
+    let headers = [];
+    let mapping = { ym: '', type: '', model: '', dept: '' };
+
+    let chartYM, chartType, chartModel, chartDept;
+
+    // ======= Rendering =======
+    function renderPreview(rows, max = 10) {
+      const head = $('#previewHead');
+      const body = $('#previewBody');
+      head.innerHTML = '';
+      body.innerHTML = '';
+      if (!rows.length) return;
+      const tr = document.createElement('tr');
+      headers.forEach(h => {
+        const th = document.createElement('th');
+        th.className = 'px-2 py-1 border text-left font-medium';
+        th.textContent = h;
+        tr.appendChild(th);
+      });
+      head.appendChild(tr);
+
+      rows.slice(0, max).forEach(r => {
+        const trb = document.createElement('tr');
+        headers.forEach(h => {
+          const td = document.createElement('td');
+          td.className = 'px-2 py-1 border';
+          td.textContent = r[h] ?? '';
+          trb.appendChild(td);
+        });
+        body.appendChild(trb);
+      });
+    }
+
+    function currentFilters() {
+      return {
+        ym: $('#fYM').value,
+        type: $('#fType').value,
+        model: $('#fModel').value,
+        dept: $('#fDept').value,
+      };
+    }
+
+    function applyFilters(rows) {
+      const f = currentFilters();
+      return rows.filter(r => {
+        if (f.ym && normalizeYM(r[mapping.ym]) !== f.ym) return false;
+        if (f.type && r[mapping.type] !== f.type) return false;
+        if (f.model && r[mapping.model] !== f.model) return false;
+        if (f.dept && r[mapping.dept] !== f.dept) return false;
+        return true;
+      });
+    }
+
+    function refreshFilters() {
+      const rows = rawRows;
+      const ymValues = Array.from(new Set(rows.map(r => normalizeYM(r[mapping.ym])).filter(Boolean))).sort();
+      const typeValues = uniqueValues(rows, mapping.type);
+      const modelValues = uniqueValues(rows, mapping.model);
+      const deptValues = uniqueValues(rows, mapping.dept);
+
+      fillSelect($('#fYM'), ymValues);
+      fillSelect($('#fType'), typeValues);
+      fillSelect($('#fModel'), modelValues);
+      fillSelect($('#fDept'), deptValues);
+    }
+
+    function destroyCharts() {
+      [chartYM, chartType, chartModel, chartDept].forEach(ch => {
+        if (ch) ch.destroy();
+      });
+      chartYM = chartType = chartModel = chartDept = undefined;
+    }
+
+    function buildCharts() {
+      const rows = applyFilters(rawRows);
+
+      // 年月
+      const ymCounts = countsBy(rows, r => normalizeYM(r[mapping.ym]));
+      const ymLabels = ymCounts.map(([k]) => k);
+      const ymData = ymCounts.map(([,v]) => v);
+
+      // 種類
+      const typeCounts = countsBy(rows, r => (r[mapping.type]||'').toString().trim());
+      const typeLabels = typeCounts.map(([k]) => k || '（未設定）');
+      const typeData = typeCounts.map(([,v]) => v);
+
+      // 機種
+      const modelCounts = countsBy(rows, r => (r[mapping.model]||'').toString().trim());
+      const modelLabels = modelCounts.map(([k]) => k || '（未設定）');
+      const modelData = modelCounts.map(([,v]) => v);
+
+      // 部署
+      const deptCounts = countsBy(rows, r => (r[mapping.dept]||'').toString().trim());
+      const deptLabels = deptCounts.map(([k]) => k || '（未設定）');
+      const deptData = deptCounts.map(([,v]) => v);
+
+      // 再描画
+      destroyCharts();
+
+      chartYM = new Chart($('#chartYM'), {
+        type: 'bar',
+        data: { labels: ymLabels, datasets: [{ label: '件数', data: ymData }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { maxRotation: 0, autoSkip: true } },
+            y: { beginAtZero: true, precision: 0 }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      chartType = new Chart($('#chartType'), {
+        type: 'bar',
+        data: { labels: typeLabels, datasets: [{ label: '件数', data: typeData }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: typeLabels.length > 6 ? 'y' : 'x',
+          scales: { y: { beginAtZero: true, precision: 0 } },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      chartModel = new Chart($('#chartModel'), {
+        type: 'bar',
+        data: { labels: modelLabels, datasets: [{ label: '件数', data: modelData }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: modelLabels.length > 6 ? 'y' : 'x',
+          scales: { y: { beginAtZero: true, precision: 0 } },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      chartDept = new Chart($('#chartDept'), {
+        type: 'bar',
+        data: { labels: deptLabels, datasets: [{ label: '件数', data: deptData }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: deptLabels.length > 6 ? 'y' : 'x',
+          scales: { y: { beginAtZero: true, precision: 0 } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function applyMappingAndRender() {
+      // フィルタの選択肢再構成 → グラフ再描画
+      refreshFilters();
+      buildCharts();
+      $('#rowCount').textContent = `${rawRows.length.toLocaleString()} 件`;
+    }
+
+    // ======= Load CSV =======
+    async function loadCSV(url) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+        if (parsed.errors?.length) {
+          console.warn('PapaParse errors', parsed.errors);
+        }
+        rawRows = parsed.data;
+        headers = parsed.meta.fields || Object.keys(rawRows[0] || {});
+        renderPreview(rawRows);
+
+        // マッピング初期化
+        mapping = autoMapHeaders(headers);
+        fillSelect($('#colYM'), headers, { withAll: false });
+        fillSelect($('#colType'), headers, { withAll: false });
+        fillSelect($('#colModel'), headers, { withAll: false });
+        fillSelect($('#colDept'), headers, { withAll: false });
+        $('#colYM').value = mapping.ym;
+        $('#colType').value = mapping.type;
+        $('#colModel').value = mapping.model;
+        $('#colDept').value = mapping.dept;
+
+        applyMappingAndRender();
+        $('#lastLoaded').textContent = new Date().toLocaleString();
+      } catch (e) {
+        console.error(e);
       }
     }
-  });
 
-  // Dept TOP 10
-  charts.deptTop = new Chart(document.getElementById('cDeptTop').getContext('2d'), {
-    type:'bar',
-    data:{ labels:deptTop.labels, datasets:[{label:'件数', data:deptTop.data, backgroundColor:palette(deptTop.data.length)}]},
-    options:{
-      indexAxis: idxAxis,
-      maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        title:{display:true, text:`部署別 TOP10（件数）｜${year}年 合計`},
-        datalabels:{anchor:'end', align:orient==='h'?'right':'top', formatter:v=>v}
-      },
-      scales: orient==='h' ? {
-        x:{beginAtZero:true,ticks:{callback:intTick},grid:{color:theme.grid}},
-        y:{grid:{display:false}}
-      } : {
-        y:{beginAtZero:true,ticks:{callback:intTick},grid:{color:theme.grid}},
-        x:{grid:{display:false}}
-      }
-    }
-  });
+    // ======= Events =======
+    $('#applyMapping').addEventListener('click', () => {
+      mapping.ym = $('#colYM').value;
+      mapping.type = $('#colType').value;
+      mapping.model = $('#colModel').value;
+      mapping.dept = $('#colDept').value;
+      applyMappingAndRender();
+    });
 
-  document.getElementById('note').textContent =
-    `レコード: ${filtered.length}（${year}年${month==='ALL'?' 全月':' '+parseInt(month,10)+'月'}）`;
-}
+    $$('#fYM, #fType, #fModel, #fDept').forEach(sel => sel.addEventListener('change', buildCharts));
 
-/** ================== EVENTS ================== */
-document.getElementById('btnRefresh').addEventListener('click', load);
-document.getElementById('btnReset').addEventListener('click', ()=>{
-  const ySel=document.getElementById('selYear');
-  if(ySel.options.length) ySel.value = ySel.options[ySel.options.length-1].value;
-  document.getElementById('selMonth').value="ALL";
-  document.getElementById('selOrient').value="v";
-  render();
-});
-['selYear','selMonth','selOrient'].forEach(id=>{
-  document.getElementById(id).addEventListener('change', render);
-});
-document.getElementById('chkDark').addEventListener('change', e=>{
-  document.documentElement.setAttribute('data-theme', e.target.checked?'dark':'light');
-  render();
-});
+    $('#clearFilters').addEventListener('click', () => {
+      $$('#fYM, #fType, #fModel, #fDept').forEach(sel => sel.value = '');
+      buildCharts();
+    });
 
-/** ================== INIT ================== */
-window.addEventListener('DOMContentLoaded', load);
-</script>
+    // 初期読み込み（固定CSV）
+    window.addEventListener('DOMContentLoaded', () => {
+      loadCSV('https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=1070847733&single=true&output=csv');
+    });
+  </script>
 </body>
 </html>
