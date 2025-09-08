@@ -21,7 +21,7 @@
     <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
       <h1 class="text-xl font-semibold">クレーム可視化</h1>
       <span class="text-sm text-slate-500">（年月・クレーム種類・機種名・部署）</span>
-      <div class="ml-auto flex items-center gap-3 text-xs text-slate-500"><span id="rowCount"></span><span id="lastLoaded"></span></div>
+      <div class="ml-auto flex items-center gap-3 text-xs text-slate-500"><span id="rowCount"></span><span id="lastLoaded"></span><span id="loadStatus" class="text-rose-600"></span></div>
     </div>
   </header>
 
@@ -368,14 +368,46 @@
 
     // ======= Load CSV =======
     async function loadCSV(url) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const text = await res.text();
-        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-        if (parsed.errors?.length) {
-          console.warn('PapaParse errors', parsed.errors);
+      const statusEl = document.getElementById('loadStatus');
+      if (statusEl) statusEl.textContent = '読み込み中…';
+      const urls = [url, `https://cors.isomorphic-git.org/${url}`, `https://corsproxy.io/?${encodeURIComponent(url)}`];
+      let text = null; let lastErr = null;
+      for (const u of urls) {
+        try {
+          const res = await fetch(u);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const t = await res.text();
+          if (!t || !t.trim()) throw new Error('空の応答');
+          text = t; break;
+        } catch (e) {
+          lastErr = e;
+          console.warn('Fetch failed for', u, e);
         }
+      }
+      if (text == null) {
+        console.error('CSV load failed:', lastErr);
+        if (statusEl) statusEl.textContent = '読み込み失敗（CORSの可能性）';
+        return;
+      }
+      try {
+        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+        if (parsed.errors?.length) console.warn('PapaParse errors', parsed.errors);
+        rawRows = parsed.data;
+        headers = parsed.meta.fields || Object.keys(rawRows[0] || {});
+        // マッピング自動検出（UIなし）
+        mapping = autoMapHeaders(headers);
+        renderPreview(rawRows);
+        refreshFilters();
+        buildCharts();
+        if (statusEl) statusEl.textContent = '';
+        const ts = new Date().toLocaleString();
+        const last = document.getElementById('lastLoaded');
+        if (last) last.textContent = ts;
+      } catch (e) {
+        console.error('Parse failed:', e);
+        if (statusEl) statusEl.textContent = 'パース失敗';
+      }
+    }
         rawRows = parsed.data;
         headers = parsed.meta.fields || Object.keys(rawRows[0] || {});
         renderPreview(rawRows);
