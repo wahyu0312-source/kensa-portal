@@ -102,7 +102,7 @@
   <template id="optionTpl"><option></option></template>
 
   <script>
-    // ======= CSV URL & Fallbacks =======
+    // ======= CSV URL & Fallbacks (CORS safe for GitHub Pages) =======
     const DIRECT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=1070847733&single=true&output=csv";
     function buildProxyUrls(url){
       const noProto = url.replace(/^https?:\/\//, "");
@@ -160,10 +160,13 @@
       };
     }
 
+    // === NEW: normalizeYM yang mereduksi ke YYYY-MM apa pun formatnya ===
     function normalizeYM(v) {
       if (v == null) return "";
       let s = String(v).trim();
       if (!s) return "";
+
+      // Pola angka umum
       const ymdMatch = s.match(/^(\d{4})[-\/.](\d{1,2})(?:[-\/.]\d{1,2})?$/);
       if (ymdMatch) {
         const y = ymdMatch[1];
@@ -188,6 +191,16 @@
         const m = ym[2].padStart(2, "0");
         return `${y}-${m}`;
       }
+
+      // Fallback: string tanggal bahasa Inggris seperti
+      // "Friday, July 04, 2025" / "July 4, 2025"
+      const d = new Date(s);
+      if (!Number.isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        return `${y}-${m}`;
+      }
+
       return s;
     }
 
@@ -220,8 +233,8 @@
       }
       for (const v of values) {
         const opt = document.createElement("option");
-        opt.value = v;
-        opt.textContent = v;
+        opt.value = v;            // value tetap YYYY-MM
+        opt.textContent = v;      // label tampil YYYY-MM (bulan–tahun saja)
         sel.appendChild(opt);
       }
     }
@@ -281,7 +294,7 @@
       const f = currentFilters();
       return rows.filter((r) => {
         if (f.ym && normalizeYM(r[mapping.ym]) !== f.ym) return false;
-        if (f.type && r[mapping.type] !== f.type) return false;  // FIXED
+        if (f.type && r[mapping.type] !== f.type) return false;   // <- fixed
         if (f.model && r[mapping.model] !== f.model) return false;
         if (f.dept && r[mapping.dept] !== f.dept) return false;
         return true;
@@ -329,7 +342,6 @@
       const deptLabels = deptCounts.map(([k]) => k || "（未設定）");
       const deptData = deptCounts.map(([, v]) => v);
 
-      // 再描画
       destroyCharts();
 
       const commonOptions = (isHorizontal = false) => ({
