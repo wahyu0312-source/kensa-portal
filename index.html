@@ -25,12 +25,32 @@
   .row{display:flex;justify-content:space-between;align-items:center;gap:16px}
   nav a{margin-left:20px;color:var(--accent);font-weight:700;text-decoration:none}
   nav a:hover{text-decoration:underline}
-  .controls{display:flex;gap:8px;align-items:center}
-  .btn{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+
+  /* ===== Toolbar rapi ===== */
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn, .menu-btn{
+    height:36px;padding:0 12px;border:1px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;line-height:1
+  }
   .btn[disabled]{opacity:.6;cursor:wait}
   .btn.active{border-color:#93c5fd;background:#f0f9ff}
   .small{font-size:12px;color:var(--muted)}
   .muted{color:var(--muted)}
+
+  /* Segmented group */
+  .segmented{
+    display:inline-flex;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff
+  }
+  .segmented .btn{border:0;border-right:1px solid var(--border);border-radius:0;height:36px}
+  .segmented .btn:last-child{border-right:0}
+
+  /* Badge Interval */
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;
+    font-size:12px;font-weight:700;color:#0f172a;background:#f1f5f9;
+    border:1px solid var(--border);border-radius:999px
+  }
+  .badge::before{content:"⏱";font-size:12px}
 
   main{max-width:1200px;margin:28px auto;padding:0 20px}
   .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;overflow:auto}
@@ -45,17 +65,16 @@
   /* Urgent styles */
   tr.row-urgent td{background:var(--urgent-row)!important;color:#b91c1c;font-weight:600}
   td.cell-urgent{background:var(--urgent-cell)!important;color:#fff!important;font-weight:800!important;border-radius:8px}
-
   .flag-urgent{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;background:#dc2626;color:#fff;font-weight:800;font-size:12px;margin-right:8px}
   .flag-urgent::before{content:"⚠";}
 
   /* Status badges */
   .tag{display:inline-flex;align-items:center;padding:2px 10px;border-radius:999px;font-weight:800;font-size:12px;color:#fff;margin-right:8px}
-  .tag-done{background:#0ea5e9}      /* 済 (検査済み/完了/OK/done) */
-  .tag-assem{background:#f59e0b}     /* 組立中 */
-  .tag-assem-done{background:#10b981}/* 組立完了 */
-  .tag-inspect{background:#8b5cf6}   /* 検査中 */
-  .tag-not{background:#94a3b8}       /* 未組立 */
+  .tag-done{background:#0ea5e9}
+  .tag-assem{background:#f59e0b}
+  .tag-assem-done{background:#10b981}
+  .tag-inspect{background:#8b5cf6}
+  .tag-not{background:#94a3b8}
 
   .chip{display:inline-flex;align-items:center;gap:8px;background:#f1f5f9;border:1px solid var(--border);padding:6px 10px;border-radius:999px}
   .chip strong{font-size:12px;color:#0f172a}
@@ -75,16 +94,17 @@
     table{min-width:unset;font-size:12px}
     .card{padding:12px}
     .export-bar{justify-content:flex-start}
+    .controls{width:100%}
+    .menubar{margin-left:auto}
   }
 
   .marquee{position:fixed;left:0;right:0;bottom:20px;background:var(--accent);color:#fff;font-weight:bold;padding:6px 0;white-space:nowrap;overflow:hidden;z-index:20}
   .marquee span{display:inline-block;padding-left:100%;animation:marquee 25s linear infinite}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
-  .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:var(--muted);background:#f1f5f9;padding:4px 0;z-index:21}
+  .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:#muted;background:#f1f5f9;padding:4px 0;z-index:21}
 
   /* --- 管理 dropdown --- */
   .menubar{ position:relative }
-  .menu-btn{ padding:8px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer }
   .menu{
     position:absolute; top:110%; right:0; min-width:220px; background:#fff;
     border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow);
@@ -94,7 +114,7 @@
   .menu .sec{ padding:6px 10px 4px; font-size:12px; color:#6b7280 }
   .menu a, .menu button{
     display:flex; align-items:center; gap:8px; width:100%;
-    padding:9px 10px; border:0; background:transparent; border-radius:8px; text-align:left; color:var(--ink);
+    padding:9px 10px; border:0; background:transparent; border-radius:8px; text-align:left; color:#0f172a;
   }
   .menu a{text-decoration:none}
   .menu a:hover, .menu button:hover{ background:#f1f5f9 }
@@ -113,13 +133,17 @@
       <a href="./forms.html">出荷検査成績書</a>
       <a href="./sagyoutejunsho.html">出荷検査作業手順書</a>
       <a href="./charts.html">出荷検査（グラフ）</a>
-      <a href="./quality.html">品質情報</a><!-- ⬅️ menu baru -->
+      <a href="./quality.html">品質情報</a>
       <a href="./claim.html">品質トライアル</a>
     </nav>
     <div class="controls">
-      <button id="btnRefresh" class="btn" type="button">Refresh now</button>
-      <button id="btnLive" class="btn" type="button">Live: Off</button>
-      <span id="intervalInfo" class="small">Interval: 60s</span>
+      <!-- Segmented: Refresh | Live -->
+      <div class="segmented" role="group" aria-label="Auto refresh controls">
+        <button id="btnRefresh" class="btn" type="button" title="Reload now">Refresh</button>
+        <button id="btnLive" class="btn" type="button" aria-pressed="false" title="Toggle live">Live</button>
+      </div>
+      <!-- Interval badge -->
+      <span id="intervalInfo" class="badge">60s</span>
 
       <!-- ▼ 管理 dropdown -->
       <div class="menubar">
@@ -171,9 +195,7 @@
         <input type="date" id="filterDate">
         <button class="btn" id="btnToday" type="button">本日出荷のみ</button>
         <button class="btn" id="btnClear" type="button">Clear</button>
-        <a class="btn" href="./charts.html" title="Grafik terpisah">グラフ開く</a>
-        <a class="btn" href="./quality.html" title="品質ダッシュボード">品質情報</a><!-- ⬅️ tombol baru -->
-      </div>
+        </div>
     </div>
 
     <div class="export-bar">
@@ -266,39 +288,29 @@
     const raw = S(val);
     const t   = raw.replace(/\s/g,'').toLowerCase();
 
-    // kosong / 未 / clear → 未組立
     if(!t || /(未|clear)/.test(t)) return {label:'未組立', cls:'tag-not'};
-
-    // 検査済み / 済 / 完了 / ok / done → 済
     if(/(検査済み|済|完了|ok|done)/.test(t)) return {label:'済', cls:'tag-done'};
-
-    // 明示状態
     if(/(組立完了)/.test(raw))            return {label:'組立完了', cls:'tag-assem-done'};
     if(/(検査中|検中)/.test(raw))         return {label:'検査中',   cls:'tag-inspect'};
     if(/(組立中|組中)/.test(raw))         return {label:'組立中',   cls:'tag-assem'};
 
-    // fallback keyword
     if(/検/.test(raw))                    return {label:'検査中',   cls:'tag-inspect'};
     if(/組/.test(raw))                    return {label:'組立中',   cls:'tag-assem'};
-
-    return null; // tak dikenal
+    return null;
   }
 
   // ===== Comparator (Urgent → Status → Date desc) =====
   function makeComparator(idx){
     const rank = s => ({ '検査中':1, '組立中':2, '未組立':3, '組立完了':4, '済':5 }[s] ?? 99);
     return (a,b)=>{
-      // Urgent first
       const au=idx.status_flag!=null && isUrgent(valAt(a, idx.status_flag));
       const bu=idx.status_flag!=null && isUrgent(valAt(b, idx.status_flag));
       if(au!==bu) return au?-1:1;
 
-      // By 製品状況 rank
       const sa = idx.status_done!=null ? (getStatusFromValue(valAt(a, idx.status_done))?.label) : null;
       const sb = idx.status_done!=null ? (getStatusFromValue(valAt(b, idx.status_done))?.label) : null;
       if(rank(sa)!==rank(sb)) return rank(sa)-rank(sb);
 
-      // Newer date first
       const da=idx.date!=null ? parseJPDate(valAt(a, idx.date)) : null;
       const db=idx.date!=null ? parseJPDate(valAt(b, idx.date)) : null;
       const ta = da ? da.getTime() : -Infinity;
@@ -317,7 +329,6 @@
 
       const tds = header.map((_,i)=>`<td>${S(r[i])}</td>`);
 
-      // Kolom tanggal (atau kolom pertama jika tidak ada)
       const dateCol = (idx.date!=null ? idx.date : 0);
       const d = idx.date!=null ? parseJPDate(valAt(r, idx.date)) : null;
       const dateText = d ? toInputDate(d) : S(r[dateCol] ?? '');
@@ -403,7 +414,7 @@
         const d = parseJPDate(valAt(r, idx.date));
         return d && sameYMD(d, today);
       })
-      .sort(cmp); // gunakan urutan yang sama
+      .sort(cmp);
 
     const visible = todayRows.length>0;
     document.getElementById('todaySection').style.display = visible ? '' : 'none';
@@ -450,7 +461,8 @@
   function startAutoRefresh(ms){
     intervalMs=ms; clearInterval(timer);
     timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs);
-    document.getElementById('intervalInfo').textContent=`Interval: ${Math.round(intervalMs/1000)}s`;
+    // Badge only shows seconds (no "Interval:")
+    document.getElementById('intervalInfo').textContent = `${Math.round(intervalMs/1000)}s`;
     const liveBtn=document.getElementById('btnLive');
     if(intervalMs<=5000){ liveBtn.classList.add('active'); liveBtn.textContent='Live: On'; }
     else{ liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off'; }
@@ -500,5 +512,3 @@
 </script>
 </body>
 </html>
-
-
