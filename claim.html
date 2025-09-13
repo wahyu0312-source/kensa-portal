@@ -15,36 +15,29 @@
     .sub{color:var(--muted);font-size:12px}
     .grid{display:grid; gap:12px}
     .grid.cols-2{grid-template-columns: 1fr 1fr}
-    .grid.cols-3{grid-template-columns: repeat(3,1fr)}
-    .grid.cols-4{grid-template-columns: repeat(4,1fr)}
     .card{background:var(--card); border:1px solid #1f2937; border-radius:var(--br); padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
     .section-title{font-weight:700;letter-spacing:.3px;margin:0 0 8px}
     label{display:block; font-size:12px; color:var(--muted); margin:8px 0 6px}
-    input[type="text"],input[type="date"],input[type="time"],input[type="number"],input[type="email"],select,textarea{
-      width:100%; padding:10px 12px; border-radius:10px; border:1px solid #283244; background:#0f172a; color:var(--text); outline:none;
+    input[type="text"],input[type="date"],input[type="email"],select,textarea{
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid #283244; background:#0f172a; color:#fff; outline:none;
     }
     textarea{min-height:96px; resize:vertical}
     .row{display:flex; gap:8px; flex-wrap:wrap}
-    .row .grow{flex:1}
-    .hint{color:var(--muted); font-size:12px}
     .actions{display:flex; gap:8px; flex-wrap:wrap}
     button{border:0; padding:10px 14px; border-radius:10px; cursor:pointer; color:#07131a; font-weight:700}
     .btn{background:var(--accent)}
-    .btn-outline{background:transparent; color:var(--text); border:1px solid #334155}
-    .btn-ok{background:var(--ok)}
-    .btn-warn{background:var(--warn)}
-    .btn-bad{background:var(--bad)}
+    .btn-outline{background:transparent; color:#e5e7eb; border:1px solid #334155}
     .pill{padding:6px 10px; border-radius:20px; border:1px solid #334155; color:#9ca3af}
     .tag{display:inline-block; padding:4px 8px; border-radius:999px; background:#0b1422; border:1px solid #243041; font-size:12px; color:#cbd5e1}
-    footer{color:#9ca3af; text-align:center; padding:24px}
-    @media (max-width:900px){
-      .grid.cols-2,.grid.cols-3,.grid.cols-4{grid-template-columns:1fr}
-    }
-    .row[role="tablist"] [data-tab], .row[role="tablist"] [data-mode]{ cursor:pointer }
+    .kpi{display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px}
+    .kpi .card{display:grid; gap:6px}
+    .kpi .big{font-size:28px; font-weight:800}
     .status{font-size:12px; padding:4px 8px; border-radius:999px; display:inline-block}
     .status.open{background:rgba(239,68,68,.15); color:#fecaca; border:1px solid rgba(239,68,68,.35)}
     .status.progress{background:rgba(245,158,11,.15); color:#fde68a; border:1px solid rgba(245,158,11,.35)}
     .status.done{background:rgba(34,197,94,.15); color:#bbf7d0; border:1px solid rgba(34,197,94,.35)}
+    @media (max-width:900px){ .grid.cols-2{grid-template-columns:1fr} }
+    .row[role="tablist"] [data-tab], .row[role="tablist"] [data-mode]{ cursor:pointer }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -55,12 +48,8 @@
         <h1>Portal Laporan <span class="tag">不具合</span> & <span class="tag">対策</span></h1>
         <div class="sub">クレーム報告と対応（phase）を分離し、Apps Script Type A に送信します</div>
       </div>
-      <div class="right row" role="group" aria-label="Utility">
+      <div class="row" role="group" aria-label="Utility">
         <a class="btn-outline" href="./index.html" title="ホーム">← ホーム</a>
-        <button class="btn-outline" id="btnExportCSV">Export CSV</button>
-        <button class="btn-outline" id="btnExportJSON">Export JSON</button>
-        <button class="btn-outline" id="btnImportJSON">Import JSON</button>
-        <input type="file" id="importJSON" accept="application/json" class="sr-only" />
       </div>
     </div>
   </header>
@@ -98,9 +87,12 @@
         <div><label>優先度</label>
           <select name="priority"><option>低</option><option selected>中</option><option>高</option></select>
         </div>
-        <div><label>状況</label>
+
+        <!-- 状況: tampil hanya di 対応 -->
+        <div id="statusField"><label>状況</label>
           <select name="status"><option selected>未</option><option>進行中</option><option>完了</option></select>
         </div>
+
         <div><label>各先クレーム?</label>
           <select name="isClaim"><option value="0">No</option><option value="1">Yes</option></select>
         </div>
@@ -113,40 +105,22 @@
 
         <!-- Penanganan -->
         <div class="grid cols-2 phase-handling" style="grid-column:1/-1; display:none">
-          <div>
-            <label>原因（5Why）</label>
-            <textarea name="rootcause"></textarea>
-          </div>
-          <div>
-            <label>応急処置（Containment）</label>
-            <textarea name="containment"></textarea>
-          </div>
-          <div>
-            <label>恒久対策（Corrective）</label>
-            <textarea name="corrective"></textarea>
-          </div>
-          <div>
-            <label>予防処置（Preventive）</label>
-            <textarea name="preventive"></textarea>
-          </div>
-          <div>
-            <label>PIC（対応者）</label>
-            <input type="text" name="pic" />
-          </div>
-          <div>
-            <label>Due（完了予定）</label>
-            <input type="date" name="due" />
-          </div>
+          <div><label>原因（5Why）</label><textarea name="rootcause"></textarea></div>
+          <div><label>応急処置（Containment）</label><textarea name="containment"></textarea></div>
+          <div><label>恒久対策（Corrective）</label><textarea name="corrective"></textarea></div>
+          <div><label>予防処置（Preventive）</label><textarea name="preventive"></textarea></div>
+          <div><label>PIC（対応者）</label><input type="text" name="pic" /></div>
+          <div><label>Due（完了予定）</label><input type="date" name="due" /></div>
         </div>
 
         <div style="grid-column:1/-1">
           <label>添付（写真・PDF 等）</label>
           <input type="file" name="attachments" id="attachments" multiple />
-          <div class="hint">添付は base64 で Apps Script に送信（ファイル小さめ推奨）。</div>
+          <div class="hint">添付サイズ20MB以下。</div>
         </div>
 
         <div class="actions" style="grid-column:1/-1; margin-top:8px">
-          <button type="submit" class="btn btn-ok">保存</button>
+          <button type="submit" class="btn">保存</button>
           <button type="reset" class="btn-outline">リセット</button>
         </div>
       </form>
@@ -155,7 +129,7 @@
     <!-- Data -->
     <section class="card">
       <h2 class="section-title">データ & サマリー</h2>
-      <div class="hint">上の「各先クレーム」を選ぶと isClaim=Yes、他は No に自動切替。フェーズでシートを分けて保存。</div>
+      <div class="hint">「各先クレーム」を選ぶと isClaim=Yes、他は No。フェーズに応じて別タブへ保存します。</div>
 
       <div class="kpi" style="margin-bottom:6px">
         <div class="card"><div class="muted">Total</div><div id="kpiTotal" class="big">0</div></div>
@@ -164,19 +138,21 @@
         <div class="card"><div class="muted">今月完了</div><div id="kpiDone" class="big">0</div></div>
       </div>
 
-      <div class="row"><input id="search" type="text" placeholder="検索: タイトル・部署・PIC…" /></div>
-
-      <div class="card" style="margin-top:12px">
-        <h3 class="section-title">📝 クレーム報告</h3>
-        <div id="listReport"></div>
+      <div class="row">
+        <input id="search" type="text" placeholder="検索: タイトル・部署・PIC…" />
       </div>
 
-      <div class="card" style="margin-top:12px">
-        <h3 class="section-title">🛠 クレーム対応</h3>
-        <div id="listHandling"></div>
-      </div>
+      <div id="list" style="margin-top:8px"></div>
 
-      <canvas id="chartByType" height="160" style="margin-top:12px"></canvas>
+      <!-- Charts -->
+      <h3 class="section-title" style="margin-top:14px">📊 種別別（報告）</h3>
+      <canvas id="chartByType" height="140"></canvas>
+
+      <h3 class="section-title" style="margin-top:14px">📈 月次トレンド（報告 vs 対応・12ヶ月）</h3>
+      <canvas id="chartMonthly" height="140"></canvas>
+
+      <h3 class="section-title" style="margin-top:14px">🟢 ステータス構成（全件）</h3>
+      <canvas id="chartStatus" height="140"></canvas>
     </section>
   </main>
 
@@ -185,8 +161,7 @@
   <script>
   // ===== Config Type A =====
   const Apps = {
-    sheetUrl: 'https://script.google.com/macros/s/AKfycbxdZvt2CzA59f6AoUXOwmN_IxmTLu8GSFZgcdc1OfoHwrq71A5dLpt2T3X3m2Q5XhNHHQ/exec',
-    // Phase→Sheet tab mapping on server (Code.gs) : report→「クレーム報告」, handling→「クレーム対応」
+    sheetUrl: 'https://script.google.com/macros/s/AKfycbxdZvt2CzA59f6AoUXOwmN_IxmTLu8GSFZgcdc1OfoHwrq71A5dLpt2T3X3m2Q5XhNHHQ/exec'
   };
   const ConfigTypes = { customer:'各先クレーム', internal:'社内クレーム', design:'設計変更', kaizen:'改善', supplier:'協力会社クレーム' };
 
@@ -209,43 +184,31 @@
   // ==== Tabs (Phase) ====
   (function initPhase(){
     const host=document.querySelector('div[role="tablist"][aria-label="Mode Form"]');
+    const statusWrap = document.getElementById('statusField');
+    const statusSel  = statusWrap.querySelector('select');
+
+    function setPhase(mode){
+      $('#phase').value = mode;
+      $$('.phase-report').forEach(el=>el.style.display=(mode==='report')?'':'none');
+      $$('.phase-handling').forEach(el=>el.style.display=(mode==='handling')?'':'none');
+
+      // 状況: sembunyikan & disable di 報告, tampil & enable di 対応
+      const showStatus = (mode==='handling');
+      statusWrap.style.display = showStatus ? '' : 'none';
+      statusSel.disabled = !showStatus;
+      if(!showStatus){ statusSel.value = '未'; } // reset default ketika disembunyikan
+    }
+
     host.addEventListener('click',e=>{
       const b=e.target.closest('[data-mode]'); if(!b) return;
       host.querySelectorAll('[data-mode]').forEach(x=>{x.classList.add('btn-outline');x.classList.remove('btn')});
       b.classList.remove('btn-outline'); b.classList.add('btn');
-      const m=b.dataset.mode; $('#phase').value=m;
-      $$('.phase-report').forEach(el=>el.style.display=(m==='report')?'':'none');
-      $$('.phase-handling').forEach(el=>el.style.display=(m==='handling')?'':'none');
+      setPhase(b.dataset.mode);
     });
+
+    // set default
+    setPhase('report');
   })();
-
-  // ==== Render (very light) ====
-  let chart=null;
-  function render(){
-    const q=$('#search').value.toLowerCase();
-    const arr=state.data.filter(r=>!q || [r.title,r.dept,r.pic,r.reporter].some(v=>String(v||'').toLowerCase().includes(q)));
-    const rep=arr.filter(r=>r.phase==='report'); 
-    const han=arr.filter(r=>r.phase==='handling');
-
-    $('#kpiTotal').textContent = arr.length;
-    $('#kpiOpen').textContent  = arr.filter(x=>x.status==='未').length;
-    $('#kpiProg').textContent  = arr.filter(x=>x.status==='進行中').length;
-    const ym=new Date().toISOString().slice(0,7);
-    $('#kpiDone').textContent  = arr.filter(x=>x.status==='完了' && String(x.date||'').startsWith(ym)).length;
-
-    const row = r => `<div class="card" style="margin:6px 0;padding:10px">
-      <div><strong>${r.title}</strong> <span class="tag">${ConfigTypes[r.type]||r.type}</span> ${r.isClaim?'<span class="tag">CLAIM</span>':''}</div>
-      <div class="muted">${r.date||''} ｜ ${r.dept||''} ｜ ${r.priority||''} ｜ ${r.status||''}</div>
-    </div>`;
-
-    $('#listReport').innerHTML   = rep.map(row).join('') || '<div class="muted">データなし</div>';
-    $('#listHandling').innerHTML = han.map(row).join('') || '<div class="muted">データなし</div>';
-
-    const labels=Object.values(ConfigTypes);
-    const counts=['customer','internal','design','kaizen','supplier'].map(k=>rep.filter(x=>x.type===k).length);
-    if(chart) chart.destroy();
-    chart=new Chart($('#chartByType'),{type:'bar',data:{labels,datasets:[{label:'件数（報告）',data:counts}]},options:{plugins:{legend:{display:false}}}});
-  }
 
   // ==== Send to Apps Script Type A ====
   async function fileToBase64(file){
@@ -266,51 +229,109 @@
     }catch(_){ /* ignore for offline */ }
   }
 
+  // ==== Helpers for charts ====
+  function monthKey(dStr){
+    const d = dStr ? new Date(dStr) : null;
+    if(!d || isNaN(d)) return null;
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; // YYYY-MM
+  }
+  function lastNMonthsLabels(n=12){
+    const a=[]; const now=new Date();
+    for(let i=n-1;i>=0;i--){
+      const d=new Date(now.getFullYear(), now.getMonth()-i, 1);
+      a.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+    }
+    return a;
+  }
+
+  // ==== Render (list & charts) ====
+  let chartType=null, chartMonthly=null, chartStatus=null;
+  function render(){
+    const q=$('#search').value.toLowerCase();
+    const arr=state.data.filter(r=>!q || [r.title,r.dept,r.pic,r.reporter].some(v=>String(v||'').toLowerCase().includes(q)));
+
+    // KPI
+    $('#kpiTotal').textContent = arr.length;
+    $('#kpiOpen').textContent  = arr.filter(x=>x.status==='未').length;
+    $('#kpiProg').textContent  = arr.filter(x=>x.status==='進行中').length;
+    const ymNow=new Date().toISOString().slice(0,7);
+    $('#kpiDone').textContent  = arr.filter(x=>x.status==='完了' && String(x.date||'').startsWith(ymNow)).length;
+
+    // List
+    const list=$('#list'); list.innerHTML='';
+    arr.sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
+    arr.forEach(r=>{
+      const div=document.createElement('div');
+      div.className='card'; div.style.padding='10px';
+      div.innerHTML = `<strong>${r.title}</strong> <span class="tag">${ConfigTypes[r.type]||r.type}</span> ${r.isClaim?'<span class="tag">CLAIM</span>':''}
+      <div class="muted">${r.date||''} ｜ ${r.dept||''} ｜ ${r.priority||''}${r.status?` ｜ ${r.status}`:''}</div>`;
+      list.appendChild(div);
+    });
+
+    // --- Chart 1: By Type (report only)
+    const labelsType=Object.values(ConfigTypes);
+    const countsType=['customer','internal','design','kaizen','supplier'].map(k=> arr.filter(x=>x.type===k && x.phase==='report').length);
+    if(chartType) chartType.destroy();
+    chartType=new Chart($('#chartByType'),{
+      type:'bar',
+      data:{labels:labelsType, datasets:[{label:'件数（報告）', data:countsType}]},
+      options:{plugins:{legend:{display:false}}}
+    });
+
+    // --- Chart 2: Monthly trend (last 12 months, report vs handling)
+    const labelsMonth = lastNMonthsLabels(12);
+    const countsReport  = labelsMonth.map(m => arr.filter(x=> x.phase==='report'   && monthKey(x.date)===m).length);
+    const countsHandling= labelsMonth.map(m => arr.filter(x=> x.phase==='handling' && monthKey(x.date)===m).length);
+    if(chartMonthly) chartMonthly.destroy();
+    chartMonthly=new Chart($('#chartMonthly'),{
+      type:'line',
+      data:{labels:labelsMonth, datasets:[
+        {label:'報告',   data:countsReport,   fill:false, tension:.2},
+        {label:'対応',   data:countsHandling, fill:false, tension:.2}
+      ]},
+      options:{scales:{ y:{ beginAtZero:true } }}
+    });
+
+    // --- Chart 3: Status pie (all phases)
+    const sOpen   = arr.filter(x=>x.status==='未').length;
+    const sProg   = arr.filter(x=>x.status==='進行中').length;
+    const sDone   = arr.filter(x=>x.status==='完了').length;
+    if(chartStatus) chartStatus.destroy();
+    chartStatus=new Chart($('#chartStatus'),{
+      type:'pie',
+      data:{ labels:['未','進行中','完了'], datasets:[{ data:[sOpen,sProg,sDone] }] },
+      options:{}
+    });
+  }
+
   // ==== Form submit ====
   $('#reportForm').addEventListener('submit', async e=>{
     e.preventDefault();
     const fd=new FormData(e.target);
     const rec=Object.fromEntries(fd.entries());
-    // normalisasi JP status jika perlu
+    // normalisasi JP status jika ada nilai EN
     if(rec.status==='Open') rec.status='未';
     if(rec.status==='In Progress') rec.status='進行中';
     if(rec.status==='Done') rec.status='完了';
     rec.isClaim = rec.isClaim==='1';
     rec.id=uid(); rec.createdAt=new Date().toISOString();
 
-    // simpan “local view” (trial)
     state.data.push(rec);
     render();
 
-    // kirim ke Apps Script
     await sendToSheet(rec);
 
     e.target.reset();
-    // default kembali ke 各先 + 報告
     document.querySelector('[data-tab="customer"]').click();
     document.querySelector('[data-mode="report"]').click();
   });
 
-  // ==== Misc ====
+  // ==== Init ====
   document.getElementById('year').textContent=new Date().getFullYear();
-  document.getElementById('btnExportCSV').addEventListener('click', ()=>{
-    if(!state.data.length) return;
-    const cols=Object.keys(state.data[0]); const esc=v=>`"${String(v??'').replaceAll('"','""')}"`;
-    const csv=[cols.map(esc).join(','), ...state.data.map(o=>cols.map(k=>esc(o[k])).join(','))].join('\n');
-    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='reports.csv'; a.click();
-  });
-  document.getElementById('btnExportJSON').addEventListener('click', ()=>{
-    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(state.data,null,2)],{type:'application/json'})); a.download='reports.json'; a.click();
-  });
-  document.getElementById('btnImportJSON').addEventListener('click', ()=> document.getElementById('importJSON').click());
-  document.getElementById('importJSON').addEventListener('change', async e=>{
-    const f=e.target.files?.[0]; if(!f) return; const t=await f.text(); const arr=JSON.parse(t);
-    if(Array.isArray(arr)){ state.data=arr; render(); } e.target.value='';
-  });
-
-  // default tab + phase
+  document.getElementById('search').addEventListener('input', render);
   document.querySelector('[data-tab="customer"]').click();
   document.querySelector('[data-mode="report"]').click();
+  render(); // render awal
   </script>
 </body>
 </html>
