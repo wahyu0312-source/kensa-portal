@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portal Laporan 不具合・対策</title>
+  <style>
+    :root{
+      --bg:#0b0f17; --card:#111827; --muted:#9ca3af; --text:#e5e7eb; --accent:#22d3ee; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+      --br:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font:14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; background:linear-gradient(180deg,#0b0f17,#0b1320 60%,#0b0f17); color:var(--text)}
+    header{position:sticky;top:0;z-index:5;background:rgba(11,15,23,.7);backdrop-filter: blur(8px);border-bottom:1px solid #1f2937}
+    .wrap{max-width:1152px;margin:0 auto;padding:16px}
+    h1{margin:0;font-size:20px;letter-spacing:.2px}
+    .sub{color:var(--muted);font-size:12px}
+    .grid{display:grid; gap:12px}
+    .grid.cols-2{grid-template-columns: 1fr 1fr}
+    .grid.cols-3{grid-template-columns: repeat(3,1fr)}
+    .grid.cols-4{grid-template-columns: repeat(4,1fr)}
+    .card{background:var(--card); border:1px solid #1f2937; border-radius:var(--br); padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .section-title{font-weight:700;letter-spacing:.3px;margin:0 0 8px}
+    label{display:block; font-size:12px; color:var(--muted); margin:8px 0 6px}
+    input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="email"], select, textarea{
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid #283244; background:#0f172a; color:var(--text); outline:none;
+    }
+    textarea{min-height:96px; resize:vertical}
+    .row{display:flex; gap:8px; flex-wrap:wrap}
+    .row .grow{flex:1}
+    .hint{color:var(--muted); font-size:12px}
+    .actions{display:flex; gap:8px; flex-wrap:wrap}
+    button{border:0; padding:10px 14px; border-radius:10px; cursor:pointer; color:#07131a; font-weight:700}
+    .btn{background:var(--accent)}
+    .btn-outline{background:transparent; color:var(--text); border:1px solid #334155}
+    .btn-ok{background:var(--ok)}
+    .btn-warn{background:var(--warn)}
+    .btn-bad{background:var(--bad)}
+    .toolbar{display:flex; gap:8px; align-items:center; justify-content:space-between; margin:8px 0 0}
+    .toolbar .row{align-items:center}
+    .pill{padding:6px 10px; border-radius:20px; border:1px solid #334155; color:var(--muted)}
+    .pill strong{color:var(--text)}
+    .status{font-size:12px; padding:4px 8px; border-radius:999px; display:inline-block}
+    .status.open{background:rgba(239,68,68,.15); color:#fecaca; border:1px solid rgba(239,68,68,.35)}
+    .status.progress{background:rgba(245,158,11,.15); color:#fde68a; border:1px solid rgba(245,158,11,.35)}
+    .status.done{background:rgba(34,197,94,.15); color:#bbf7d0; border:1px solid rgba(34,197,94,.35)}
+    details{border:1px solid #283244; border-radius:12px; overflow:hidden}
+    summary{list-style:none; cursor:pointer; padding:10px 12px; background:#0e1726}
+    summary::-webkit-details-marker{display:none}
+    .meta{display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:8px}
+    .meta div{padding:6px 8px; background:#0b1422; border:1px solid #1f2a3d; border-radius:8px}
+    .meta label{margin:0 0 2px}
+    .files a{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid #2b3a56; border-radius:20px; margin:4px 6px 0 0; color:#cbd5e1; text-decoration:none}
+    .muted{color:var(--muted)}
+    .right{margin-left:auto}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .kpi{display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px}
+    .kpi .card{display:grid; gap:6px}
+    .kpi .big{font-size:28px; font-weight:800}
+    .tag{display:inline-block; padding:4px 8px; border-radius:999px; background:#0b1422; border:1px solid #243041; font-size:12px; color:#cbd5e1}
+    footer{color:var(--muted); text-align:center; padding:24px}
+    @media (max-width:900px){
+      .grid.cols-2,.grid.cols-3,.grid.cols-4{grid-template-columns:1fr}
+      .kpi{grid-template-columns: 1fr 1fr}
+      .meta{grid-template-columns:1fr}
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <div class="wrap row">
+      <div>
+        <h1>Portal Laporan <span class="tag">不具合</span> & <span class="tag">対策</span></h1>
+        <div class="sub">Single‑file portal — sinkron dengan mode Type A (Google Sheets). Data dikirim ke Apps Script + Sheets.</div>
+      </div>
+      <div class="right row" role="group" aria-label="Utility">
+        <button class="btn-outline" id="btnExportCSV">Export CSV</button>
+        <button class="btn-outline" id="btnExportJSON">Export JSON</button>
+        <button class="btn-outline" id="btnImportJSON">Import JSON</button>
+        <input type="file" id="importJSON" accept="application/json" class="sr-only" />
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap grid cols-2" style="margin-top:12px">
+    <!-- Form -->
+    <section class="card">
+      <h2 class="section-title">Form Laporan</h2>
+      <div class="row" role="tablist">
+        <button type="button" class="btn pill" data-tab="customer">各先クレーム</button>
+        <button type="button" class="btn-outline pill" data-tab="internal">社内クレーム</button>
+        <button type="button" class="btn-outline pill" data-tab="design">設計変更</button>
+        <button type="button" class="btn-outline pill" data-tab="kaizen">改善</button>
+        <button type="button" class="btn-outline pill" data-tab="supplier">協力会社クレーム</button>
+      </div>
+      <form id="reportForm" class="grid cols-2">
+        <input type="hidden" name="type" id="type" value="customer" />
+        <div><label>Judul</label><input type="text" name="title" required /></div>
+        <div><label>Tanggal</label><input type="date" name="date" required /></div>
+        <div><label>Pelapor</label><input type="text" name="reporter" required /></div>
+        <div><label>Email</label><input type="email" name="email" /></div>
+        <div><label>Dept</label><input type="text" name="dept" /></div>
+        <div><label>Kategori</label><input type="text" name="category" /></div>
+        <div><label>Prioritas</label><select name="priority"><option>Low</option><option selected>Medium</option><option>High</option></select></div>
+        <div><label>Status</label><select name="status"><option>Open</option><option>In Progress</option><option>Done</option></select></div>
+        <div><label>Customer Claim?</label><select name="isClaim"><option value="0">No</option><option value="1">Yes</option></select></div>
+        <div style="grid-column:1/-1"><label>Deskripsi</label><textarea name="problem"></textarea></div>
+        <div class="actions" style="grid-column:1/-1"><button type="submit" class="btn btn-ok">Simpan</button></div>
+      </form>
+    </section>
+
+    <!-- Data -->
+    <section class="card">
+      <h2 class="section-title">Data & Ringkasan</h2>
+      <div class="kpi"><div class="card"><div class="muted">Total</div><div id="kpiTotal" class="big">0</div></div></div>
+      <div id="list"></div>
+      <canvas id="chartByType" height="160"></canvas>
+    </section>
+  </main>
+
+  <footer>© <span id="year"></span> To‑Hatsu</footer>
+
+  <script>
+  const Config = {
+    mode:'sheet',
+    sheetUrl:'https://script.google.com/macros/s/AKfycbxdZvt2CzA59f6AoUXOwmN_IxmTLu8GSFZgcdc1OfoHwrq71A5dLpt2T3X3m2Q5XhNHHQ/exec',
+    types:{customer:'各先クレーム',internal:'社内クレーム',design:'設計変更',kaizen:'改善',supplier:'協力会社クレーム'}
+  };
+
+  const state={data:[],filtered:[]};
+  const $=s=>document.querySelector(s);
+
+  function uid(){return 'R'+Math.random().toString(36).slice(2,7).toUpperCase()+'-'+Date.now().toString(36).toUpperCase();}
+
+  function render(){
+    $('#kpiTotal').textContent=state.filtered.length;
+    const list=$('#list');list.innerHTML='';
+    state.filtered.forEach(r=>{const div=document.createElement('div');div.textContent=`${r.id} ${r.title}`;list.appendChild(div)});
+    const ctx=$('#chartByType');
+    new Chart(ctx,{type:'bar',data:{labels:Object.values(Config.types),datasets:[{data:Object.keys(Config.types).map(k=>state.filtered.filter(x=>x.type===k).length)}]}});
+  }
+
+  async function sendToSheet(rec){
+    await fetch(Config.sheetUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(rec)});
+  }
+
+  $('#reportForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const fd=new FormData(e.target);const rec=Object.fromEntries(fd.entries());
+    rec.id=uid();rec.createdAt=new Date().toISOString();rec.isClaim=rec.isClaim==='1';
+    state.data.push(rec);state.filtered=state.data;render();
+    await sendToSheet(rec);
+    e.target.reset();
+  });
+
+  document.getElementById('year').textContent=new Date().getFullYear();
+  </script>
+</body>
+</html>
