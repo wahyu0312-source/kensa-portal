@@ -65,6 +65,9 @@
       .kpi{grid-template-columns: 1fr 1fr}
       .meta{grid-template-columns:1fr}
     }
+
+    /* tambahan: tab bisa diklik */
+    .row[role="tablist"] [data-tab]{ cursor:pointer }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -73,7 +76,7 @@
     <div class="wrap row">
       <div>
         <h1>Portal Laporan <span class="tag">不具合</span> & <span class="tag">対策</span></h1>
-        <div class="sub">Single‑file portal — sinkron dengan mode Type A (Google Sheets). Data dikirim ke Apps Script + Sheets.</div>
+        <div class="sub">Single-file portal — sinkron dengan mode Type A (Google Sheets). Data dikirim ke Apps Script + Sheets.</div>
       </div>
       <div class="right row" role="group" aria-label="Utility">
         <a class="btn-outline" href="./index.html" title="戻る">← 戻る</a>
@@ -83,21 +86,20 @@
         <input type="file" id="importJSON" accept="application/json" class="sr-only" />
       </div>
     </div>
-    
   </header>
 
   <main class="wrap grid cols-2" style="margin-top:12px">
     <!-- Form -->
     <section class="card">
       <h2 class="section-title">Form Laporan</h2>
-      <div class="row" role="tablist">
+      <div class="row" role="tablist" aria-label="Jenis Form">
         <button type="button" class="btn pill" data-tab="customer">各先クレーム</button>
         <button type="button" class="btn-outline pill" data-tab="internal">社内クレーム</button>
         <button type="button" class="btn-outline pill" data-tab="design">設計変更</button>
         <button type="button" class="btn-outline pill" data-tab="kaizen">改善</button>
         <button type="button" class="btn-outline pill" data-tab="supplier">協力会社クレーム</button>
       </div>
-      <form id="reportForm" class="grid cols-2">
+      <form id="reportForm" class="grid cols-2" autocomplete="off">
         <input type="hidden" name="type" id="type" value="customer" />
         <div><label>Judul</label><input type="text" name="title" required /></div>
         <div><label>Tanggal</label><input type="date" name="date" required /></div>
@@ -105,9 +107,15 @@
         <div><label>Email</label><input type="email" name="email" /></div>
         <div><label>Dept</label><input type="text" name="dept" /></div>
         <div><label>Kategori</label><input type="text" name="category" /></div>
-        <div><label>Prioritas</label><select name="priority"><option>Low</option><option selected>Medium</option><option>High</option></select></div>
-        <div><label>Status</label><select name="status"><option>Open</option><option>In Progress</option><option>Done</option></select></div>
-        <div><label>Customer Claim?</label><select name="isClaim"><option value="0">No</option><option value="1">Yes</option></select></div>
+        <div><label>Prioritas</label>
+          <select name="priority"><option>Low</option><option selected>Medium</option><option>High</option></select>
+        </div>
+        <div><label>Status</label>
+          <select name="status"><option selected>Open</option><option>In Progress</option><option>Done</option></select>
+        </div>
+        <div><label>Customer Claim?</label>
+          <select name="isClaim"><option value="0">No</option><option value="1">Yes</option></select>
+        </div>
         <div style="grid-column:1/-1"><label>Deskripsi</label><textarea name="problem"></textarea></div>
         <div class="actions" style="grid-column:1/-1"><button type="submit" class="btn btn-ok">Simpan</button></div>
       </form>
@@ -116,13 +124,15 @@
     <!-- Data -->
     <section class="card">
       <h2 class="section-title">Data & Ringkasan</h2>
-      <div class="kpi"><div class="card"><div class="muted">Total</div><div id="kpiTotal" class="big">0</div></div></div>
-      <div id="list"></div>
-      <canvas id="chartByType" height="160"></canvas>
+      <div class="kpi">
+        <div class="card"><div class="muted">Total</div><div id="kpiTotal" class="big">0</div></div>
+      </div>
+      <div id="list" style="margin-top:8px"></div>
+      <canvas id="chartByType" height="160" style="margin-top:12px"></canvas>
     </section>
   </main>
 
-  <footer>© <span id="year"></span> To‑Hatsu</footer>
+  <footer>© <span id="year"></span> To-Hatsu</footer>
 
   <script>
   const Config = {
@@ -136,25 +146,96 @@
 
   function uid(){return 'R'+Math.random().toString(36).slice(2,7).toUpperCase()+'-'+Date.now().toString(36).toUpperCase();}
 
+  // --- Delegasi klik tab (robust) ---
+  (function initTabs(){
+    const tablist = document.querySelector('div[role="tablist"]');
+    if(!tablist) return;
+
+    tablist.addEventListener('click', (e)=>{
+      const btn = e.target.closest('[data-tab]');
+      if(!btn) return;
+
+      const t = btn.dataset.tab; // customer/internal/design/kaizen/supplier
+      document.getElementById('type').value = t;
+
+      // toggle gaya aktif/non-aktif
+      tablist.querySelectorAll('[data-tab]').forEach(b=>{
+        b.classList.add('btn-outline');
+        b.classList.remove('btn');
+      });
+      btn.classList.remove('btn-outline');
+      btn.classList.add('btn');
+
+      // auto-claim: Yes untuk customer, selain itu No
+      const claimSel = document.querySelector('[name="isClaim"]');
+      if(claimSel) claimSel.value = (t==='customer') ? '1' : '0';
+    }, false);
+
+    // akses keyboard (Enter/Space)
+    tablist.addEventListener('keydown',(e)=>{
+      if(e.key!=='Enter' && e.key!==' ') return;
+      const btn = e.target.closest('[data-tab]');
+      if(btn){ btn.click(); e.preventDefault(); }
+    });
+  })();
+
+  // --- Render list + KPI + chart (destroy instance lama)
+  let chartByType = null;
   function render(){
-    $('#kpiTotal').textContent=state.filtered.length;
-    const list=$('#list');list.innerHTML='';
-    state.filtered.forEach(r=>{const div=document.createElement('div');div.textContent=`${r.id} ${r.title}`;list.appendChild(div)});
+    // KPI
+    document.getElementById('kpiTotal').textContent = state.filtered.length;
+
+    // List sederhana
+    const list=$('#list'); list.innerHTML='';
+    state.filtered.forEach(r=>{
+      const div=document.createElement('div');
+      div.className='card';
+      div.style.padding='10px';
+      div.textContent=`${r.id} • [${Config.types[r.type]||r.type}] ${r.title}`;
+      list.appendChild(div);
+    });
+
+    // Chart
     const ctx=$('#chartByType');
-    new Chart(ctx,{type:'bar',data:{labels:Object.values(Config.types),datasets:[{data:Object.keys(Config.types).map(k=>state.filtered.filter(x=>x.type===k).length)}]}});
+    const labels = Object.values(Config.types);
+    const counts = Object.keys(Config.types).map(k=> state.filtered.filter(x=>x.type===k).length);
+
+    if(chartByType){ chartByType.destroy(); }
+    chartByType = new Chart(ctx,{
+      type:'bar',
+      data:{ labels, datasets:[{ label:'Count', data:counts }] },
+      options:{ responsive:true, plugins:{ legend:{ display:false } } }
+    });
   }
 
   async function sendToSheet(rec){
-    await fetch(Config.sheetUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(rec)});
+    try{
+      const res = await fetch(Config.sheetUrl,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(rec)
+      });
+      // fallback diam-diam jika CORS
+      if(!res.ok){ await fetch(Config.sheetUrl,{ method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(rec)}); }
+    }catch(_){ /* ignore */ }
   }
 
-  $('#reportForm').addEventListener('submit',async e=>{
+  document.getElementById('reportForm').addEventListener('submit',async e=>{
     e.preventDefault();
-    const fd=new FormData(e.target);const rec=Object.fromEntries(fd.entries());
-    rec.id=uid();rec.createdAt=new Date().toISOString();rec.isClaim=rec.isClaim==='1';
-    state.data.push(rec);state.filtered=state.data;render();
+    const fd=new FormData(e.target);
+    const rec=Object.fromEntries(fd.entries());
+    rec.id=uid();
+    rec.createdAt=new Date().toISOString();
+    rec.isClaim = (rec.isClaim === '1');
+
+    state.data.push(rec);
+    state.filtered = state.data.slice();
+    render();
+
     await sendToSheet(rec);
     e.target.reset();
+    // setelah reset, set kembali tab default (customer)
+    document.querySelector('div[role="tablist"] [data-tab="customer"]').click();
   });
 
   document.getElementById('year').textContent=new Date().getFullYear();
