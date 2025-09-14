@@ -1,337 +1,492 @@
-<!DOCTYPE html> 
-<html lang="jp">
+<!doctype html>
+<html lang="ja" data-theme="light">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>不具合・対策</title>
-  <style>
-    :root{ --bg:#0b0f17; --card:#111827; --muted:#9ca3af; --text:#e5e7eb; --accent:#22d3ee; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --br:16px; }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0; font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"; background:linear-gradient(180deg,#0b0f17,#0b1320 60%,#0b0f17); color:var(--text)}
-    header{position:sticky;top:0;z-index:5;background:rgba(11,15,23,.7);backdrop-filter: blur(8px);border-bottom:1px solid #1f2937}
-    .wrap{max-width:1152px;margin:0 auto;padding:16px}
-    h1{margin:0;font-size:20px;letter-spacing:.2px}
-    .sub{color:var(--muted);font-size:12px}
-    .grid{display:grid; gap:12px}
-    .grid.cols-2{grid-template-columns: 1fr 1fr}
-    .card{background:var(--card); border:1px solid #1f2937; border-radius:var(--br); padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    .section-title{font-weight:700;letter-spacing:.3px;margin:0 0 8px}
-    label{display:block; font-size:12px; color:var(--muted); margin:8px 0 6px}
-    input[type="text"],input[type="date"],input[type="email"],select,textarea{
-      width:100%; padding:10px 12px; border-radius:10px; border:1px solid #283244; background:#0f172a; color:#fff; outline:none;
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>不具合・対策（クレームポータル）</title>
+
+<style>
+  :root{
+    --bg1:#eef2ff; --bg2:#f8fafc;
+    --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
+    --accent:#2563eb; --accent-2:#22d3ee;
+    --ok:#16a34a; --warn:#f59e0b; --bad:#ef4444;
+    --radius-xl:22px; --radius:12px;
+    --shadow-1:0 12px 30px rgba(15,23,42,.08); --shadow-2:0 30px 60px rgba(15,23,42,.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg1:#0b1220; --bg2:#0b1220;
+      --panel:#0f172a; --ink:#e5e7eb; --muted:#94a3b8; --border:#1f2937;
+      --accent:#60a5fa; --shadow-1:none; --shadow-2:none;
     }
-    textarea{min-height:96px; resize:vertical}
-    .row{display:flex; gap:8px; flex-wrap:wrap}
-    .actions{display:flex; gap:8px; flex-wrap:wrap}
-    button{border:0; padding:10px 14px; border-radius:10px; cursor:pointer; color:#07131a; font-weight:700}
-    .btn{background:var(--accent)}
-    .btn-outline{background:transparent; color:#e5e7eb; border:1px solid #334155}
-    .pill{padding:6px 10px; border-radius:20px; border:1px solid #334155; color:#9ca3af}
-    .tag{display:inline-block; padding:4px 8px; border-radius:999px; background:#0b1422; border:1px solid #243041; font-size:12px; color:#cbd5e1}
-    .kpi{display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px}
-    .kpi .card{display:grid; gap:6px}
-    .kpi .big{font-size:28px; font-weight:800}
-    .status{font-size:12px; padding:4px 8px; border-radius:999px; display:inline-block}
-    .status.open{background:rgba(239,68,68,.15); color:#fecaca; border:1px solid rgba(239,68,68,.35)}
-    .status.progress{background:rgba(245,158,11,.15); color:#fde68a; border:1px solid rgba(245,158,11,.35)}
-    .status.done{background:rgba(34,197,94,.15); color:#bbf7d0; border:1px solid rgba(34,197,94,.35)}
-    @media (max-width:900px){ .grid.cols-2{grid-template-columns:1fr} }
-    .row[role="tablist"] [data-tab], .row[role="tablist"] [data-mode]{ cursor:pointer }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
+    background:
+      radial-gradient(1100px 540px at -12% -12%, #c7d2fe33 0%, transparent 60%),
+      radial-gradient(820px 460px at 112% -6%, #bae6fd33 0%, transparent 55%),
+      linear-gradient(120deg,var(--bg1),var(--bg2));
+    padding-bottom:56px;
+  }
+
+  /* ===== Header/Nav ===== */
+  header{position:sticky;top:0;z-index:50;background:#ffffffcc;backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  @media (prefers-color-scheme: dark){ header{background:#0f172acc} }
+  .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{height:36px}
+  nav a{margin-left:14px;color:var(--accent);font-weight:700;text-decoration:none}
+  nav a:hover{text-decoration:underline}
+
+  /* ===== Layout ===== */
+  main{max-width:1200px;margin:20px auto;padding:0 20px}
+  .grid{display:grid;gap:16px;grid-template-columns:1fr 1fr}
+  @media (max-width:960px){ .grid{grid-template-columns:1fr} }
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-xl);box-shadow:var(--shadow-2);padding:18px}
+  .section-title{margin:0 0 10px 0}
+
+  /* ===== Controls ===== */
+  .pill{display:inline-flex;gap:8px;align-items:center;height:32px;padding:0 12px;border-radius:9999px;border:1px solid var(--border);background:var(--panel);color:var(--ink);cursor:pointer}
+  .pill.active{border-color:#93c5fd;background:#f0f9ff}
+  @media (prefers-color-scheme: dark){ .pill.active{background:#0b3b6f66} }
+  .group{display:flex;gap:8px;flex-wrap:wrap}
+
+  label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:6px 0 6px}
+  input[type="text"],input[type="date"],input[type="email"],select,textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--panel);color:var(--ink);outline:none
+  }
+  textarea{min-height:96px;resize:vertical}
+  .hint{font-size:12px;color:var(--muted)}
+
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--border);background:var(--panel);cursor:pointer}
+  .btn.primary{background:var(--accent);color:#fff;border-color:#1e4fdc}
+  .btn.ghost{background:#f1f5f9}
+  @media (prefers-color-scheme: dark){ .btn.ghost{background:#0b1624} }
+
+  /* ===== Tag/Status ===== */
+  .tag{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;background:#0ea5e91a;color:var(--ink);border:1px solid var(--border);font-size:12px}
+  .status{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);display:inline-block}
+  .status.open{background:rgba(239,68,68,.1);color:#b91c1c}
+  .status.prog{background:rgba(245,158,11,.1);color:#b45309}
+  .status.done{background:rgba(34,197,94,.12);color:#15803d}
+
+  /* ===== KPI ===== */
+  .kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+  @media (max-width:600px){ .kpi{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  .kpi .box{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:var(--shadow-1)}
+  .kpi .big{font-size:26px;font-weight:800}
+
+  /* ===== List ===== */
+  .list .item{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:10px 12px;box-shadow:var(--shadow-1)}
+  .list .item + .item{margin-top:8px}
+  .sub{color:var(--muted);font-size:12px}
+
+  /* ===== Toast ===== */
+  .toast{position:fixed;right:18px;bottom:18px;z-index:60;display:flex;flex-direction:column;gap:10px}
+  .toast .t{background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-1);padding:10px 12px;font-size:14px}
+  .t.ok{border-color:#bbf7d0}
+  .t.err{border-color:#fecaca}
+
+  .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:var(--muted);background:#f1f5f9;padding:4px 0;z-index:21}
+  @media (prefers-color-scheme: dark){ .footer{background:#0b1220} }
+</style>
 </head>
 <body>
-  <header>
-    <div class="wrap row">
-      <div>
-        <h1>Portal Laporan <span class="tag">不具合</span> & <span class="tag">対策</span></h1>
-        <div class="sub">クレーム報告と対応（phase）を分離し、Apps Script Type A に送信します</div>
-      </div>
-      <div class="row" role="group" aria-label="Utility">
-        <a class="btn-outline" href="./index.html" title="ホーム">← ホーム</a>
-      </div>
+<header>
+  <div class="wrap row">
+    <div class="brand">
+      <img src="tsh.png" alt="TSH">
+      <strong>品質管理生産技術</strong>
     </div>
-  </header>
+    <nav>
+      <a href="./index.html">ホーム</a>
+      <a href="./forms.html">出荷検査成績書</a>
+      <a href="./sagyoutejunsho.html">作業手順書</a>
+      <a href="./charts.html">チャート</a>
+      <a href="./quality.html">品質情報</a>
+      <a href="./claim.html"><strong>不具合・対策</strong></a>
+    </nav>
+  </div>
+</header>
 
-  <main class="wrap grid cols-2" style="margin-top:12px">
-    <!-- Form -->
+<main class="wrap">
+  <div class="grid">
+    <!-- ===== Form ===== -->
     <section class="card">
       <h2 class="section-title">品質フォーム</h2>
 
       <!-- Jenis -->
-      <div class="row" role="tablist" aria-label="Jenis Form">
-        <button type="button" class="btn pill" data-tab="customer">各先クレーム</button>
-        <button type="button" class="btn-outline pill" data-tab="internal">社内クレーム</button>
-        <button type="button" class="btn-outline pill" data-tab="design">設計変更</button>
-        <button type="button" class="btn-outline pill" data-tab="kaizen">改善</button>
-        <button type="button" class="btn-outline pill" data-tab="supplier">協力会社クレーム</button>
+      <div class="group" role="tablist" aria-label="Jenis Form">
+        <button type="button" class="pill active" data-tab="customer">各先クレーム</button>
+        <button type="button" class="pill" data-tab="internal">社内クレーム</button>
+        <button type="button" class="pill" data-tab="design">設計変更</button>
+        <button type="button" class="pill" data-tab="kaizen">改善</button>
+        <button type="button" class="pill" data-tab="supplier">協力会社クレーム</button>
       </div>
 
       <!-- Phase -->
-      <div class="row" role="tablist" aria-label="Mode Form" style="margin-top:6px">
-        <button type="button" class="btn pill" data-mode="report">📝 クレーム報告</button>
-        <button type="button" class="btn-outline pill" data-mode="handling">🛠 クレーム対応</button>
+      <div class="group" role="tablist" aria-label="Mode Form" style="margin-top:6px">
+        <button type="button" class="pill active" data-mode="report">📝 クレーム報告</button>
+        <button type="button" class="pill" data-mode="handling">🛠 クレーム対応</button>
       </div>
 
-      <form id="reportForm" class="grid cols-2" autocomplete="off">
-        <input type="hidden" name="type" id="type" value="customer" />
-        <input type="hidden" name="phase" id="phase" value="report" />
+      <form id="reportForm" class="grid" style="grid-template-columns:1fr 1fr" autocomplete="off">
+        <input type="hidden" name="type" id="type" value="customer">
+        <input type="hidden" name="phase" id="phase" value="report">
 
-        <div><label>タイトル</label><input type="text" name="title" required /></div>
-        <div><label>日付</label><input type="date" name="date" required /></div>
-        <div><label>報告者</label><input type="text" name="reporter" required /></div>
-        <div><label>Email</label><input type="email" name="email" /></div>
-        <div><label>部署</label><input type="text" name="dept" /></div>
-        <div><label>カテゴリ</label><input type="text" name="category" /></div>
+        <div><label>タイトル</label><input name="title" type="text" required placeholder="例：MU6300 X軸 ﾌﾟﾛﾃｸﾀｰ干渉"/></div>
+        <div><label>日付</label><input name="date" type="date" required /></div>
+        <div><label>報告者</label><input name="reporter" type="text" required /></div>
+        <div><label>Email</label><input name="email" type="email" placeholder="name@example.com"/></div>
+        <div><label>部署</label><input name="dept" type="text" placeholder="品質／生産技術 など" /></div>
+        <div><label>カテゴリ</label><input name="category" type="text" placeholder="外観／寸法／工程…"/></div>
         <div><label>優先度</label>
-          <select name="priority"><option>低</option><option selected>中</option><option>高</option></select>
+          <select name="priority">
+            <option>低</option><option selected>中</option><option>高</option>
+          </select>
         </div>
 
-        <!-- 状況: tampil hanya di 対応 -->
-        <div id="statusField"><label>状況</label>
-          <select name="status"><option selected>未</option><option>進行中</option><option>完了</option></select>
+        <!-- 状況は「対応」フェーズのみ -->
+        <div id="statusField">
+          <label>状況</label>
+          <select name="status">
+            <option selected>未</option><option>進行中</option><option>完了</option>
+          </select>
         </div>
 
-        <div><label>各先クレーム?</label>
-          <select name="isClaim"><option value="0">No</option><option value="1">Yes</option></select>
+        <div>
+          <label>各先クレーム?</label>
+          <select name="isClaim"><option value="0">No</option><option value="1" selected>Yes</option></select>
         </div>
 
-        <!-- Laporan -->
+        <!-- 報告 -->
         <div class="phase-report" style="grid-column:1/-1">
           <label>不具合内容（報告）</label>
           <textarea name="problem" placeholder="現象、規格、基準、発生条件など"></textarea>
         </div>
 
-        <!-- Penanganan -->
-        <div class="grid cols-2 phase-handling" style="grid-column:1/-1; display:none">
+        <!-- 対応 -->
+        <div class="grid phase-handling" style="grid-template-columns:1fr 1fr;grid-column:1/-1;display:none">
           <div><label>原因（5Why）</label><textarea name="rootcause"></textarea></div>
           <div><label>応急処置（Containment）</label><textarea name="containment"></textarea></div>
           <div><label>恒久対策（Corrective）</label><textarea name="corrective"></textarea></div>
           <div><label>予防処置（Preventive）</label><textarea name="preventive"></textarea></div>
-          <div><label>PIC（対応者）</label><input type="text" name="pic" /></div>
-          <div><label>Due（完了予定）</label><input type="date" name="due" /></div>
+          <div><label>PIC（対応者）</label><input name="pic" type="text" /></div>
+          <div><label>Due（完了予定）</label><input name="due" type="date" /></div>
         </div>
 
         <div style="grid-column:1/-1">
           <label>添付（写真・PDF 等）</label>
-          <input type="file" name="attachments" id="attachments" multiple />
-          <div class="hint">添付サイズ20MB以下。</div>
+          <input id="attachments" name="attachments" type="file" multiple />
+          <div class="hint">合計 20MB／最大 10 ファイルまで。</div>
+          <div id="attachInfo" class="hint"></div>
         </div>
 
-        <div class="actions" style="grid-column:1/-1; margin-top:8px">
-          <button type="submit" class="btn">保存</button>
-          <button type="reset" class="btn-outline">リセット</button>
+        <div class="actions" style="grid-column:1/-1;margin-top:4px">
+          <button type="submit" class="btn primary">保存</button>
+          <button type="reset" class="btn">リセット</button>
+          <button type="button" id="btnClearDraft" class="btn ghost" title="一時保存を削除">一時保存クリア</button>
+          <span id="draftNote" class="hint" style="margin-left:auto"></span>
         </div>
       </form>
     </section>
 
-    <!-- Data -->
+    <!-- ===== Data & Summary ===== -->
     <section class="card">
       <h2 class="section-title">データ & サマリー</h2>
-      <div class="hint">「各先クレーム」を選ぶと isClaim=Yes、他は No。フェーズに応じて別タブへ保存します。</div>
+      <div class="hint">「各先クレーム」＝ isClaim: Yes。他は No。フェーズごとに別集計します。</div>
 
-      <div class="kpi" style="margin-bottom:6px">
-        <div class="card"><div class="muted">Total</div><div id="kpiTotal" class="big">0</div></div>
-        <div class="card"><div class="muted">Open</div><div id="kpiOpen" class="big">0</div></div>
-        <div class="card"><div class="muted">進行中</div><div id="kpiProg" class="big">0</div></div>
-        <div class="card"><div class="muted">今月完了</div><div id="kpiDone" class="big">0</div></div>
+      <div class="kpi" style="margin:8px 0">
+        <div class="box"><div class="sub">Total</div><div id="kpiTotal" class="big">0</div></div>
+        <div class="box"><div class="sub">Open</div><div id="kpiOpen" class="big">0</div></div>
+        <div class="box"><div class="sub">進行中</div><div id="kpiProg" class="big">0</div></div>
+        <div class="box"><div class="sub">今月完了</div><div id="kpiDone" class="big">0</div></div>
       </div>
 
-      <div class="row">
-        <input id="search" type="text" placeholder="検索: タイトル・部署・PIC…" />
+      <div class="row" style="margin:6px 0">
+        <input id="search" type="text" placeholder="検索: タイトル・部署・PIC…">
+        <button id="btnExport" class="btn" title="CSVにエクスポート">Export CSV</button>
       </div>
 
-      <div id="list" style="margin-top:8px"></div>
+      <div id="list" class="list" style="margin-top:8px"></div>
 
       <!-- Charts -->
       <h3 class="section-title" style="margin-top:14px">📊 種別別（報告）</h3>
-      <canvas id="chartByType" height="140"></canvas>
+      <canvas id="chartByType" height="140" aria-label="種別別（報告）"></canvas>
 
       <h3 class="section-title" style="margin-top:14px">📈 月次トレンド（報告 vs 対応・12ヶ月）</h3>
-      <canvas id="chartMonthly" height="140"></canvas>
+      <canvas id="chartMonthly" height="140" aria-label="月次トレンド"></canvas>
 
       <h3 class="section-title" style="margin-top:14px">🟢 ステータス構成（全件）</h3>
-      <canvas id="chartStatus" height="140"></canvas>
+      <canvas id="chartStatus" height="140" aria-label="ステータス構成"></canvas>
     </section>
-  </main>
+  </div>
+</main>
 
-  <footer>© <span id="year"></span> To-Hatsu</footer>
+<div class="toast" id="toast"></div>
+<div class="footer">Design by Wahyu</div>
 
-  <script>
-  // ===== Config Type A =====
-  const Apps = {
-    sheetUrl: 'https://script.google.com/macros/s/AKfycbxdZvt2CzA59f6AoUXOwmN_IxmTLu8GSFZgcdc1OfoHwrq71A5dLpt2T3X3m2Q5XhNHHQ/exec'
-  };
-  const ConfigTypes = { customer:'各先クレーム', internal:'社内クレーム', design:'設計変更', kaizen:'改善', supplier:'協力会社クレーム' };
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+/* ===== Config (Apps Script Type A) ===== */
+const Apps = { sheetUrl: 'https://script.google.com/macros/s/AKfycbxdZvt2CzA59f6AoUXOwmN_IxmTLu8GSFZgcdc1OfoHwrq71A5dLpt2T3X3m2Q5XhNHHQ/exec' };
+const ConfigTypes = { customer:'各先クレーム', internal:'社内クレーム', design:'設計変更', kaizen:'改善', supplier:'協力会社クレーム' };
 
-  // ===== State =====
-  const state={data:[]}; const $=s=>document.querySelector(s); const $$=s=>Array.from(document.querySelectorAll(s));
-  function uid(){return 'R'+Math.random().toString(36).slice(2,7).toUpperCase()+'-'+Date.now().toString(36).toUpperCase();}
+/* ===== State / Utils ===== */
+const $ = (s)=>document.querySelector(s);
+const $$= (s)=>Array.from(document.querySelectorAll(s));
+const state = { data:[] };
+function uid(){return 'R'+Math.random().toString(36).slice(2,7).toUpperCase()+'-'+Date.now().toString(36).toUpperCase();}
+function monthKey(dStr){ const d = dStr? new Date(dStr):null; if(!d||isNaN(d)) return null; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+function lastNMonthsLabels(n=12){ const a=[], now=new Date(); for(let i=n-1;i>=0;i--){const d=new Date(now.getFullYear(), now.getMonth()-i, 1); a.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);} return a; }
+function toast(msg,type='ok'){ const t=document.createElement('div'); t.className='t '+type; t.textContent=msg; $('#toast').appendChild(t); setTimeout(()=>t.remove(),3000); }
 
-  // ==== Tabs (Jenis) ====
-  (function initJenis(){
-    const host=document.querySelector('div[role="tablist"][aria-label="Jenis Form"]');
-    host.addEventListener('click',e=>{
-      const b=e.target.closest('[data-tab]'); if(!b) return;
-      host.querySelectorAll('[data-tab]').forEach(x=>{x.classList.add('btn-outline');x.classList.remove('btn')});
-      b.classList.remove('btn-outline'); b.classList.add('btn');
-      const t=b.dataset.tab; $('#type').value=t;
-      const claimSel=$('[name="isClaim"]'); if(claimSel) claimSel.value=(t==='customer')?'1':'0';
-    });
-  })();
+/* ===== Tabs (Jenis) ===== */
+(function initJenis(){
+  const host=document.querySelector('[aria-label="Jenis Form"]');
+  host.addEventListener('click',e=>{
+    const b=e.target.closest('[data-tab]'); if(!b) return;
+    host.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    $('#type').value=b.dataset.tab;
+    $('[name="isClaim"]').value = (b.dataset.tab==='customer') ? '1' : '0';
+  });
+})();
 
-  // ==== Tabs (Phase) ====
-  (function initPhase(){
-    const host=document.querySelector('div[role="tablist"][aria-label="Mode Form"]');
-    const statusWrap = document.getElementById('statusField');
-    const statusSel  = statusWrap.querySelector('select');
+/* ===== Tabs (Phase) ===== */
+(function initPhase(){
+  const host=document.querySelector('[aria-label="Mode Form"]');
+  const statusWrap = $('#statusField');
+  const statusSel  = statusWrap.querySelector('select');
 
-    function setPhase(mode){
-      $('#phase').value = mode;
-      $$('.phase-report').forEach(el=>el.style.display=(mode==='report')?'':'none');
-      $$('.phase-handling').forEach(el=>el.style.display=(mode==='handling')?'':'none');
-
-      // 状況: sembunyikan & disable di 報告, tampil & enable di 対応
-      const showStatus = (mode==='handling');
-      statusWrap.style.display = showStatus ? '' : 'none';
-      statusSel.disabled = !showStatus;
-      if(!showStatus){ statusSel.value = '未'; } // reset default ketika disembunyikan
-    }
-
-    host.addEventListener('click',e=>{
-      const b=e.target.closest('[data-mode]'); if(!b) return;
-      host.querySelectorAll('[data-mode]').forEach(x=>{x.classList.add('btn-outline');x.classList.remove('btn')});
-      b.classList.remove('btn-outline'); b.classList.add('btn');
-      setPhase(b.dataset.mode);
-    });
-
-    // set default
-    setPhase('report');
-  })();
-
-  // ==== Send to Apps Script Type A ====
-  async function fileToBase64(file){
-    return new Promise((resolve,reject)=>{
-      const fr=new FileReader();
-      fr.onload=()=>{ const b64=String(fr.result).split(',')[1]; resolve({name:file.name,type:file.type,size:file.size,base64:b64}); };
-      fr.onerror=reject; fr.readAsDataURL(file);
-    });
-  }
-  async function sendToSheet(rec){
-    const files = $('#attachments').files;
-    const attachments = [];
-    for(const f of files){ attachments.push(await fileToBase64(f)); }
-    const payload = { ...rec, attachments };
-    try{
-      const res = await fetch(Apps.sheetUrl,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-      if(!res.ok){ await fetch(Apps.sheetUrl,{ method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); }
-    }catch(_){ /* ignore for offline */ }
+  function setPhase(mode){
+    $('#phase').value = mode;
+    $$('.phase-report').forEach(el=> el.style.display = (mode==='report') ? '' : 'none');
+    $$('.phase-handling').forEach(el=> el.style.display = (mode==='handling') ? '' : 'none');
+    const showStatus = (mode==='handling');
+    statusWrap.style.display = showStatus ? '' : 'none';
+    statusSel.disabled = !showStatus;
+    if(!showStatus) statusSel.value='未';
   }
 
-  // ==== Helpers for charts ====
-  function monthKey(dStr){
-    const d = dStr ? new Date(dStr) : null;
-    if(!d || isNaN(d)) return null;
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; // YYYY-MM
-  }
-  function lastNMonthsLabels(n=12){
-    const a=[]; const now=new Date();
-    for(let i=n-1;i>=0;i--){
-      const d=new Date(now.getFullYear(), now.getMonth()-i, 1);
-      a.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
-    }
-    return a;
-  }
-
-  // ==== Render (list & charts) ====
-  let chartType=null, chartMonthly=null, chartStatus=null;
-  function render(){
-    const q=$('#search').value.toLowerCase();
-    const arr=state.data.filter(r=>!q || [r.title,r.dept,r.pic,r.reporter].some(v=>String(v||'').toLowerCase().includes(q)));
-
-    // KPI
-    $('#kpiTotal').textContent = arr.length;
-    $('#kpiOpen').textContent  = arr.filter(x=>x.status==='未').length;
-    $('#kpiProg').textContent  = arr.filter(x=>x.status==='進行中').length;
-    const ymNow=new Date().toISOString().slice(0,7);
-    $('#kpiDone').textContent  = arr.filter(x=>x.status==='完了' && String(x.date||'').startsWith(ymNow)).length;
-
-    // List
-    const list=$('#list'); list.innerHTML='';
-    arr.sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
-    arr.forEach(r=>{
-      const div=document.createElement('div');
-      div.className='card'; div.style.padding='10px';
-      div.innerHTML = `<strong>${r.title}</strong> <span class="tag">${ConfigTypes[r.type]||r.type}</span> ${r.isClaim?'<span class="tag">CLAIM</span>':''}
-      <div class="muted">${r.date||''} ｜ ${r.dept||''} ｜ ${r.priority||''}${r.status?` ｜ ${r.status}`:''}</div>`;
-      list.appendChild(div);
-    });
-
-    // --- Chart 1: By Type (report only)
-    const labelsType=Object.values(ConfigTypes);
-    const countsType=['customer','internal','design','kaizen','supplier'].map(k=> arr.filter(x=>x.type===k && x.phase==='report').length);
-    if(chartType) chartType.destroy();
-    chartType=new Chart($('#chartByType'),{
-      type:'bar',
-      data:{labels:labelsType, datasets:[{label:'件数（報告）', data:countsType}]},
-      options:{plugins:{legend:{display:false}}}
-    });
-
-    // --- Chart 2: Monthly trend (last 12 months, report vs handling)
-    const labelsMonth = lastNMonthsLabels(12);
-    const countsReport  = labelsMonth.map(m => arr.filter(x=> x.phase==='report'   && monthKey(x.date)===m).length);
-    const countsHandling= labelsMonth.map(m => arr.filter(x=> x.phase==='handling' && monthKey(x.date)===m).length);
-    if(chartMonthly) chartMonthly.destroy();
-    chartMonthly=new Chart($('#chartMonthly'),{
-      type:'line',
-      data:{labels:labelsMonth, datasets:[
-        {label:'報告',   data:countsReport,   fill:false, tension:.2},
-        {label:'対応',   data:countsHandling, fill:false, tension:.2}
-      ]},
-      options:{scales:{ y:{ beginAtZero:true } }}
-    });
-
-    // --- Chart 3: Status pie (all phases)
-    const sOpen   = arr.filter(x=>x.status==='未').length;
-    const sProg   = arr.filter(x=>x.status==='進行中').length;
-    const sDone   = arr.filter(x=>x.status==='完了').length;
-    if(chartStatus) chartStatus.destroy();
-    chartStatus=new Chart($('#chartStatus'),{
-      type:'pie',
-      data:{ labels:['未','進行中','完了'], datasets:[{ data:[sOpen,sProg,sDone] }] },
-      options:{}
-    });
-  }
-
-  // ==== Form submit ====
-  $('#reportForm').addEventListener('submit', async e=>{
-    e.preventDefault();
-    const fd=new FormData(e.target);
-    const rec=Object.fromEntries(fd.entries());
-    // normalisasi JP status jika ada nilai EN
-    if(rec.status==='Open') rec.status='未';
-    if(rec.status==='In Progress') rec.status='進行中';
-    if(rec.status==='Done') rec.status='完了';
-    rec.isClaim = rec.isClaim==='1';
-    rec.id=uid(); rec.createdAt=new Date().toISOString();
-
-    state.data.push(rec);
-    render();
-
-    await sendToSheet(rec);
-
-    e.target.reset();
-    document.querySelector('[data-tab="customer"]').click();
-    document.querySelector('[data-mode="report"]').click();
+  host.addEventListener('click',e=>{
+    const b=e.target.closest('[data-mode]'); if(!b) return;
+    host.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    setPhase(b.dataset.mode);
   });
 
-  // ==== Init ====
-  document.getElementById('year').textContent=new Date().getFullYear();
-  document.getElementById('search').addEventListener('input', render);
+  setPhase('report');
+})();
+
+/* ===== Attachments validation (≤20MB & ≤10 files) ===== */
+(function initAttach(){
+  const input = $('#attachments');
+  const info  = $('#attachInfo');
+  input.addEventListener('change', ()=>{
+    const files=[...input.files];
+    const total = files.reduce((n,f)=>n+f.size,0);
+    info.textContent = `${files.length} file / ${(total/1024/1024).toFixed(1)} MB`;
+    if(files.length>10 || total>20*1024*1024){
+      toast('添付は最大10件・合計20MBまでです。', 'err');
+      input.value = '';
+      info.textContent = '';
+    }
+  });
+})();
+
+/* ===== Draft autosave (localStorage) ===== */
+(function initDraft(){
+  const KEY='claim_draft_v1';
+  const form=$('#reportForm');
+  const note=$('#draftNote');
+
+  // restore
+  try{
+    const saved=localStorage.getItem(KEY);
+    if(saved){
+      const obj=JSON.parse(saved);
+      Object.entries(obj||{}).forEach(([k,v])=>{
+        const el=form.querySelector(`[name="${k}"]`);
+        if(el && el.type!=='file') el.value=v;
+      });
+      note.textContent='一時保存を復元しました';
+      toast('一時保存を復元', 'ok');
+    }
+  }catch(_){ localStorage.removeItem(KEY); }
+
+  // save on input
+  form.addEventListener('input', ()=>{
+    const fd=new FormData(form);
+    const obj=Object.fromEntries(fd.entries());
+    delete obj.attachments;
+    localStorage.setItem(KEY, JSON.stringify(obj));
+    note.textContent='自動保存中…';
+  });
+
+  // clear draft
+  $('#btnClearDraft').addEventListener('click', ()=>{
+    localStorage.removeItem(KEY);
+    note.textContent='一時保存を削除しました';
+    toast('一時保存クリア', 'ok');
+  });
+
+  // reset should also clear attach info
+  form.addEventListener('reset', ()=>{
+    setTimeout(()=>{ $('#attachInfo').textContent=''; }, 0);
+  });
+})();
+
+/* ===== Send to Apps Script ===== */
+async function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{ const b64=String(fr.result).split(',')[1]; resolve({name:file.name,type:file.type,size:file.size,base64:b64}); };
+    fr.onerror=reject; fr.readAsDataURL(file);
+  });
+}
+async function sendToSheet(rec){
+  const files = $('#attachments').files;
+  const attachments = [];
+  for(const f of files){ attachments.push(await fileToBase64(f)); }
+  const payload = { ...rec, attachments };
+  try{
+    const res = await fetch(Apps.sheetUrl,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if(!res.ok){
+      // fallback no-cors
+      await fetch(Apps.sheetUrl,{ method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    }
+    toast('送信しました（オンライン）','ok');
+  }catch(_){
+    toast('オフライン保存（次回オンライン時に送信を試行してください）','err');
+  }
+}
+
+/* ===== Charts & List ===== */
+let chartType=null, chartMonthly=null, chartStatus=null;
+
+function render(){
+  const q=$('#search').value.toLowerCase();
+  const arr=state.data.filter(r=>!q || [r.title,r.dept,r.pic,r.reporter].some(v=>String(v||'').toLowerCase().includes(q)));
+
+  // KPI
+  $('#kpiTotal').textContent = arr.length;
+  $('#kpiOpen').textContent  = arr.filter(x=>x.status==='未').length;
+  $('#kpiProg').textContent  = arr.filter(x=>x.status==='進行中').length;
+  const ymNow=new Date().toISOString().slice(0,7);
+  $('#kpiDone').textContent  = arr.filter(x=>x.status==='完了' && String(x.date||'').startsWith(ymNow)).length;
+
+  // List
+  const list=$('#list'); list.innerHTML='';
+  arr.sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
+  arr.forEach(r=>{
+    const div=document.createElement('div'); div.className='item';
+    const status = r.status==='完了'?'done':(r.status==='進行中'?'prog':'open');
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <strong>${r.title || '(無題)'}</strong>
+        <span class="tag">${ConfigTypes[r.type]||r.type}</span>
+        ${r.isClaim?'<span class="tag">CLAIM</span>':''}
+        ${r.status?`<span class="status ${status}">${r.status}</span>`:''}
+      </div>
+      <div class="sub">${r.date||''} ｜ ${r.dept||''} ｜ ${r.priority||''}${r.pic?` ｜ PIC:${r.pic}`:''}</div>
+    `;
+    list.appendChild(div);
+  });
+
+  // Chart 1: By Type (report only)
+  const labelsType=Object.values(ConfigTypes);
+  const typeKeys=['customer','internal','design','kaizen','supplier'];
+  const countsType=typeKeys.map(k=> arr.filter(x=>x.type===k && x.phase==='report').length);
+  if(chartType) chartType.destroy();
+  chartType=new Chart($('#chartByType'),{
+    type:'bar',
+    data:{labels:labelsType, datasets:[{label:'件数（報告）', data:countsType}]},
+    options:{responsive:true,plugins:{legend:{display:false}}}
+  });
+
+  // Chart 2: Monthly trend
+  const months = lastNMonthsLabels(12);
+  const countsReport  = months.map(m => arr.filter(x=> x.phase==='report'   && monthKey(x.date)===m).length);
+  const countsHandling= months.map(m => arr.filter(x=> x.phase==='handling' && monthKey(x.date)===m).length);
+  if(chartMonthly) chartMonthly.destroy();
+  chartMonthly=new Chart($('#chartMonthly'),{
+    type:'line',
+    data:{labels:months, datasets:[
+      {label:'報告', data:countsReport,   tension:.25, pointRadius:2},
+      {label:'対応', data:countsHandling, tension:.25, pointRadius:2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}}}
+  });
+
+  // Chart 3: Status pie
+  const sOpen=arr.filter(x=>x.status==='未').length;
+  const sProg=arr.filter(x=>x.status==='進行中').length;
+  const sDone=arr.filter(x=>x.status==='完了').length;
+  if(chartStatus) chartStatus.destroy();
+  chartStatus=new Chart($('#chartStatus'),{
+    type:'pie',
+    data:{ labels:['未','進行中','完了'], datasets:[{ data:[sOpen,sProg,sDone] }] },
+    options:{responsive:true,maintainAspectRatio:false}
+  });
+}
+
+/* ===== Export CSV (current view) ===== */
+$('#btnExport').addEventListener('click', ()=>{
+  const q=$('#search').value.toLowerCase();
+  const arr=state.data.filter(r=>!q || [r.title,r.dept,r.pic,r.reporter].some(v=>String(v||'').toLowerCase().includes(q)));
+  const headers=['id','createdAt','type','phase','title','date','reporter','email','dept','category','priority','status','isClaim','problem','rootcause','containment','corrective','preventive','pic','due'];
+  const lines=[headers.join(',')];
+  arr.forEach(r=>{
+    const row=headers.map(h=>{
+      const v=r[h]==null?'':String(r[h]).replace(/"/g,'""');
+      return `"${v}"`;
+    }).join(',');
+    lines.push(row);
+  });
+  const blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='claims.csv'; a.click();
+});
+
+/* ===== Submit ===== */
+$('#reportForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const fd=new FormData(e.target);
+  const rec=Object.fromEntries(fd.entries());
+
+  // JP status normalize
+  if(rec.status==='Open') rec.status='未';
+  if(rec.status==='In Progress') rec.status='進行中';
+  if(rec.status==='Done') rec.status='完了';
+
+  rec.isClaim = rec.isClaim==='1';
+  rec.id=uid();
+  rec.createdAt=new Date().toISOString();
+
+  state.data.push(rec);
+  render();
+
+  await sendToSheet(rec);
+
+  e.target.reset();
+  // default tabs
   document.querySelector('[data-tab="customer"]').click();
   document.querySelector('[data-mode="report"]').click();
-  render(); // render awal
-  </script>
+  toast('ローカルに保存しました','ok');
+});
+
+/* ===== Search live ===== */
+$('#search').addEventListener('input', render);
+
+/* ===== Init ===== */
+render();
+</script>
 </body>
 </html>
