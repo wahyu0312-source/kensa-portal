@@ -7,85 +7,97 @@
 
 <style>
   :root{
-    --bg:#f6f7fb; --bg-2:#eef2ff; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb; --ring:#c7d2fe;
+    --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb; --ring:#c7d2fe;
     --accent:#2563eb; --danger:#dc2626; --success:#10b981; --warning:#f59e0b; --purple:#8b5cf6;
-    --radius-xl:22px; --radius-lg:16px; --radius:12px; --shadow-1:0 12px 30px rgba(15,23,42,.08); --shadow-2:0 30px 60px rgba(15,23,42,.10);
+    --radius-xl:22px; --radius:12px; --shadow-1:0 12px 30px rgba(15,23,42,.08); --shadow-2:0 30px 60px rgba(15,23,42,.10);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
-    margin:0;color:var(--ink);
+    margin:0; color:var(--ink);
     font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
     background:
       radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
       radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
       linear-gradient(120deg,#f8fafc,var(--bg));
   }
+  a{color:inherit; text-decoration:none}
 
-  /* ===== Shell ===== */
+  /* ===== Shell (no fixed sidebar; full width main) ===== */
   .app{
-    display:grid; grid-template-columns:260px 1fr; grid-template-rows:64px 1fr;
-    grid-template-areas:"header header" "side main"; min-height:100vh;
+    display:grid;
+    grid-template-rows:64px 1fr;
+    grid-template-areas:
+      "header"
+      "main";
+    min-height:100vh;
   }
-
-  /* COLLAPSE: hide sidebar & make main full */
-  .app.side-collapsed{ grid-template-columns:0 1fr; }
-  .app.side-collapsed .side{ display:none; }
-  .app.side-collapsed main{ max-width: min(1600px, calc(100vw - 40px)); }
 
   header{
     grid-area:header; position:sticky; top:0; z-index:60;
-    backdrop-filter:blur(12px); background:#ffffffb8; border-bottom:1px solid var(--border);
+    backdrop-filter:blur(12px); background:#ffffffc7; border-bottom:1px solid var(--border);
   }
-  .header-wrap{height:64px; max-width:1400px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:0 20px}
+  .header-wrap{
+    height:64px; max-width:1400px; margin:0 auto;
+    display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 14px;
+  }
   .brand{display:flex; align-items:center; gap:10px}
   .brand img{height:36px}
   .ttl{font-weight:800}
 
-  /* burger */
-  .burger{display:none; width:40px; height:36px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
-  .burger span{display:block; width:20px; height:2px; background:#0f172a; margin:4px auto; border-radius:2px}
+  .top-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; line-height:1;
+    height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--border); background:#fff; cursor:pointer;
+  }
+  .btn:hover{border-color:var(--ring)}
+  .badge{
+    height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px;
+    font-size:12px; font-weight:700; color:var(--ink);
+    background:#f1f5f9; border:1px solid var(--border); border-radius:999px
+  }
 
-  .top-actions{display:flex; gap:10px; align-items:center}
-  .seg{display:inline-flex; background:#fff; border:1px solid var(--border); border-radius:12px; overflow:hidden}
-  .seg .btn{height:34px; border:0; border-right:1px solid var(--border)} .seg .btn:last-child{border-right:0}
-  .badge{height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--ink); background:#f1f5f9; border:1px solid var(--border); border-radius:999px}
-  .badge::before{content:"⏱"}
+  /* Burger (mobile) */
+  .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px;
+          border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
+  .burger:active{transform:scale(.98)}
 
-  /* toggle side button (desktop only) */
-  .toggle-side{ display:inline-flex; align-items:center; gap:6px }
-  @media (max-width:900px){ .toggle-side{ display:none } }
+  /* ===== Hover Sidebar (desktop) ===== */
+  .edge-hotspot{
+    position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px);
+    z-index:70;
+  }
+  .hover-side{
+    position:fixed; left:0; top:64px; height:calc(100vh - 64px);
+    width:260px; padding:14px 12px; overflow:auto;
+    background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
+    transform:translateX(-100%); transition:transform .22s ease; z-index:71;
+  }
+  .hover-side.open{ transform:translateX(0) }
+  .hover-side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
+  .navlist{ display:grid; gap:4px }
+  .slink{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink) }
+  .slink:hover{ background:#f1f5ff }
+  .ico{ width:22px; text-align:center }
 
-  /* Sidebar */
-  .side{grid-area:side; position:sticky; top:64px; align-self:start; height:calc(100vh - 64px); overflow:auto; padding:18px}
-  .side-card{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-1); padding:14px}
-  .side h3{margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase}
-  .navlist{display:grid; gap:4px}
-  .link{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink); text-decoration:none}
-  .link small{color:var(--muted)} .link:hover{background:#f1f5ff} .link strong{font-weight:700}
-  .ico{width:22px; text-align:center}
+  /* ===== Drawer (mobile) ===== */
+  .drawer{ position:fixed; inset:0; z-index:80; display:none }
+  .drawer.open{ display:block }
+  .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
+  .drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
+                  background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto;
+                  transform:translateX(-100%); transition:transform .25s ease }
+  .drawer.open .panel{ transform:translateX(0) }
+  .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
 
-  /* Main */
-  main{grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 96px}
-  .page-head{display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:14px}
-  .h1{font-size:22px; margin:0} .small{font-size:12px; color:var(--muted)}
-  .panel{background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-2); padding:18px; overflow:auto}
-  .panel + .panel{margin-top:18px}
-  .panel-title{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px}
-  .chip{display:inline-flex; align-items:center; gap:8px; background:#f1f5f9; border:1px solid var(--border); padding:6px 10px; border-radius:999px}
-  .chip strong{font-size:12px} .count{font-weight:800}
-  .toolbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:6px 0 8px}
-  .toolbar .btn{height:36px}
-  input[type="date"]{height:36px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:#var(--ink)}
-  .btn{display:inline-flex; align-items:center; gap:8px; line-height:1; padding:0 12px; height:32px; border-radius:10px; border:1px solid var(--border); background:#fff; cursor:pointer}
-  .btn:hover{border-color:var(--ring)} .btn.active{background:#f0f9ff; border-color:#93c5fd} .btn[disabled]{opacity:.6; cursor:wait}
-
-  /* Status + urgent */
-  .flag-urgent{display:inline-flex; align-items:center; gap:6px; padding:2px 10px; margin-right:8px; border-radius:999px; background:var(--danger); color:#fff; font-weight:800; font-size:12px}
-  .urgent-banner{background:var(--danger); color:#fff; padding:10px 16px; border-radius:12px; text-align:center; font-weight:800; animation:blink 1s infinite}
-  @keyframes blink{0%,50%,100%{opacity:1}25%,75%{opacity:.75}}
-  .tag{display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:800; font-size:12px; color:#fff; margin-right:8px}
-  .tag-done{background:#0ea5e9}.tag-assem{background:var(--warning)}.tag-assem-done{background:#10b981}.tag-inspect{background:#8b5cf6}.tag-not{background:#94a3b8}
+  /* ===== Main ===== */
+  main{ grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 96px }
+  .page-head{ display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:14px }
+  .h1{ font-size:22px; margin:0 }
+  .small{ font-size:12px; color:var(--muted) }
+  .panel{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-2); padding:18px; overflow:auto }
+  .panel + .panel{ margin-top:18px }
+  .panel-title{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px }
 
   /* Table */
   table{width:100%; border-collapse:separate; border-spacing:0; min-width:900px}
@@ -93,120 +105,51 @@
   tbody td{padding:12px 14px; border-bottom:1px solid var(--border); white-space:nowrap}
   tbody tr:hover{background:#f6f9ff}
   tbody tr.row-urgent td{background:#fee2e2 !important; color:#b91c1c; font-weight:600}
-  td.cell-urgent{background:#ef4444 !important; color:#fff !important; font-weight:800 !important; border-radius:8px}
+  .flag-urgent{display:inline-flex; align-items:center; gap:6px; padding:2px 10px; margin-right:8px; border-radius:999px; background:var(--danger); color:#fff; font-weight:800; font-size:12px}
+  .urgent-banner{background:var(--danger); color:#fff; padding:10px 16px; border-radius:12px; text-align:center; font-weight:800; animation:blink 1s infinite}
+  @keyframes blink{0%,50%,100%{opacity:1}25%,75%{opacity:.75}}
+  .tag{display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:800; font-size:12px; color:#fff; margin-right:8px}
+  .tag-done{background:#0ea5e9}.tag-assem{background:var(--warning)}.tag-assem-done{background:var(--success)}.tag-inspect{background:#8b5cf6}.tag-not{background:#94a3b8}
 
-  /* Footer ticker */
+  /* Ticker + footer */
   .marquee{position:fixed; left:20px; right:20px; bottom:20px; z-index:30; background:var(--accent); color:#fff; font-weight:800; border-radius:12px; box-shadow:var(--shadow-1); white-space:nowrap; overflow:hidden}
   .marquee span{display:inline-block; padding:8px 0 8px 100%; animation:marquee 25s linear infinite}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
-  .footer{position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:#muted; background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border)}
+  .footer{position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:var(--muted); background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border)}
 
-  /* Dropdown (管理) */
-  .menubar{position:relative}
-  .menu{position:absolute; top:110%; right:0; min-width:230px; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-2); padding:6px; display:none; z-index:100}
-  .menu.open{display:block}
-  .menu .sec{padding:6px 10px 4px; font-size:12px; color:#6b7280}
-  .menu a,.menu button{display:flex; align-items:center; gap:8px; width:100%; padding:9px 10px; border:0; background:transparent; border-radius:8px; text-align:left; color:#0f172a; text-decoration:none}
-  .menu a:hover,.menu button:hover{background:#f1f5f9}
-  .sep{height:1px; background:var(--border); margin:6px}
+  /* Admin hide by default */
+  .admin-only{ display:none }
 
-  /* Drawer (mobile) */
-  .backdrop{position:fixed; inset:0; background:rgba(0,0,0,.2); backdrop-filter:blur(1px); z-index:55; display:none}
-  .backdrop.show{display:block}
-  .drawer{position:fixed; inset:0 0 0 auto; width:80%; max-width:320px; background:#fff; border-left:1px solid var(--border);
-    transform:translateX(100%); transition:transform .25s ease; z-index:60; display:flex; flex-direction:column}
-  .drawer.open{transform:translateX(0)}
-  .drawer header{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; border-bottom:1px solid var(--border)}
-  .drawer a{display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--border); color:#0f172a; text-decoration:none}
-  .drawer a strong{color:var(--accent)}
-  .drawer .sec{padding:10px 16px; font-size:12px; color:#6b7280}
-
-  /* Hide admin by default */
-  .admin-only{display:none}
-
-  /* Responsive */
-  @media (max-width:1080px){ .app{grid-template-columns:220px 1fr} }
+  /* Hide edge-hover on small screens (use drawer) */
   @media (max-width:900px){
-    .app{grid-template-columns:1fr; grid-template-areas:"header" "main"}
-    .side{display:none}
-    .burger{display:block}
+    .burger{ display:inline-flex }
+    .edge-hotspot, .hover-side{ display:none }
   }
 </style>
 </head>
 
 <body>
-<div class="app" id="appRoot">
-  <!-- ============== HEADER ============== -->
+<div class="app">
+  <!-- ===== HEADER ===== -->
   <header>
     <div class="header-wrap">
+      <button id="btnBurger" class="burger" aria-label="メニュー"><span>☰</span></button>
+
       <div class="brand">
-        <button id="btnBurger" class="burger" aria-label="Open menu" aria-controls="drawer" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
-        <img src="tsh.png" alt="TSH">
+        <img src="tsh.png" alt="TSH" onerror="this.style.display='none'">
         <div class="ttl"><strong>品質管理生産技術</strong></div>
       </div>
 
       <nav class="top-actions">
-        <!-- NEW: collapse sidebar toggle (desktop) -->
-        <button id="toggleSide" class="btn toggle-side" type="button" title="Hide/Show Pages">⮜ Hide Pages</button>
-
-        <div class="seg" role="group" aria-label="Auto refresh controls">
-          <button id="btnRefresh" class="btn" type="button" title="Reload now">⟳ Refresh</button>
-          <button id="btnLive" class="btn" type="button" aria-pressed="false" title="Toggle live">● Live</button>
-        </div>
+        <button id="btnRefresh" class="btn" type="button">⟳ Refresh</button>
+        <button id="btnLive" class="btn" type="button" aria-pressed="false">● Live</button>
         <span id="intervalInfo" class="badge">60s</span>
-
-        <div class="menubar">
-          <button id="menuBtn" class="btn" type="button">管理 ▾</button>
-          <div id="menu" class="menu" role="menu" aria-hidden="true">
-            <div class="sec">ナビ</div>
-            <a href="./" role="menuitem">🏠 トップ</a>
-            <a href="./forms.html" role="menuitem">📄 出荷検査成績書</a>
-            <a href="./quality.html" role="menuitem">📊 品質情報</a>
-            <a href="./admin-prefix.html" role="menuitem" class="admin-only">🛠️ Admin Prefix</a>
-
-            <div class="sep"></div>
-            <div class="sec">操作</div>
-            <button id="m-refresh" role="menuitem">🔄 Refresh</button>
-            <button id="m-live" role="menuitem">🟢 Live 切替</button>
-
-            <div class="sep"></div>
-            <div class="sec">Admin</div>
-            <button id="m-admin-in" role="menuitem">🔐 Admin ログイン</button>
-            <button id="m-admin-out" role="menuitem" class="admin-only">🚪 Admin ログアウト</button>
-          </div>
-        </div>
+        <button id="btnAdmin" class="btn" type="button" title="Admin login/logout">管理</button>
       </nav>
     </div>
   </header>
 
-  <!-- ============== SIDEBAR (desktop) ============== -->
-  <aside class="side">
-    <div class="side-card">
-      <h3>Pages</h3>
-      <div class="navlist">
-        <a class="link" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small>Dashboard</small></a>
-        <a class="link" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
-        <a class="link" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
-        <a class="link" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
-        <a class="link" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-        <a class="link" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
-      </div>
-
-      <div class="admin-only">
-        <h3 class="mt">Admin</h3>
-        <div class="navlist">
-          <a class="link" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-          <a class="link" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
-          <a class="link" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
-          <a class="link" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
-        </div>
-      </div>
-    </div>
-  </aside>
-
-  <!-- ============== MAIN ============== -->
+  <!-- ===== MAIN ===== -->
   <main>
     <div class="page-head">
       <h1 class="h1">出荷状況一覧</h1>
@@ -219,7 +162,7 @@
     <section id="todaySection" class="panel" style="display:none">
       <div class="panel-title">
         <h2 style="margin:0">本日出荷</h2>
-        <span class="chip"><strong>件数</strong><span id="todayCount" class="count">0</span></span>
+        <span class="badge"><strong>件数</strong>&nbsp;<span id="todayCount" style="font-weight:800">0</span></span>
       </div>
       <table id="todayTable">
         <thead><tr id="todayHead"></tr></thead>
@@ -231,19 +174,17 @@
     <section class="panel">
       <div class="panel-title">
         <h2 style="margin:0">全件一覧</h2>
-        <div class="toolbar">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
           <label class="small">出荷日：</label>
-          <input type="date" id="filterDate">
+          <input type="date" id="filterDate" style="height:36px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:#0f172a">
           <button class="btn" id="btnToday" type="button">本日出荷のみ</button>
           <button class="btn" id="btnClear" type="button">Clear</button>
+          <div style="margin-left:auto; display:flex; gap:8px">
+            <button class="btn" id="btnExcel" type="button">⬇ Excel</button>
+            <button class="btn" id="btnPDF" type="button">⬇ PDF</button>
+          </div>
         </div>
       </div>
-
-      <div class="toolbar" style="justify-content:flex-end">
-        <button class="btn" id="btnExcel" type="button">⬇ Excel</button>
-        <button class="btn" id="btnPDF" type="button">⬇ PDF</button>
-      </div>
-
       <table id="shipTable">
         <thead><tr id="shipHead"></tr></thead>
         <tbody id="shipBody"></tbody>
@@ -253,28 +194,55 @@
   </main>
 </div>
 
-<!-- ===== Mobile Drawer ===== -->
-<div id="backdrop" class="backdrop" hidden></div>
-<aside id="drawer" class="drawer" aria-hidden="true">
-  <header>
-    <div style="display:flex;align-items:center;gap:10px">
-      <img src="tsh.png" alt="TSH" style="height:28px"><strong>メニュー</strong>
-    </div>
-    <button id="btnCloseDrawer" class="btn" type="button">閉じる</button>
-  </header>
-  <a href="./index.html"><strong>ホーム</strong> ｜ Dashboard</a>
-  <a href="./forms.html">出荷検査成績書</a>
-  <a href="./sagyoutejunsho.html">作業手順書</a>
-  <a href="./charts.html">チャート</a>
-  <a href="./quality.html">品質情報</a>
+<!-- ===== Hover Sidebar (desktop) ===== -->
+<div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
+<aside id="hoverSide" class="hover-side" aria-label="Pages">
+  <h3>Pages</h3>
+  <div class="navlist">
+    <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
+    <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+    <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+    <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+    <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+    <a class="slink admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+  </div>
 
-  <div class="sec admin-only">ADMIN</div>
-  <a class="admin-only" href="./admin-numbering.html">Admin Numbering</a>
-  <a class="admin-only" href="./admin-prefix.html">Admin Prefix</a>
-  <a class="admin-only" href="./admin-serial-gas.html">Admin Serial Gas</a>
-  <a class="admin-only" href="./thanks.html">Thanks</a>
-  <a class="admin-only" href="./claim.html">Trial Page</a>
+  <div class="admin-only" style="margin-top:12px">
+    <h3>Admin</h3>
+    <div class="navlist">
+      <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+      <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+      <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+      <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+    </div>
+  </div>
 </aside>
+
+<!-- ===== Drawer (mobile) ===== -->
+<div id="drawer" class="drawer" aria-hidden="true">
+  <div class="backdrop" data-close></div>
+  <aside class="panel">
+    <button class="close" data-close>✕</button>
+    <div class="navlist" style="margin-top:30px">
+      <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
+      <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+      <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+      <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+      <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+      <a class="slink admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+    </div>
+
+    <div class="admin-only" style="margin-top:12px">
+      <h3>Admin</h3>
+      <div class="navlist">
+        <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+        <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+        <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+        <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+      </div>
+    </div>
+  </aside>
+</div>
 
 <div class="marquee"><span>品質管理生産技術システム - 最新の出荷状況を表示しています - Awali Dengan Bismillah</span></div>
 <div class="footer">Design by Wahyu</div>
@@ -284,42 +252,46 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
-<!-- ===== SCRIPT ===== -->
 <script>
-  /* ==== Admin gate (UI only) ==== */
-  const ADMIN_CODE = "kensa2025";
+  /* ========= Drawer (mobile) ========= */
+  const drawer = document.getElementById('drawer');
+  document.getElementById('btnBurger')?.addEventListener('click', ()=>{
+    drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');
+  });
+  drawer?.addEventListener('click', (e)=>{
+    if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
+  });
+
+  /* ========= Admin gate (UI only) ========= */
+  const ADMIN_CODE = "admin2025"; // ganti sesuai kebutuhan
   function setAdmin(on){
-    document.querySelectorAll('.admin-only').forEach(el => el.style.display = on ? '' : 'none');
+    document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
     localStorage.setItem('kensa_admin', on ? '1' : '0');
+    const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
   }
-  function readAdmin(){ return localStorage.getItem('kensa_admin') === '1'; }
-  function ensureAdminFromStorage(){ setAdmin(readAdmin()); }
-
-  document.getElementById('m-admin-in')?.addEventListener('click', ()=>{
-    const code = prompt('Admin code:');
-    if(code === ADMIN_CODE){ setAdmin(true); alert('Admin ON'); }
-    else{ alert('コードが違います'); }
-  });
-  document.getElementById('m-admin-out')?.addEventListener('click', ()=>{
-    setAdmin(false); alert('Admin OFF');
-  });
-
-  /* ==== Sidebar collapse (desktop) ==== */
-  const appRoot = document.getElementById('appRoot');
-  const btnToggleSide = document.getElementById('toggleSide');
-  function applySideCollapsed(collapsed){
-    appRoot.classList.toggle('side-collapsed', collapsed);
-    if(btnToggleSide){
-      btnToggleSide.textContent = collapsed ? '☰ Show Pages' : '⮜ Hide Pages';
+  function isAdmin(){ return localStorage.getItem('kensa_admin')==='1'; }
+  document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
+    if(isAdmin()){
+      if(confirm('AdminをOFFにしますか？')) setAdmin(false);
+    }else{
+      const c = prompt('Admin code:');
+      if(c===ADMIN_CODE) setAdmin(true); else alert('コードが違います');
     }
-    localStorage.setItem('side_collapsed', collapsed ? '1' : '0');
-  }
-  btnToggleSide?.addEventListener('click', ()=>{
-    const collapsed = !appRoot.classList.contains('side-collapsed');
-    applySideCollapsed(collapsed);
   });
 
-  /* ==== CSV & render ==== */
+  /* ========= EDGE-HOVER sidebar (desktop) ========= */
+  const hot = document.getElementById('edgeHotspot');
+  const fly = document.getElementById('hoverSide');
+  let hideTimer = null;
+  const HIDE_DELAY = 280;
+  function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
+  function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
+  hot?.addEventListener('mouseenter', openFly);
+  hot?.addEventListener('mouseleave', scheduleClose);
+  fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer));
+  fly?.addEventListener('mouseleave', scheduleClose);
+
+  /* ========= CSV & render ========= */
   const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
   const TAB_NAME ="最新情報";
   const CSV_URL  =`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
@@ -427,10 +399,10 @@
       const header=data[0], rowsRaw=data.slice(1); const idx=indexByName(header); const cmp=makeComparator(idx);
       const rows=[...rowsRaw].sort(cmp); cached={header,rows,idx,cmp};
 
-      const urgentCount=rows.reduce((n,r)=> n + (idx.status_flag!=null && isUrgent(valAt(r,idx.status_flag)) ? 1 : 0), 0);
+      const urgentCount=rows.reduce((n,r)=> n + (idx.status_flag!=null && isUrgent(valAt(r, idx.status_flag)) ? 1 : 0), 0);
       const banner=document.getElementById('urgent-banner');
       banner.style.display=urgentCount>0?'block':'none';
-      banner.textContent=urgentCount>0?`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`:'';
+      banner.textContent=urgentCount>0?`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`:'';      
 
       renderTodaySection(); applyFilter(null);
 
@@ -493,29 +465,9 @@
   document.getElementById('btnToday').addEventListener('click', ()=>applyFilter(toInputDate(new Date())));
   document.getElementById('btnClear').addEventListener('click', ()=>{document.getElementById('filterDate').value=""; applyFilter(null);});
 
-  /* ==== 管理 menu ==== */
-  const _menuBtn=document.getElementById('menuBtn'); const _menu=document.getElementById('menu');
-  function closeMenu(){ _menu?.classList.remove('open'); _menu?.setAttribute('aria-hidden','true'); }
-  _menuBtn?.addEventListener('click', e=>{ e.stopPropagation(); _menu.classList.toggle('open'); _menu.setAttribute('aria-hidden', _menu.classList.contains('open')?'false':'true'); });
-  document.addEventListener('click', closeMenu);
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeMenu(); });
-  document.getElementById('m-refresh')?.addEventListener('click', ()=>{ closeMenu(); document.getElementById('btnRefresh')?.click(); });
-  document.getElementById('m-live')?.addEventListener('click', ()=>{ closeMenu(); document.getElementById('btnLive')?.click(); });
-
-  /* ==== Drawer (mobile) ==== */
-  const drawer=document.getElementById('drawer'), backdrop=document.getElementById('backdrop');
-  const burger=document.getElementById('btnBurger'), closeDr=document.getElementById('btnCloseDrawer');
-  function openDrawer(){ drawer.classList.add('open'); backdrop.classList.add('show'); burger.setAttribute('aria-expanded','true'); drawer.setAttribute('aria-hidden','false'); backdrop.hidden=false; }
-  function closeDrawer(){ drawer.classList.remove('open'); backdrop.classList.remove('show'); burger.setAttribute('aria-expanded','false'); drawer.setAttribute('aria-hidden','true'); backdrop.hidden=true; }
-  burger.addEventListener('click', openDrawer);
-  closeDr.addEventListener('click', closeDrawer);
-  backdrop.addEventListener('click', closeDrawer);
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDrawer(); });
-
   // Init
   window.addEventListener('DOMContentLoaded', ()=>{
-    ensureAdminFromStorage();                 // hide/show admin section
-    applySideCollapsed(localStorage.getItem('side_collapsed') === '1'); // sidebar state
+    setAdmin(isAdmin());   // restore admin UI
     load(); startAutoRefresh(60000);
   });
 </script>
