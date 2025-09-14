@@ -1,140 +1,271 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>出荷検査成績書</title>
-  <style>
-    :root{
-      --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
-      --bg1:#eef4ff; --bg2:#f8fafc; --card:#fff; --accent:#2563eb;
-      --ok:#16a34a; --ng:#b91c1c;
-      --radius-lg:24px; --radius-sm:10px;
-      --shadow:0 10px 30px rgba(0,0,0,.06);
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>出荷検査成績書</title>
+
+<style>
+  :root{
+    /* Core */
+    --bg:        #f6f7fb;
+    --panel:     #ffffff;
+    --ink:       #0f172a;
+    --muted:     #64748b;
+    --border:    #e5e7eb;
+    --ring:      #c7d2fe;
+
+    /* Brand */
+    --accent:    #2563eb;
+    --accent-2:  #1d4ed8;
+    --ok:        #16a34a;
+    --ng:        #b91c1c;
+
+    /* UI */
+    --radius-xl: 22px;
+    --radius:    12px;
+    --shadow-1:  0 12px 30px rgba(15,23,42,.08);
+    --shadow-2:  0 30px 60px rgba(15,23,42,.10);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
+    background:
+      radial-gradient(1100px 540px at -12% -12%, #c7d2fe 0%, transparent 60%),
+      radial-gradient(820px 460px at 112% -6%, #bae6fd 0%, transparent 55%),
+      linear-gradient(120deg,#f8fafc,var(--bg));
+  }
+  a{color:inherit}
+
+  /* ===== Shell (Header + Sidebar + Content) */
+  .app{
+    display:grid;
+    grid-template-columns: 260px 1fr;
+    grid-template-rows: 64px 1fr;
+    grid-template-areas:
+      "header header"
+      "side   main";
+    min-height:100vh;
+  }
+
+  header{
+    grid-area:header;
+    position:sticky; top:0; z-index:50;
+    backdrop-filter: blur(12px);
+    background:#ffffffc7;
+    border-bottom:1px solid var(--border);
+  }
+  .header-wrap{
+    height:64px; max-width:1400px; margin:0 auto;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 20px;
+  }
+  .brand{display:flex; align-items:center; gap:10px}
+  .brand img{height:36px}
+  .brand .ttl{font-weight:800}
+
+  .top-actions{display:flex; gap:10px; align-items:center}
+  .btn{
+    height:34px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff;
+    display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+  }
+  .btn.primary{background:var(--accent); color:#fff; border-color:#1e40af; box-shadow:0 6px 16px rgba(37,99,235,.25)}
+  .btn:hover{border-color:var(--ring)}
+  .badge{height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px;
+    font-size:12px; font-weight:700; color:var(--ink);
+    background:#f1f5f9; border:1px solid var(--border); border-radius:999px}
+
+  /* Sidebar */
+  .side{
+    grid-area:side; position:sticky; top:64px; align-self:start;
+    height:calc(100vh - 64px); overflow:auto; padding:18px;
+  }
+  .side-card{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-xl);
+    box-shadow:var(--shadow-1); padding:14px;
+  }
+  .side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
+  .navlist{ display:grid; gap:4px }
+  .link{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 12px; border-radius:12px; color:var(--ink); text-decoration:none;
+  }
+  .link small{ color:var(--muted) }
+  .link:hover{ background:#f1f5ff }
+  .ico{ width:22px; text-align:center }
+
+  /* Main */
+  main{
+    grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 96px;
+  }
+  .page-head{ display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:14px }
+  .h1{ font-size:22px; margin:0 }
+  .small{ font-size:12px; color:var(--muted) }
+
+  .panel{
+    background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl);
+    box-shadow:var(--shadow-2); padding:18px;
+  }
+  .panel + .panel{ margin-top:16px }
+
+  /* Lock */
+  .lock{ display:flex; flex-wrap:wrap; gap:8px; align-items:center }
+  .input{
+    height:38px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:var(--ink);
+    outline:none;
+  }
+  .input:focus{ border-color:var(--ring); box-shadow:0 0 0 3px #93c5fd55 }
+  .lock .msg{ min-width:80px; font-weight:700 }
+
+  /* Search */
+  .searchbar{ display:flex; gap:8px; align-items:center }
+  .searchbar .search{
+    flex:1; height:40px; padding:0 14px; border:2px solid #0b12221a; border-radius:9999px; outline:none; background:#fff;
+  }
+  .hidden{ display:none !important }
+
+  /* Accordion folders */
+  .folder{
+    background:#fff; border:1px solid var(--border); border-radius:16px; margin-bottom:12px; overflow:hidden;
+  }
+  .folder-head{
+    padding:14px 16px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+    background:#f9fafb; font-weight:800;
+  }
+  .folder-head .caret{ transition: transform .2s }
+  .folder-body{ display:none; padding:12px }
+  .subfolder{ margin-bottom:10px }
+  .subfolder strong{ display:block; margin-bottom:6px }
+  .linkfile{
+    display:block; padding:10px 12px; border:1px solid var(--border); border-radius:10px; margin-bottom:6px;
+    text-decoration:none; color:var(--ink); background:#fff;
+  }
+  .linkfile span{ display:block; font-size:12px; color:var(--muted) }
+  .linkfile:hover{ background:#f0f9ff; border-color:#93c5fd }
+
+  /* Footer ticker */
+  .marquee{
+    position:fixed; left:20px; right:20px; bottom:20px; z-index:30;
+    background:var(--accent); color:#fff; font-weight:800; border-radius:12px; box-shadow:var(--shadow-1);
+    white-space:nowrap; overflow:hidden;
+  }
+  .marquee span{ display:inline-block; padding:8px 0 8px 100%; animation:marquee 18s linear infinite }
+  @keyframes marquee{ 0%{ transform:translateX(0) } 100%{ transform:translateX(-100%) } }
+
+  .footer{
+    position:fixed; bottom:0; left:0; right:0; z-index:31;
+    text-align:center; font-size:12px; color:var(--muted); background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border);
+  }
+
+  /* Responsive */
+  @media (max-width: 900px){
+    .app{
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "header"
+        "main";
     }
-    *{box-sizing:border-box}
-    html,body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;color:var(--ink);background:linear-gradient(120deg,var(--bg1),var(--bg2))}
-    a{color:inherit}
-
-    header{position:sticky;top:0;background:#ffffffcc;backdrop-filter:blur(8px);border-bottom:1px solid var(--border);z-index:20}
-    .container{max-width:1200px;margin:0 auto;padding:12px 20px}
-    .row{display:flex;align-items:center;justify-content:space-between;gap:16px}
-    .brand{display:flex;align-items:center;gap:12px;min-height:44px}
-    .brand img.logo{height:38px;width:auto;display:block}
-    .brand-title{display:flex;flex-direction:column}
-    .brand-title small{font-size:12px;color:var(--muted)}
-
-    nav{display:flex;align-items:center;gap:14px}
-    nav a{color:var(--accent);font-weight:700;text-decoration:none;padding:6px 0}
-    nav a:hover{text-decoration:underline}
-    .btn-chart{display:inline-block;padding:9px 14px;border-radius:9999px;background:var(--accent);color:#fff !important;border:1px solid #1e4fdc;box-shadow:0 6px 16px rgba(37,99,235,.25);text-decoration:none}
-    .btn-chart:hover{filter:brightness(1.05);text-decoration:none}
-
-    main{max-width:1200px;margin:24px auto;padding:0 20px 56px}
-    h1{margin:0 0 16px 0}
-
-    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow)}
-    .lock{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .lock input{padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);min-width:240px}
-    .lock button{padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;cursor:pointer}
-    .lock .msg{min-width:80px;font-weight:600}
-
-    .searchbar{display:flex;gap:8px;align-items:center}
-    .searchbar input{flex:1;padding:12px;border:2px solid #0b12221a;border-radius:9999px;outline:none}
-    .searchbar button{padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;cursor:pointer}
-    .hidden{display:none}
-
-    .folder{background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
-    .folder-head{padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:#f9fafb;font-weight:700}
-    .folder-body{display:none;padding:12px}
-    .subfolder{margin-bottom:10px}
-    .subfolder strong{display:block;margin-bottom:6px}
-    .link{display:block;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;text-decoration:none;color:var(--ink);background:#fff}
-    .link span{display:block;font-size:12px;color:var(--muted)}
-    .link:hover{background:#f0f9ff;border-color:#93c5fd}
-
-    footer{text-align:center;color:var(--muted);padding:20px}
-
-    .marquee-bottom {position: fixed;bottom: 0;left: 0;width: 100%;overflow: hidden;white-space: nowrap;background: #2563eb;color: #fff;padding: 8px 0;z-index: 9999}
-    .marquee-bottom span {display: inline-block;padding-left: 100%;animation: marquee-bottom 15s linear infinite;font-weight: bold;font-size: 14px}
-    @keyframes marquee-bottom {0%{transform: translateX(0)}100%{transform: translateX(-100%)}}
-
-    @media (max-width: 640px){
-      .brand img.logo{height:30px}
-      nav{gap:10px}
-      .btn-chart{padding:8px 12px}
-    }
-  </style>
+    .side{ display:none }
+  }
+</style>
 </head>
+
 <body>
-<header>
-  <div class="container row">
-    <div class="brand">
-      <img src="tsh.png" alt="東京精密発條 ロゴ" class="logo" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">
-      <svg viewBox="0 0 64 64" aria-hidden="true" style="display:none;width:38px;height:38px">
-        <circle cx="32" cy="32" r="30" fill="#2563eb22"/>
-        <path d="M12 34h40M12 30h40M20 18h24v6H20zM20 40h24v6H20z" stroke="#2563eb" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <circle cx="20" cy="32" r="3" fill="#2563eb"/>
-        <circle cx="44" cy="32" r="3" fill="#2563eb"/>
-      </svg>
-      <div class="brand-title">
-        <strong>品質管理生産技術</strong>
-        <small>東京精密発條株式会社</small>
+<div class="app">
+  <!-- ===== HEADER ===== -->
+  <header>
+    <div class="header-wrap">
+      <div class="brand">
+        <img src="tsh.png" alt="TSH">
+        <strong class="ttl">品質管理生産技術</strong>
+      </div>
+      <nav class="top-actions" aria-label="Top navigation">
+        <a class="btn" href="./index.html">🏠 ホーム</a>
+        <a class="btn primary" href="./forms.html" aria-current="page">📄 出荷検査成績書</a>
+        <a class="btn" href="./sagyoutejunsho.html">📝 作業手順書</a>
+        <a class="btn" href="./charts.html">📈 チャート</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="side">
+    <div class="side-card">
+      <h3>Pages</h3>
+      <div class="navlist">
+        <a class="link" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small>Dashboard</small></a>
+        <a class="link" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+        <a class="link" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+        <a class="link" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+        <a class="link" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+        <a class="link" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+      </div>
+
+      <h3>Admin</h3>
+      <div class="navlist">
+        <a class="link" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+        <a class="link" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+        <a class="link" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+        <a class="link" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
       </div>
     </div>
-    <nav>
-      <a href="./index.html">ホーム</a>
-      <a href="./forms.html"><strong>出荷検査成績書</strong></a>
-      <a href="./sagyoutejunsho.html">作業手順書</a>
-      <a class="btn-chart" href="./charts.html" aria-label="チャートページを開く">チャート</a>
-    </nav>
-  </div>
-</header>
+  </aside>
 
-<main>
-  <h1>出荷検査成績書フォルダ</h1>
-
-  <!-- Password -->
-  <div id="lock" class="card">
-    <div class="lock">
-      <input id="pwd" type="password" placeholder="パスワード" autocomplete="current-password">
-      <button id="btnToggle" type="button">表示</button>
-      <button id="btnUnlock" type="button">確定</button>
-      <span id="msg" class="msg"></span>
+  <!-- ===== MAIN ===== -->
+  <main>
+    <div class="page-head">
+      <h1 class="h1">出荷検査成績書フォルダ</h1>
+      <span class="small">必要に応じて検索／フィルタしてください</span>
     </div>
-  </div>
 
-  <!-- Search -->
-  <div id="searchWrap" class="card hidden" style="margin-top:12px;">
-    <div class="searchbar">
-      <input id="q" type="search" placeholder="検索（顧客名／サブフォルダ／フォーム名／説明）">
-      <button id="btnSearch" type="button">検索</button>
-      <button id="btnReset"  type="button">リセット</button>
-      <span id="hit" style="color:#64748b"></span>
-    </div>
-  </div>
+    <!-- Password Gate -->
+    <section id="lock" class="panel" aria-labelledby="lock-title">
+      <h2 id="lock-title" class="small" style="margin:0 0 10px">アクセス保護</h2>
+      <div class="lock">
+        <input id="pwd" class="input" type="password" placeholder="パスワード" autocomplete="current-password" aria-label="パスワード">
+        <button id="btnToggle" class="btn" type="button" aria-controls="pwd" aria-pressed="false">表示</button>
+        <button id="btnUnlock" class="btn" type="button">確定</button>
+        <span id="msg" class="msg"></span>
+      </div>
+    </section>
 
-  <div id="folders" class="hidden"></div>
-</main>
+    <!-- Search -->
+    <section id="searchWrap" class="panel hidden" aria-label="検索パネル">
+      <div class="searchbar">
+        <input id="q" class="search" type="search" placeholder="検索（顧客名／サブフォルダ／フォーム名／説明）" aria-label="検索語">
+        <button id="btnSearch" class="btn" type="button">検索</button>
+        <button id="btnReset"  class="btn" type="button">リセット</button>
+        <span id="hit" class="small" aria-live="polite"></span>
+      </div>
+    </section>
 
-<footer>&copy; <span id="year"></span> wahyu</footer>
+    <!-- Folders -->
+    <section class="panel">
+      <div id="folders" class="folders"></div>
+    </section>
+  </main>
+</div>
+
+<div class="marquee"><span>⚙️ 品質管理生産技術ポータルへようこそ ｜ 本日も安全第一でお願いします ｜ 水分補給して下さいお願い致します</span></div>
+<div class="footer">Design by Wahyu</div>
 
 <script>
   // ---------- Helpers ----------
   function getJSON(key, fallback){
-    try {
+    try{
       const val = localStorage.getItem(key);
       if (val === null || val === '') return fallback;
       return JSON.parse(val);
-    } catch (e){
-      // bersihkan jika rusak
+    }catch(e){
       localStorage.removeItem(key);
       return fallback;
     }
   }
 
   // ---------- Constants & Data ----------
-  document.getElementById('year').textContent = new Date().getFullYear();
   const PASSWORD = "kensa2025"; // ganti jika perlu
 
   const DATA = [
@@ -189,14 +320,15 @@
     btnSearch.addEventListener('click', search);
     btnReset.addEventListener('click', resetView);
 
-    // 表示/非表示 toggle
+    // toggle show/hide
     btnToggle.addEventListener('click', () => {
       const show = elPwd.type === 'password';
       elPwd.type = show ? 'text' : 'password';
       btnToggle.textContent = show ? '非表示' : '表示';
+      btnToggle.setAttribute('aria-pressed', show ? 'true' : 'false');
     });
 
-    // Live check password
+    // live validate
     elPwd.addEventListener('input', () => {
       if (!elPwd.value) { elMsg.textContent = ''; return; }
       const ok = elPwd.value === PASSWORD;
@@ -204,14 +336,14 @@
       elMsg.style.color = ok ? 'var(--ok)' : 'var(--ng)';
     });
 
-    // Restore state (aman dari data rusak)
+    // Restore state safely
     const unlocked = localStorage.getItem('kensa_unlocked') === '1';
     const savedQuery = localStorage.getItem('kensa_query') || "";
     const savedOpen = getJSON('kensa_open', []);
 
     if (unlocked) {
       elLock.classList.add('hidden');
-      elFolders.classList.remove('hidden');
+      elFolders.parentElement.classList.remove('hidden'); // panel wrapper visible
       elSearchWrap.classList.remove('hidden');
 
       elQ.value = savedQuery;
@@ -219,9 +351,6 @@
       openCustomers = new Set(savedOpen);
       render(DATA);
     }
-
-    // Info di console untuk debugging
-    console.info('Kensa portal loaded. If the buttons don’t work, clear site data: localStorage keys kensa_*.');
   })();
 
   // ---------- Actions ----------
@@ -230,7 +359,7 @@
     if (v !== PASSWORD) { elMsg.textContent = '× 違います'; elMsg.style.color = 'var(--ng)'; return; }
     elMsg.textContent = '✓ 正しい'; elMsg.style.color = 'var(--ok)';
     elLock.classList.add('hidden');
-    elFolders.classList.remove('hidden');
+    elFolders.parentElement.classList.remove('hidden');
     elSearchWrap.classList.remove('hidden');
     localStorage.setItem('kensa_unlocked','1');
     render(DATA);
@@ -251,6 +380,7 @@
     localStorage.removeItem('kensa_open');
     render(DATA);
     [...document.querySelectorAll('.folder-body')].forEach(b => b.style.display = 'none');
+    [...document.querySelectorAll('.caret')].forEach(c => c.style.transform='rotate(0deg)');
   }
 
   function render(src){
@@ -261,9 +391,11 @@
       const wrap = document.createElement('div');
       wrap.className = "folder";
 
-      const head = document.createElement('div');
+      const head = document.createElement('button');
       head.className = "folder-head";
-      head.textContent = c.customer;
+      head.type = "button";
+      head.setAttribute('aria-expanded', 'false');
+      head.innerHTML = `<span>${c.customer}</span><span class="caret">▾</span>`;
 
       const body = document.createElement('div');
       body.className = "folder-body";
@@ -280,8 +412,8 @@
           if (lastQuery && !hay.includes(lastQuery)) return;
 
           const a = document.createElement('a');
-          a.className = "link";
-          a.href = l.url;
+          a.className = "linkfile";
+          a.href = l.url || "#";
           a.target = "_blank";
           a.rel = "noopener noreferrer";
           a.innerHTML = `${l.label}<span>${l.desc || ""}</span>`;
@@ -297,16 +429,20 @@
           hits++; customerHasHit = true;
         });
 
-        if (sfDiv.querySelector('.link')) body.appendChild(sfDiv);
+        if (sfDiv.querySelector('.linkfile')) body.appendChild(sfDiv);
       });
 
       const shouldOpen = lastQuery ? customerHasHit : openCustomers.has(c.customer);
       body.style.display = shouldOpen ? 'block' : 'none';
+      head.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+      head.querySelector('.caret').style.transform = shouldOpen ? 'rotate(180deg)' : 'rotate(0deg)';
       if (shouldOpen && !lastQuery) openCustomers.add(c.customer);
 
       head.addEventListener('click', ()=>{
         const nowOpen = body.style.display === 'block';
         body.style.display = nowOpen ? 'none' : 'block';
+        head.setAttribute('aria-expanded', nowOpen ? 'false' : 'true');
+        head.querySelector('.caret').style.transform = nowOpen ? 'rotate(0deg)' : 'rotate(180deg)';
         if (!lastQuery) {
           if (nowOpen) openCustomers.delete(c.customer);
           else openCustomers.add(c.customer);
@@ -325,15 +461,9 @@
 
     if (!lastQuery) {
       [...elFolders.querySelectorAll('.folder-body')].forEach(b => b.style.display = 'none');
+      [...elFolders.querySelectorAll('.caret')].forEach(c => c.style.transform='rotate(0deg)');
     }
   }
 </script>
-
-<div class="marquee-bottom">
-  <span>⚙️ 品質管理生産技術ポータルへようこそ ｜ 本日も安全第一でお願いします ｜ 水分補給して下さいお願い致します</span>
-</div>
 </body>
 </html>
-
-
-
