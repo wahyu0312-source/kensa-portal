@@ -36,6 +36,10 @@
       "side   main";
     min-height:100vh;
   }
+  /* ⬇⬇ Collapsed state (desktop) */
+  .app.side-collapsed{ grid-template-columns:0 1fr; }
+  .app.side-collapsed .side{ display:none; }
+  .app.side-collapsed main{ max-width:min(1600px, calc(100vw - 40px)); }
 
   header{
     grid-area:header; position:sticky; top:0; z-index:60;
@@ -50,13 +54,17 @@
   .brand img{height:36px}
   .brand .ttl{font-weight:800}
 
-  .top-actions{display:flex; gap:8px; align-items:center}
+  .top-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
   .btn{
     height:34px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff;
     display:inline-flex; align-items:center; gap:8px; cursor:pointer; text-decoration:none;
   }
   .btn.primary{background:var(--accent); color:#fff; border-color:#1e40af; box-shadow:0 6px 16px rgba(37,99,235,.25)}
   .btn:hover{border-color:var(--ring)}
+
+  /* Desktop "Hide/Show Pages" button */
+  .collapse-btn{order:-1}
+  @media (max-width:900px){ .collapse-btn{ display:none } }
 
   /* Burger */
   .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px;
@@ -134,7 +142,7 @@
 </head>
 
 <body>
-<div class="app">
+<div class="app" id="appRoot">
   <!-- ===== HEADER ===== -->
   <header>
     <div class="header-wrap">
@@ -143,7 +151,11 @@
         <img src="tsh.png" alt="TSH" onerror="this.style.display='none'">
         <strong class="ttl">品質管理生産技術</strong>
       </div>
+
       <nav class="top-actions" aria-label="Top navigation">
+        <!-- NEW: Hide/Show Pages (desktop) -->
+        <button id="toggleSide" class="btn collapse-btn" type="button" title="Hide/Show Pages">⮜ Hide Pages</button>
+
         <a class="btn" href="./index.html">🏠 ホーム</a>
         <a class="btn primary" href="./forms.html" aria-current="page">📄 出荷検査成績書</a>
         <a class="btn" href="./sagyoutejunsho.html">📝 作業手順書</a>
@@ -258,7 +270,7 @@
   function setAdmin(on){
     document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
     localStorage.setItem('kensa_admin', on ? '1' : '0');
-    document.getElementById('btnAdmin').textContent = on ? '管理（ON）' : '管理';
+    const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
   }
   function readAdmin(){ return localStorage.getItem('kensa_admin')==='1'; }
   document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
@@ -268,6 +280,19 @@
       const c = prompt('Admin code:');
       if(c===ADMIN_CODE) setAdmin(true); else alert('コードが違います');
     }
+  });
+
+  /* ================= Sidebar collapse (desktop) ================= */
+  const appRoot = document.getElementById('appRoot');
+  const toggleSideBtn = document.getElementById('toggleSide');
+  function applySideCollapsed(collapsed){
+    appRoot.classList.toggle('side-collapsed', collapsed);
+    if(toggleSideBtn){ toggleSideBtn.textContent = collapsed ? '☰ Show Pages' : '⮜ Hide Pages'; }
+    localStorage.setItem('side_collapsed', collapsed ? '1' : '0');
+  }
+  toggleSideBtn?.addEventListener('click', ()=>{
+    const collapsed = !appRoot.classList.contains('side-collapsed');
+    applySideCollapsed(collapsed);
   });
 
   /* ================= Password lock for folder content ================= */
@@ -331,6 +356,7 @@
   // ---------- Init ----------
   (function init(){
     setAdmin(readAdmin());
+    applySideCollapsed(localStorage.getItem('side_collapsed')==='1');
 
     // Enter handlers
     elPwd.addEventListener('keydown', e => { if (e.key === "Enter") unlock(); });
@@ -482,9 +508,6 @@
       [...elFolders.querySelectorAll('.caret')].forEach(c => c.style.transform='rotate(0deg)');
     }
   }
-
-  // On load: restore admin UI visibility too
-  window.addEventListener('DOMContentLoaded', ()=> setAdmin(readAdmin()));
 </script>
 </body>
 </html>
