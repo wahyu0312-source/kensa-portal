@@ -28,6 +28,11 @@
     grid-template-areas:"header header" "side main"; min-height:100vh;
   }
 
+  /* COLLAPSE: hide sidebar & make main full */
+  .app.side-collapsed{ grid-template-columns:0 1fr; }
+  .app.side-collapsed .side{ display:none; }
+  .app.side-collapsed main{ max-width: min(1600px, calc(100vw - 40px)); }
+
   header{
     grid-area:header; position:sticky; top:0; z-index:60;
     backdrop-filter:blur(12px); background:#ffffffb8; border-bottom:1px solid var(--border);
@@ -46,6 +51,10 @@
   .seg .btn{height:34px; border:0; border-right:1px solid var(--border)} .seg .btn:last-child{border-right:0}
   .badge{height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--ink); background:#f1f5f9; border:1px solid var(--border); border-radius:999px}
   .badge::before{content:"⏱"}
+
+  /* toggle side button (desktop only) */
+  .toggle-side{ display:inline-flex; align-items:center; gap:6px }
+  @media (max-width:900px){ .toggle-side{ display:none } }
 
   /* Sidebar */
   .side{grid-area:side; position:sticky; top:64px; align-self:start; height:calc(100vh - 64px); overflow:auto; padding:18px}
@@ -76,7 +85,7 @@
   .urgent-banner{background:var(--danger); color:#fff; padding:10px 16px; border-radius:12px; text-align:center; font-weight:800; animation:blink 1s infinite}
   @keyframes blink{0%,50%,100%{opacity:1}25%,75%{opacity:.75}}
   .tag{display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:800; font-size:12px; color:#fff; margin-right:8px}
-  .tag-done{background:#0ea5e9}.tag-assem{background:var(--warning)}.tag-assem-done{background:var(--success)}.tag-inspect{background:var(--purple)}.tag-not{background:#94a3b8}
+  .tag-done{background:#0ea5e9}.tag-assem{background:var(--warning)}.tag-assem-done{background:#10b981}.tag-inspect{background:#8b5cf6}.tag-not{background:#94a3b8}
 
   /* Table */
   table{width:100%; border-collapse:separate; border-spacing:0; min-width:900px}
@@ -90,7 +99,7 @@
   .marquee{position:fixed; left:20px; right:20px; bottom:20px; z-index:30; background:var(--accent); color:#fff; font-weight:800; border-radius:12px; box-shadow:var(--shadow-1); white-space:nowrap; overflow:hidden}
   .marquee span{display:inline-block; padding:8px 0 8px 100%; animation:marquee 25s linear infinite}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
-  .footer{position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:var(--muted); background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border)}
+  .footer{position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:#muted; background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border)}
 
   /* Dropdown (管理) */
   .menubar{position:relative}
@@ -126,7 +135,7 @@
 </head>
 
 <body>
-<div class="app">
+<div class="app" id="appRoot">
   <!-- ============== HEADER ============== -->
   <header>
     <div class="header-wrap">
@@ -139,6 +148,9 @@
       </div>
 
       <nav class="top-actions">
+        <!-- NEW: collapse sidebar toggle (desktop) -->
+        <button id="toggleSide" class="btn toggle-side" type="button" title="Hide/Show Pages">⮜ Hide Pages</button>
+
         <div class="seg" role="group" aria-label="Auto refresh controls">
           <button id="btnRefresh" class="btn" type="button" title="Reload now">⟳ Refresh</button>
           <button id="btnLive" class="btn" type="button" aria-pressed="false" title="Toggle live">● Live</button>
@@ -275,7 +287,7 @@
 <!-- ===== SCRIPT ===== -->
 <script>
   /* ==== Admin gate (UI only) ==== */
-  const ADMIN_CODE = "kensa2025"; // ganti sesukamu
+  const ADMIN_CODE = "kensa2025";
   function setAdmin(on){
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = on ? '' : 'none');
     localStorage.setItem('kensa_admin', on ? '1' : '0');
@@ -283,7 +295,6 @@
   function readAdmin(){ return localStorage.getItem('kensa_admin') === '1'; }
   function ensureAdminFromStorage(){ setAdmin(readAdmin()); }
 
-  // Menu login/logout
   document.getElementById('m-admin-in')?.addEventListener('click', ()=>{
     const code = prompt('Admin code:');
     if(code === ADMIN_CODE){ setAdmin(true); alert('Admin ON'); }
@@ -293,7 +304,22 @@
     setAdmin(false); alert('Admin OFF');
   });
 
-  /* ==== CSV & render (sama seperti sebelumnya) ==== */
+  /* ==== Sidebar collapse (desktop) ==== */
+  const appRoot = document.getElementById('appRoot');
+  const btnToggleSide = document.getElementById('toggleSide');
+  function applySideCollapsed(collapsed){
+    appRoot.classList.toggle('side-collapsed', collapsed);
+    if(btnToggleSide){
+      btnToggleSide.textContent = collapsed ? '☰ Show Pages' : '⮜ Hide Pages';
+    }
+    localStorage.setItem('side_collapsed', collapsed ? '1' : '0');
+  }
+  btnToggleSide?.addEventListener('click', ()=>{
+    const collapsed = !appRoot.classList.contains('side-collapsed');
+    applySideCollapsed(collapsed);
+  });
+
+  /* ==== CSV & render ==== */
   const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
   const TAB_NAME ="最新情報";
   const CSV_URL  =`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
@@ -488,7 +514,8 @@
 
   // Init
   window.addEventListener('DOMContentLoaded', ()=>{
-    ensureAdminFromStorage();         // sembunyikan Admin jika belum login
+    ensureAdminFromStorage();                 // hide/show admin section
+    applySideCollapsed(localStorage.getItem('side_collapsed') === '1'); // sidebar state
     load(); startAutoRefresh(60000);
   });
 </script>
