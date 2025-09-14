@@ -34,23 +34,41 @@
       "side   main";
     min-height:100vh;
   }
+  /* Collapsed (desktop) */
+  .app.side-collapsed{ grid-template-columns:0 1fr; }
+  .app.side-collapsed .side{ display:none; }
+  .app.side-collapsed main{ max-width:min(1600px, calc(100vw - 40px)); }
+
   header{
-    grid-area:header; position:sticky; top:0; z-index:50;
+    grid-area:header; position:sticky; top:0; z-index:60;
     backdrop-filter:blur(12px); background:#ffffffc7; border-bottom:1px solid var(--border);
   }
   .header-wrap{
     height:64px; max-width:1400px; margin:0 auto;
-    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 20px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 14px;
   }
   .brand{display:flex; align-items:center; gap:10px}
   .brand img{height:36px}
   .brand .ttl{font-weight:800}
-  .top-actions{display:flex; gap:10px; align-items:center}
-  .btn{height:34px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff; display:inline-flex; align-items:center; gap:8px; text-decoration:none}
+
+  .top-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .btn{
+    height:34px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff;
+    display:inline-flex; align-items:center; gap:8px; text-decoration:none; cursor:pointer;
+  }
   .btn:hover{border-color:var(--ring)}
   .btn.primary{background:var(--accent); color:#fff; border-color:#1e40af; box-shadow:0 6px 16px rgba(37,99,235,.25)}
 
-  /* Sidebar */
+  /* Collapse toggle (desktop only) */
+  .collapse-btn{order:-1}
+  @media (max-width:900px){ .collapse-btn{ display:none } }
+
+  /* Burger */
+  .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px;
+          border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
+  .burger:active{transform:scale(.98)}
+
+  /* Sidebar (desktop) */
   .side{
     grid-area:side; position:sticky; top:64px; align-self:start;
     height:calc(100vh - 64px); overflow:auto; padding:18px;
@@ -65,6 +83,16 @@
   .slink:hover{ background:#f1f5ff }
   .ico{ width:22px; text-align:center }
 
+  /* Drawer (mobile) */
+  .drawer{ position:fixed; inset:0; z-index:70; display:none }
+  .drawer.open{ display:block }
+  .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
+  .drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
+                  background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto;
+                  transform:translateX(-100%); transition:transform .25s ease }
+  .drawer.open .panel{ transform:translateX(0) }
+  .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
+
   /* Main */
   main{ grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 96px }
   .page-head{ display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:14px }
@@ -75,8 +103,8 @@
   .panel + .panel{ margin-top:16px }
 
   /* Search */
-  .searchbar{ display:flex; gap:8px; align-items:center; margin-bottom:8px }
-  .search{ flex:1; height:40px; padding:0 14px; border:2px solid #0b12221a; border-radius:9999px; outline:none; background:#fff }
+  .searchbar{ display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap }
+  .search{ flex:1; min-width:220px; height:40px; padding:0 14px; border:2px solid #0b12221a; border-radius:9999px; outline:none; background:#fff }
   .btn-sm{ height:34px }
 
   /* Grid of folders */
@@ -97,26 +125,72 @@
   .marquee span{ display:inline-block; padding:8px 0 8px 100%; animation:marquee 18s linear infinite }
   @keyframes marquee{ 0%{transform:translateX(0)} 100%{transform:translateX(-100%)} }
   .footer{ position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:var(--muted); background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border) }
+
+  /* Admin auto-hide */
+  .admin-only{ display:none }
+
+  /* Responsive */
+  @media (max-width:900px){
+    .app{ grid-template-columns:1fr; grid-template-areas:"header" "main" }
+    .side{ display:none }
+    .burger{ display:inline-flex }
+    .top-actions a, .top-actions button:not(.collapse-btn){ } /* keep nav; burger shows drawer */
+  }
 </style>
 </head>
 
 <body>
-<div class="app">
+<div class="app" id="appRoot">
   <!-- ===== HEADER ===== -->
   <header>
     <div class="header-wrap">
+      <button id="btnBurger" class="burger" aria-label="メニュー"><span>☰</span></button>
+
       <div class="brand">
-        <img src="tsh.png" alt="TSH">
+        <img src="tsh.png" alt="TSH" onerror="this.style.display='none'">
         <strong class="ttl">品質管理生産技術</strong>
       </div>
+
       <nav class="top-actions" aria-label="Top navigation">
+        <button id="toggleSide" class="btn collapse-btn" type="button" title="Hide/Show Pages">⮜ Pages</button>
         <a class="btn" href="./index.html">🏠 ホーム</a>
         <a class="btn" href="./forms.html">📄 出荷検査成績書</a>
         <a class="btn primary" href="./sagyoutejunsho.html" aria-current="page">📝 作業手順書</a>
         <a class="btn" href="./charts.html">📈 チャート</a>
+        <a class="btn" href="./quality.html">🔎 品質情報</a>
+        <button id="btnAdmin" class="btn" type="button">管理</button>
       </nav>
     </div>
   </header>
+
+  <!-- ===== DRAWER (mobile) ===== -->
+  <div id="drawer" class="drawer" aria-hidden="true">
+    <div class="backdrop" data-close></div>
+    <aside class="panel">
+      <button class="close" data-close>✕</button>
+      <div class="side-card" style="box-shadow:none;border:0;padding-top:30px">
+        <h3>Pages</h3>
+        <div class="navlist">
+          <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:var(--muted)">Dashboard</small></a>
+          <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+          <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+          <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+          <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+          <a class="slink admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+        </div>
+
+        <div class="admin-only">
+          <h3>Admin</h3>
+          <div class="navlist">
+            <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+            <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+            <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+            <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
 
   <!-- ===== SIDEBAR ===== -->
   <aside class="side">
@@ -128,15 +202,17 @@
         <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
         <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
         <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-        <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+        <a class="slink admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
       </div>
 
-      <h3>Admin</h3>
-      <div class="navlist">
-        <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-        <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
-        <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
-        <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+      <div class="admin-only">
+        <h3>Admin</h3>
+        <div class="navlist">
+          <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+          <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+          <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+          <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+        </div>
       </div>
     </div>
   </aside>
@@ -167,7 +243,45 @@
 <div class="footer">Design by Wahyu</div>
 
 <script>
-/* ======== Data ======== */
+/* ========= Drawer (mobile) ========= */
+const drawer = document.getElementById('drawer');
+document.getElementById('btnBurger')?.addEventListener('click', ()=>{
+  drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');
+});
+drawer?.addEventListener('click', (e)=>{
+  if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
+});
+
+/* ========= Admin gate (UI only) ========= */
+const ADMIN_CODE = "admin2025"; // ganti sesuai kebutuhan
+function setAdmin(on){
+  document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
+  localStorage.setItem('kensa_admin', on ? '1' : '0');
+  const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
+}
+function isAdmin(){ return localStorage.getItem('kensa_admin')==='1'; }
+document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
+  if(isAdmin()){
+    if(confirm('AdminをOFFにしますか？')) setAdmin(false);
+  }else{
+    const c = prompt('Admin code:');
+    if(c===ADMIN_CODE) setAdmin(true); else alert('コードが違います');
+  }
+});
+
+/* ========= Sidebar collapse (desktop) ========= */
+const appRoot = document.getElementById('appRoot');
+const toggleSideBtn = document.getElementById('toggleSide');
+function applySideCollapsed(collapsed){
+  appRoot.classList.toggle('side-collapsed', collapsed);
+  toggleSideBtn.textContent = collapsed ? '☰ Show Pages' : '⮜ Hide Pages';
+  localStorage.setItem('side_collapsed', collapsed ? '1' : '0');
+}
+toggleSideBtn?.addEventListener('click', ()=>{
+  applySideCollapsed(!appRoot.classList.contains('side-collapsed'));
+});
+
+/* ========= Data ========= */
 const DATA = [
   { name:"出荷検査手順書", docs:[
     {title:"検査手順書MB-XX", url:"https://online.fliphtml5.com/fjppt/mhky/"},
@@ -186,7 +300,7 @@ const DATA = [
   ]},
 ];
 
-/* ======== Elements ======== */
+/* ========= Elements ========= */
 const elFolders = document.getElementById('folders');
 const elQ = document.getElementById('q');
 const elHit = document.getElementById('hit');
@@ -194,10 +308,10 @@ const elCount = document.getElementById('countInfo');
 const btnSearch = document.getElementById('btnSearch');
 const btnReset  = document.getElementById('btnReset');
 
-/* ======== State ======== */
+/* ========= State ========= */
 let lastQuery = "";
 
-/* ======== Render ======== */
+/* ========= Render ========= */
 function render(src){
   elFolders.innerHTML = "";
   let totalDocs = 0, hits = 0;
@@ -218,9 +332,7 @@ function render(src){
       return keep;
     });
 
-    card.innerHTML = `
-      <h3>📁 ${folder.name} <small style="color:#6b7280">(${filtered.length})</small></h3>
-    `;
+    card.innerHTML = `<h3>📁 ${folder.name} <small style="color:#6b7280">(${filtered.length})</small></h3>`;
 
     filtered.forEach(d=>{
       const row = document.createElement('div');
@@ -229,7 +341,6 @@ function render(src){
       docsWrap.appendChild(row);
     });
 
-    // hanya tampilkan kartu jika ada isi (saat difilter)
     if(filtered.length){
       card.appendChild(docsWrap);
       card.addEventListener('click', ()=> card.classList.toggle('open'));
@@ -242,7 +353,7 @@ function render(src){
   elCount.textContent = `合計ドキュメント: ${totalDocs}`;
 }
 
-/* ======== Events ======== */
+/* ========= Events ========= */
 btnSearch.addEventListener('click', ()=>{
   lastQuery = (elQ.value || "").trim().toLowerCase();
   render(DATA);
@@ -252,8 +363,12 @@ btnReset.addEventListener('click', ()=>{
 });
 elQ.addEventListener('keydown', e=>{ if(e.key==="Enter") btnSearch.click(); });
 
-/* ======== Init ======== */
-render(DATA);
+/* ========= Init ========= */
+window.addEventListener('DOMContentLoaded', ()=>{
+  setAdmin(localStorage.getItem('kensa_admin')==='1');
+  applySideCollapsed(localStorage.getItem('side_collapsed')==='1');
+  render(DATA);
+});
 </script>
 </body>
 </html>
