@@ -4,351 +4,276 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>品質管理生産技術システム</title>
-
-<!-- ================== STYLE ================== -->
 <style>
   :root{
-    /* Core */
-    --bg:        #f6f7fb;
-    --bg-2:      #eef2ff;
-    --panel:     #ffffff;
-    --ink:       #0f172a;
-    --muted:     #64748b;
-    --border:    #e5e7eb;
-    --ring:      #c7d2fe;
-
-    /* Brand */
-    --accent:    #2563eb;
-    --accent-2:  #1d4ed8;
-    --danger:    #dc2626;
-    --success:   #10b981;
-    --warning:   #f59e0b;
-    --purple:    #8b5cf6;
-
-    /* UI */
-    --radius-xl: 22px;
-    --radius-lg: 16px;
-    --radius:    12px;
-    --shadow-1:  0 12px 30px rgba(15,23,42,.08);
-    --shadow-2:  0 30px 60px rgba(15,23,42,.10);
+    --bg1:#eef2ff; --bg2:#f8fafc; --card:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
+    --accent:#2563eb; --danger:#b91c1c; --shadow:0 30px 60px rgba(15,23,42,.08); --radius:22px;
+    --urgent-row:#fee2e2; --urgent-cell:#ef4444;
   }
-
-  *{ box-sizing:border-box }
-  html,body{ height:100% }
+  *{box-sizing:border-box}
   body{
     margin:0; color:var(--ink);
-    font-family: system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
     background:
       radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
       radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
-      linear-gradient(120deg,#f8fafc,var(--bg));
+      linear-gradient(120deg,var(--bg1),var(--bg2));
+    padding-bottom:56px;
   }
 
-  /* ===== Shell (Header + Sidebar + Content) */
-  .app{
-    display:grid;
-    grid-template-columns: 260px 1fr;
-    grid-template-rows: 64px 1fr;
-    grid-template-areas:
-      "header header"
-      "side   main";
-    min-height:100vh;
-  }
+  /* ===== Header + Nav ===== */
+  header{position:sticky;top:0;z-index:30;background:#ffffffcc;backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+  .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
 
-  header{
-    grid-area:header;
-    position:sticky; top:0; z-index:50;
-    backdrop-filter: blur(12px);
-    background: #ffffffb8;
-    border-bottom:1px solid var(--border);
-  }
-  .header-wrap{
-    height:64px; max-width:1400px; margin:0 auto;
-    display:flex; align-items:center; justify-content:space-between;
-    padding:0 20px;
-  }
-  .brand{
-    display:flex; align-items:center; gap:10px;
-  }
-  .brand img{ height:36px }
-  .brand .ttl{ font-weight:800 }
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{height:36px}
+  .brand strong{white-space:nowrap}
 
-  .top-actions{ display:flex; gap:10px; align-items:center }
+  nav.primary{display:flex;align-items:center;gap:16px}
+  nav.primary a{color:var(--accent);font-weight:700;text-decoration:none}
+  nav.primary a:hover{text-decoration:underline}
 
-  /* segmented */
-  .seg{
-    display:inline-flex; background:#fff; border:1px solid var(--border);
-    border-radius:12px; overflow:hidden;
-  }
-  .seg .btn{ height:34px; border:0; border-right:1px solid var(--border) }
-  .seg .btn:last-child{ border-right:0 }
+  /* burger */
+  .burger{display:none; width:40px;height:36px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
+  .burger span{display:block;width:20px;height:2px;background:#0f172a;margin:4px auto;border-radius:2px}
+  @media (max-width: 900px){ nav.primary{display:none} .burger{display:block} }
 
-  .badge{ height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px;
-    font-size:12px; font-weight:700; color:var(--ink);
-    background:#f1f5f9; border:1px solid var(--border); border-radius:999px }
-  .badge::before{ content:"⏱" }
+  /* drawer */
+  .drawer{
+    position:fixed; inset:0 0 0 auto; width:80%; max-width:320px; background:#fff; border-left:1px solid var(--border);
+    transform:translateX(100%); transition:transform .25s ease; z-index:60; display:flex; flex-direction:column;
+  }
+  .drawer.open{ transform:translateX(0) }
+  .backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,.2); backdrop-filter:blur(1px); z-index:55; display:none;
+  }
+  .backdrop.show{ display:block }
+  .drawer header{position:static; border:0; background:#fff}
+  .drawer a{display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--border); color:#0f172a; text-decoration:none}
+  .drawer a strong{color:var(--accent)}
+  .drawer .sec{padding:10px 16px; font-size:12px; color:#6b7280}
 
-  /* Sidebar */
-  .side{
-    grid-area:side; position:sticky; top:64px; align-self:start;
-    height:calc(100vh - 64px); overflow:auto; padding:18px;
+  /* ===== Toolbar ===== */
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btn, .menu-btn{
+    height:36px;padding:0 12px;border:1px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;line-height:1
   }
-  .side-card{
-    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-xl);
-    box-shadow:var(--shadow-1); padding:14px;
-  }
-  .side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
-  .navlist{ display:grid; gap:4px }
-  .link{
-    display:flex; align-items:center; gap:10px;
-    padding:10px 12px; border-radius:12px; color:var(--ink); text-decoration:none;
-  }
-  .link small{ color:var(--muted) }
-  .link:hover{ background:#f1f5ff }
-  .link strong{ font-weight:700 }
-  .ico{ width:22px; text-align:center }
+  .btn.active{border-color:#93c5fd;background:#f0f9ff}
+  .small{font-size:12px;color:var(--muted)}
 
-  /* Main */
-  main{
-    grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 96px;
-  }
-  .page-head{
-    display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:14px;
-  }
-  .h1{ font-size:22px; margin:0 }
-  .small{ font-size:12px; color:var(--muted) }
+  /* Segmented */
+  .segmented{display:inline-flex;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff}
+  .segmented .btn{border:0;border-right:1px solid var(--border);border-radius:0}
+  .segmented .btn:last-child{border-right:0}
 
-  .panel{
-    background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl);
-    box-shadow:var(--shadow-2); padding:18px; overflow:auto;
-  }
-  .panel + .panel{ margin-top:18px }
+  .badge{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;font-size:12px;font-weight:700;color:#0f172a;background:#f1f5f9;border:1px solid var(--border);border-radius:999px}
+  .badge::before{content:"⏱";font-size:12px}
 
-  .panel-title{
-    display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px;
-  }
-  .chip{ display:inline-flex; align-items:center; gap:8px; background:#f1f5f9; border:1px solid var(--border);
-    padding:6px 10px; border-radius:999px }
-  .chip strong{ font-size:12px }
-  .count{ font-weight:800 }
+  main{max-width:1200px;margin:24px auto;padding:0 20px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px; /* overflow:auto; ← matikan supaya tak ada scroll dalam card */ }
 
-  /* filter + export row */
-  .toolbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:6px 0 8px }
-  .toolbar .btn{ height:36px }
-  input[type="date"]{
-    height:36px; padding:0 12px; border:1px solid var(--border); border-radius:10px;
-    background:#fff; color:var(--ink);
-  }
+  .card-title{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px}
+  .subtle{color:#475569;font-size:14px}
 
-  /* Buttons */
-  .btn{
-    display:inline-flex; align-items:center; gap:8px; line-height:1;
-    padding:0 12px; height:32px; border-radius:10px; border:1px solid var(--border); background:#fff; cursor:pointer;
-  }
-  .btn:hover{ border-color:var(--ring) }
-  .btn.active{ background:#f0f9ff; border-color:#93c5fd }
-  .btn[disabled]{ opacity:.6; cursor:wait }
-
-  /* Status + urgent */
-  .flag-urgent{
-    display:inline-flex; align-items:center; gap:6px; padding:2px 10px; margin-right:8px;
-    border-radius:999px; background:var(--danger); color:#fff; font-weight:800; font-size:12px;
-  }
-  .urgent-banner{
-    background:var(--danger); color:#fff; padding:10px 16px; border-radius:12px; text-align:center; font-weight:800;
-    animation:blink 1s infinite;
-  }
-  @keyframes blink{ 0%,50%,100%{opacity:1} 25%,75%{opacity:.75} }
-
-  .tag{
-    display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:800; font-size:12px; color:#fff;
-    margin-right:8px
-  }
-  .tag-done{ background:#0ea5e9 }
-  .tag-assem{ background:var(--warning) }
-  .tag-assem-done{ background:var(--success) }
-  .tag-inspect{ background:var(--purple) }
-  .tag-not{ background:#94a3b8 }
-
-  /* Table */
-  table{ width:100%; border-collapse:separate; border-spacing:0; min-width:900px }
+  /* ===== TABLE: FIT TANPA SCROLL ===== */
+  table{width:100%; border-collapse:separate; border-spacing:0;} /* min-width dihapus */
   thead th{
-    position:sticky; top:0; z-index:1; background:#f8fafc; color:#475569;
-    text-align:left; font-weight:800; padding:12px 14px; border-bottom:1px solid var(--border);
+    background:#f8fafc;color:#475569;position:sticky;top:0;z-index:1;text-align:left;font-weight:700;
+    padding:12px 14px;border-bottom:1px solid var(--border)
   }
-  tbody td{ padding:12px 14px; border-bottom:1px solid var(--border); white-space:nowrap }
-  tbody tr:hover{ background:#f6f9ff }
-  tbody tr.row-urgent td{ background:#fee2e2 !important; color:#b91c1c; font-weight:600 }
-  td.cell-urgent{ background:#ef4444 !important; color:#fff !important; font-weight:800 !important; border-radius:8px }
+  th, td{ white-space:normal; word-break:break-word; } /* wrap teks panjang */
+  tbody td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tbody tr:hover{background:#f1f5ff}
 
-  /* Footer ticker */
-  .marquee{
-    position:fixed; left:20px; right:20px; bottom:20px; z-index:30;
-    background:var(--accent); color:#fff; font-weight:800;
-    border-radius:12px; box-shadow:var(--shadow-1);
-    white-space:nowrap; overflow:hidden;
-  }
-  .marquee span{ display:inline-block; padding:8px 0 8px 100%; animation:marquee 25s linear infinite }
-  @keyframes marquee{ 0%{ transform:translateX(0) } 100%{ transform:translateX(-100%) } }
-
-  .footer{
-    position:fixed; bottom:0; left:0; right:0; z-index:31;
-    text-align:center; font-size:12px; color:var(--muted); background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border);
+  /* ellipsis untuk kolom super panjang saat layar besar (opsional) */
+  @media (min-width: 1000px){
+    td:nth-child(3), th:nth-child(3),
+    td:nth-child(4), th:nth-child(4){
+      max-width: 380px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
   }
 
-  /* Dropdown (管理) */
+  /* Urgent styles */
+  tr.row-urgent td{background:var(--urgent-row)!important;color:#b91c1c;font-weight:600}
+  td.cell-urgent{background:var(--urgent-cell)!important;color:#fff!important;font-weight:800!important;border-radius:8px}
+  .flag-urgent{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;background:#dc2626;color:#fff;font-weight:800;font-size:12px;margin-right:8px}
+  .flag-urgent::before{content:"⚠";}
+
+  /* Status badges */
+  .tag{display:inline-flex;align-items:center;padding:2px 10px;border-radius:999px;font-weight:800;font-size:12px;color:#fff;margin-right:8px}
+  .tag-done{background:#0ea5e9}
+  .tag-assem{background:#f59e0b}
+  .tag-assem-done{background:#10b981}
+  .tag-inspect{background:#8b5cf6}
+  .tag-not{background:#94a3b8}
+
+  .chip{display:inline-flex;align-items:center;gap:8px;background:#f1f5f9;border:1px solid var(--border);padding:6px 10px;border-radius:999px}
+  .chip strong{font-size:12px;color:#0f172a}
+  .chip .count{font-weight:800}
+
+  #urgent-banner{background:#b91c1c;color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:14px;font-weight:bold;text-align:center;animation:blink 1s infinite}
+  @keyframes blink{0%,50%,100%{background:#b91c1c}25%,75%{background:#ef4444}}
+
+  .export-bar{margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 0}
+  .filterbar input[type="date"]{padding:8px 10px;border:1px solid var(--border);border-radius:10px}
+
+  /* Compact mode (opsional) */
+  .compact body{font-size:14px}
+  .compact thead th, .compact tbody td{padding:8px 8px}
+  .compact td:nth-child(3), .compact td:nth-child(4){max-width:220px}
+
+  @media (max-width: 768px){
+    .row{flex-direction:column;align-items:flex-start}
+    table{font-size:12px}
+    .card{padding:12px}
+    .export-bar{justify-content:flex-start}
+  }
+
+  .marquee{position:fixed;left:0;right:0;bottom:20px;background:var(--accent);color:#fff;font-weight:bold;padding:6px 0;white-space:nowrap;overflow:hidden;z-index:20;border-radius:8px; margin:0 auto; width:min(90%,1200px)}
+  .marquee span{display:inline-block;padding-left:100%;animation:marquee 25s linear infinite}
+  @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+  .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:#64748b;background:#f1f5f9;padding:4px 0;z-index:21}
+
+  /* --- 管理 dropdown --- */
   .menubar{ position:relative }
   .menu{
-    position:absolute; top:110%; right:0; min-width:230px; background:#fff;
-    border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-2);
+    position:absolute; top:110%; right:0; min-width:220px; background:#fff;
+    border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow);
     padding:6px; display:none; z-index:100;
   }
   .menu.open{ display:block }
   .menu .sec{ padding:6px 10px 4px; font-size:12px; color:#6b7280 }
   .menu a, .menu button{
     display:flex; align-items:center; gap:8px; width:100%;
-    padding:9px 10px; border:0; background:transparent; border-radius:8px; text-align:left; color:#0f172a; text-decoration:none;
+    padding:9px 10px; border:0; background:transparent; border-radius:8px; text-align:left; color:#0f172a;
   }
+  .menu a{text-decoration:none}
   .menu a:hover, .menu button:hover{ background:#f1f5f9 }
   .sep{ height:1px; background:var(--border); margin:6px }
-
-  /* Responsive */
-  @media (max-width: 1080px){
-    .app{ grid-template-columns: 220px 1fr }
-  }
-  @media (max-width: 900px){
-    .app{
-      grid-template-columns: 1fr;
-      grid-template-areas:
-        "header"
-        "main";
-    }
-    .side{ display:none }
-    table{ min-width:unset }
-  }
 </style>
 </head>
-
 <body>
-<div class="app">
-  <!-- ============== HEADER ============== -->
-  <header>
-    <div class="header-wrap">
-      <div class="brand">
-        <img src="tsh.png" alt="TSH">
-        <div class="ttl ttl--brand"><strong class="ttl">品質管理生産技術</strong></div>
-      </div>
-
-      <nav class="top-actions">
-        <!-- Segmented: Refresh | Live -->
-        <div class="seg" role="group" aria-label="Auto refresh controls">
-          <button id="btnRefresh" class="btn" type="button" title="Reload now">⟳ Refresh</button>
-          <button id="btnLive" class="btn" type="button" aria-pressed="false" title="Toggle live">● Live</button>
-        </div>
-
-        <!-- Interval badge -->
-        <span id="intervalInfo" class="badge">60s</span>
-
-        <!-- ▼ 管理 dropdown -->
-        <div class="menubar">
-          <button id="menuBtn" class="btn" type="button">管理 ▾</button>
-          <div id="menu" class="menu" role="menu" aria-hidden="true">
-            <div class="sec">ナビ</div>
-            <a href="./" role="menuitem">🏠 トップ</a>
-            <a href="./forms.html" role="menuitem">📄 出荷検査成績書</a>
-            <a href="./quality.html" role="menuitem">📊 品質情報</a>
-            <a href="./admin-prefix.html" role="menuitem">🛠️ Admin Prefix</a>
-
-            <div class="sep"></div>
-            <div class="sec">操作</div>
-            <button id="m-refresh" role="menuitem">🔄 Refresh</button>
-            <button id="m-live" role="menuitem">🟢 Live 切替</button>
-          </div>
-        </div>
-        <!-- ▲ 管理 dropdown -->
-      </nav>
+<header>
+  <div class="wrap row">
+    <div class="brand">
+      <img src="tsh.png" alt="TSH">
+      <strong>品質管理生産技術</strong>
     </div>
+
+    <nav class="primary" aria-label="Primary">
+      <a href="./index.html"><strong>ホーム</strong></a>
+      <a href="./forms.html">出荷検査成績書</a>
+      <a href="./sagyoutejunsho.html">作業手順書</a>
+      <a href="./charts.html">チャート</a>
+      <a href="./quality.html">品質情報</a>
+      <a href="./claim.html">Trial Page</a>
+    </nav>
+
+    <div class="controls">
+      <!-- burger for mobile -->
+      <button id="btnBurger" class="burger" aria-label="Open menu" aria-controls="drawer" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+
+      <div class="segmented" role="group" aria-label="Auto refresh controls">
+        <button id="btnRefresh" class="btn" type="button" title="Reload now">Refresh</button>
+        <button id="btnLive" class="btn" type="button" aria-pressed="false" title="Toggle live">Live</button>
+      </div>
+      <span id="intervalInfo" class="badge">60s</span>
+
+      <div class="menubar">
+        <button id="menuBtn" class="menu-btn" type="button">管理 ▾</button>
+        <div id="menu" class="menu" role="menu" aria-hidden="true">
+          <div class="sec">ナビ</div>
+          <a href="./" role="menuitem">🏠 トップ</a>
+          <a href="./forms.html" role="menuitem">📄 出荷検査成績書</a>
+          <a href="./quality.html" role="menuitem">📊 品質情報</a>
+          <a href="./admin-prefix.html" role="menuitem">🛠️ Admin Prefix</a>
+          <div class="sep"></div>
+          <div class="sec">操作</div>
+          <button id="m-refresh" role="menuitem">🔄 Refresh</button>
+          <button id="m-live" role="menuitem">🟢 Live 切替</button>
+          <button id="btnCompact" role="menuitem">📏 Compact</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile Drawer -->
+<div id="backdrop" class="backdrop" hidden></div>
+<aside id="drawer" class="drawer" aria-hidden="true">
+  <header class="row" style="padding:12px 16px">
+    <div class="brand"><img src="tsh.png" alt="TSH" style="height:28px"><strong>メニュー</strong></div>
+    <button id="btnCloseDrawer" class="btn" type="button">閉じる</button>
   </header>
+  <a href="./index.html"><strong>ホーム</strong> ｜ Dashboard</a>
+  <a href="./forms.html">出荷検査成績書</a>
+  <a href="./sagyoutejunsho.html">作業手順書</a>
+  <a href="./charts.html">チャート</a>
+  <a href="./quality.html">品質情報</a>
+  <div class="sec">ADMIN</div>
+  <a href="./admin-numbering.html">Admin Numbering</a>
+  <a href="./admin-prefix.html">Admin Prefix</a>
+  <a href="./claim.html">Trial Page</a>
+</aside>
 
-  <!-- ============== SIDEBAR LINKS (semua file) ============== -->
-  <aside class="side">
-    <div class="side-card">
-      <h3>Pages</h3>
-      <div class="navlist">
-        <a class="link" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small>Dashboard</small></a>
-        <a class="link" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
-        <a class="link" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
-        <a class="link" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
-        <a class="link" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-        <a class="link" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
-      </div>
+<main>
+  <div id="urgent-banner">現在、至急案件はありません。</div>
 
-      <h3 class="mt">Admin</h3>
-      <div class="navlist">
-        <a class="link" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-        <a class="link" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
-        <a class="link" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
-        <a class="link" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+  <div style="display:flex;justify-content:space-between;align-items:end">
+    <h1>全件一覧</h1>
+    <span id="lastUpdated" class="small"></span>
+  </div>
+
+  <!-- 本日出荷 -->
+  <section id="todaySection" class="card" style="display:none;margin-bottom:20px">
+    <div class="card-title">
+      <h2 style="margin:0">本日出荷</h2>
+      <span class="chip"><strong>件数</strong><span id="todayCount" class="count">0</span></span>
+    </div>
+    <table id="todayTable">
+      <thead><tr id="todayHead"></tr></thead>
+      <tbody id="todayBody"></tbody>
+    </table>
+  </section>
+
+  <!-- 全件一覧 -->
+  <section class="card">
+    <div class="card-title">
+      <h2 style="margin:0">全件一覧</h2>
+      <div class="filterbar">
+        <label class="subtle">出荷日フィルタ：</label>
+        <input type="date" id="filterDate">
+        <button class="btn" id="btnToday" type="button">本日出荷のみ</button>
+        <button class="btn" id="btnClear" type="button">Clear</button>
       </div>
     </div>
-  </aside>
 
-  <!-- ============== MAIN ============== -->
-  <main>
-    <div class="page-head">
-      <h1 class="h1">出荷状況一覧</h1>
-      <span id="lastUpdated" class="small"></span>
+    <div class="export-bar">
+      <button class="btn" id="btnExcel" type="button">Export Excel</button>
+      <button class="btn" id="btnPDF" type="button">Export PDF</button>
     </div>
 
-    <div id="urgent-banner" class="urgent-banner" style="display:none">現在、至急案件はありません。</div>
-
-    <!-- 本日出荷 -->
-    <section id="todaySection" class="panel" style="display:none">
-      <div class="panel-title">
-        <h2 style="margin:0">本日出荷</h2>
-        <span class="chip"><strong>件数</strong><span id="todayCount" class="count">0</span></span>
-      </div>
-      <table id="todayTable">
-        <thead><tr id="todayHead"></tr></thead>
-        <tbody id="todayBody"></tbody>
-      </table>
-    </section>
-
-    <!-- 全件一覧 -->
-    <section class="panel">
-      <div class="panel-title">
-        <h2 style="margin:0">全件一覧</h2>
-        <div class="toolbar">
-          <label class="small">出荷日：</label>
-          <input type="date" id="filterDate">
-          <button class="btn" id="btnToday" type="button">本日出荷のみ</button>
-          <button class="btn" id="btnClear" type="button">Clear</button>
-        </div>
-      </div>
-
-      <div class="toolbar" style="justify-content:flex-end">
-        <button class="btn" id="btnExcel" type="button">⬇ Excel</button>
-        <button class="btn" id="btnPDF" type="button">⬇ PDF</button>
-      </div>
-
-      <table id="shipTable">
-        <thead><tr id="shipHead"></tr></thead>
-        <tbody id="shipBody"></tbody>
-      </table>
-      <div class="small" id="shipHint" style="margin-top:8px"></div>
-    </section>
-  </main>
-</div>
+    <table id="shipTable">
+      <thead><tr id="shipHead"></tr></thead>
+      <tbody id="shipBody"></tbody>
+    </table>
+    <div class="muted small" id="shipHint"></div>
+  </section>
+</main>
 
 <div class="marquee"><span>品質管理生産技術システム - 最新の出荷状況を表示しています - Awali Dengan Bismillah</span></div>
 <div class="footer">Design by Wahyu</div>
 
-<!-- ================== LIBS ================== -->
+<!-- Export libs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
-<!-- ================== SCRIPT ================== -->
 <script>
   // ===== Config =====
   const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
@@ -373,12 +298,7 @@
   function indexByName(header){
     const map={}; header.forEach((h,i)=>map[S(h)]=i);
     const find=names=>{for(const n of names){if(n in map) return map[n];} return null;};
-    const findFuzzy = (regex) => {
-      for(let i=0;i<header.length;i++){
-        if(regex.test(S(header[i]))) return i;
-      }
-      return null;
-    };
+    const findFuzzy = (regex) => { for(let i=0;i<header.length;i++){ if(regex.test(S(header[i]))) return i; } return null; };
     return {
       date:find(["出荷日","日付","Date"]),
       cust:find(["顧客名","客先","Customer"]),
@@ -390,7 +310,6 @@
       note:find(["注番","注文番号","備考","注文","Order","注釈"]),
       status_done:find(["製品状況","製品状態","納品状況"]) ?? findFuzzy(/(製品|納品).*(状況|状態)/),
       status_flag:find(["Status","ステータス","状態","至急"]) ?? findFuzzy(/status|至急/i),
-      // QC (optional)
       qc_check:  find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFuzzy(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
       qc_label:  find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"])            ?? findFuzzy(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
       qc_result: find(["検査成績表","成績表","InspectionReport"])   ?? findFuzzy(/(検査|inspection).*(成績|report)/i),
@@ -415,15 +334,12 @@
 
   // ===== 製品状況 → Badge =====
   function getStatusFromValue(val){
-    const raw = S(val);
-    const t   = raw.replace(/\s/g,'').toLowerCase();
-
+    const raw = S(val); const t = raw.replace(/\s/g,'').toLowerCase();
     if(!t || /(未|clear)/.test(t)) return {label:'未組立', cls:'tag-not'};
     if(/(検査済み|済|完了|ok|done)/.test(t)) return {label:'済', cls:'tag-done'};
     if(/(組立完了)/.test(raw))            return {label:'組立完了', cls:'tag-assem-done'};
     if(/(検査中|検中)/.test(raw))         return {label:'検査中',   cls:'tag-inspect'};
     if(/(組立中|組中)/.test(raw))         return {label:'組立中',   cls:'tag-assem'};
-
     if(/検/.test(raw))                    return {label:'検査中',   cls:'tag-inspect'};
     if(/組/.test(raw))                    return {label:'組立中',   cls:'tag-assem'};
     return null;
@@ -436,11 +352,9 @@
       const au=idx.status_flag!=null && isUrgent(valAt(a, idx.status_flag));
       const bu=idx.status_flag!=null && isUrgent(valAt(b, idx.status_flag));
       if(au!==bu) return au?-1:1;
-
       const sa = idx.status_done!=null ? (getStatusFromValue(valAt(a, idx.status_done))?.label) : null;
       const sb = idx.status_done!=null ? (getStatusFromValue(valAt(b, idx.status_done))?.label) : null;
       if(rank(sa)!==rank(sb)) return rank(sa)-rank(sb);
-
       const da=idx.date!=null ? parseJPDate(valAt(a, idx.date)) : null;
       const db=idx.date!=null ? parseJPDate(valAt(b, idx.date)) : null;
       const ta = da ? da.getTime() : -Infinity;
@@ -453,22 +367,16 @@
   function renderTable(header, idx, rows, tbodyEl, headEl){
     headEl.innerHTML = header.map(h=>`<th>${h}</th>`).join('');
     tbodyEl.innerHTML = '';
-
     rows.forEach(r=>{
       const rowUrg  = idx.status_flag!=null ? isUrgent(valAt(r, idx.status_flag)) : false;
-
       const tds = header.map((_,i)=>`<td>${S(r[i])}</td>`);
-
       const dateCol = (idx.date!=null ? idx.date : 0);
       const d = idx.date!=null ? parseJPDate(valAt(r, idx.date)) : null;
       const dateText = d ? toInputDate(d) : S(r[dateCol] ?? '');
-
-      const urgentFlag = rowUrg ? `<span class="flag-urgent">⚠ 至急</span>` : '';
+      const urgentFlag = rowUrg ? `<span class="flag-urgent">至急</span>` : '';
       const statusObj = (idx.status_done!=null) ? getStatusFromValue(valAt(r, idx.status_done)) : null;
       const badge = statusObj ? `<span class="tag ${statusObj.cls}">${statusObj.label}</span>` : '';
-
       tds[dateCol] = `<td>${urgentFlag}${badge}${dateText}</td>`;
-
       tbodyEl.insertAdjacentHTML('beforeend', `<tr class="${rowUrg?'row-urgent':''}">${tds.join('')}</tr>`);
     });
   }
@@ -484,11 +392,8 @@
       const btn=document.getElementById('btnRefresh');
       const old=btn.textContent; btn.textContent='Loading...'; btn.disabled=true;
 
-      if(aborter) aborter.abort();
-      aborter=new AbortController();
-
-      const url = CSV_URL + "&_ts=" + Date.now();
-      const res=await fetch(url,{signal:aborter.signal,cache:'no-store'});
+      aborter?.abort(); aborter=new AbortController();
+      const res=await fetch(CSV_URL + "&_ts=" + Date.now(),{signal:aborter.signal,cache:'no-store'});
       if(!res.ok) throw new Error("HTTP "+res.status);
       const text=await res.text();
       const data=parseCSV(text);
@@ -497,27 +402,19 @@
       const header=data[0], rowsRaw=data.slice(1);
       const idx=indexByName(header);
       const cmp = makeComparator(idx);
-
       const rows=[...rowsRaw].sort(cmp); // Urgent→Status→Date
       cached = { header, rows, idx, cmp };
 
       // Urgent banner
       const urgentCount = rows.reduce((n,r)=> n + (idx.status_flag!=null && isUrgent(valAt(r, idx.status_flag)) ? 1 : 0), 0);
-      const banner = document.getElementById('urgent-banner');
-      if(urgentCount>0){
-        banner.style.display='block';
-        banner.textContent = `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`;
-      }else{
-        banner.style.display='none';
-      }
+      document.getElementById('urgent-banner').textContent =
+        urgentCount>0 ? `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。` : '現在、至急案件はありません。';
 
-      // 今日 section
+      // Today
       renderTodaySection();
-
       // Main table
       applyFilter(null);
 
-      // Info
       const cols = [];
       if(idx.qty!=null) cols.push('数量:'+header[idx.qty]);
       if(idx.cust!=null) cols.push('顧客:'+header[idx.cust]);
@@ -526,14 +423,13 @@
         `データ元: ${TAB_NAME}（${rows.length} 行）｜${cols.join(' ｜ ')} ｜ Urgent列: ${idx.status_flag!=null ? header[idx.status_flag] : '—'}`;
       document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
 
-      // Prefill filter ke hari ini
       document.getElementById('filterDate').value = toInputDate(new Date());
 
       btn.textContent=old; btn.disabled=false; isLoading=false;
     }catch(e){
       console.error("[ERROR] load()", e);
       const btn=document.getElementById('btnRefresh');
-      btn.textContent='Refresh'; btn.disabled=false; isLoading=false;
+      btn.textContent='Refresh now'; btn.disabled=false; isLoading=false;
       document.getElementById('shipHint').textContent='読み込みに失敗しました。シート名/公開設定/列名をご確認ください。';
     }
   }
@@ -541,19 +437,14 @@
   function renderTodaySection(){
     const { header, rows, idx, cmp } = cached;
     if(idx.date==null){ document.getElementById('todaySection').style.display='none'; return; }
-
     const today = new Date();
-    const todayRows = rows
-      .filter(r => {
-        const d = parseJPDate(valAt(r, idx.date));
-        return d && sameYMD(d, today);
-      })
-      .sort(cmp);
-
+    const todayRows = rows.filter(r => {
+      const d = parseJPDate(valAt(r, idx.date));
+      return d && sameYMD(d, today);
+    }).sort(cmp);
     const visible = todayRows.length>0;
     document.getElementById('todaySection').style.display = visible ? '' : 'none';
     if(!visible) return;
-
     document.getElementById('todayCount').textContent = todayRows.length;
     renderTable(header, idx, todayRows, document.getElementById('todayBody'), document.getElementById('todayHead'));
   }
@@ -562,7 +453,6 @@
   function applyFilter(dateStr){
     const { header, rows, idx, cmp } = cached;
     let view = rows;
-
     if(idx.date!=null && dateStr){
       const target = new Date(dateStr+"T00:00:00");
       view = rows.filter(r => {
@@ -570,7 +460,6 @@
         return d && sameYMD(d, target);
       }).sort(cmp);
     }
-
     renderTable(header, idx, view, document.getElementById('shipBody'), document.getElementById('shipHead'));
   }
 
@@ -601,40 +490,40 @@
     else{ liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off'; }
   }
 
-  // Events
+  // ===== Events =====
   document.getElementById('btnRefresh').addEventListener('click', load);
   document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
   document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
 
   document.getElementById('filterDate').addEventListener('change', (e)=> applyFilter(e.target.value || null));
-  document.getElementById('btnToday').addEventListener('click', ()=> applyFilter(toInputDate(new Date())));
-  document.getElementById('btnClear').addEventListener('click', ()=>{
-    document.getElementById('filterDate').value = "";
-    applyFilter(null);
-  });
+  document.getElementById('btnToday').addEventListener('click', ()=> applyFilter(new Date().toISOString().slice(0,10)));
+  document.getElementById('btnClear').addEventListener('click', ()=>{ document.getElementById('filterDate').value = ""; applyFilter(null); });
 
-  window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
-</script>
-
-<!-- 管理 menu logic -->
-<script>
+  // 管理 menu
   const _menuBtn = document.getElementById('menuBtn');
   const _menu    = document.getElementById('menu');
-
-  function closeMenu(){
-    _menu?.classList.remove('open');
-    _menu?.setAttribute('aria-hidden','true');
-  }
-  _menuBtn?.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    _menu.classList.toggle('open');
-    _menu.setAttribute('aria-hidden', _menu.classList.contains('open') ? 'false' : 'true');
-  });
+  function closeMenu(){ _menu?.classList.remove('open'); _menu?.setAttribute('aria-hidden','true'); }
+  _menuBtn?.addEventListener('click', (e)=>{ e.stopPropagation(); _menu.classList.toggle('open'); _menu.setAttribute('aria-hidden', _menu.classList.contains('open') ? 'false' : 'true'); });
   document.addEventListener('click', closeMenu);
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
-
   document.getElementById('m-refresh')?.addEventListener('click', ()=>{ closeMenu(); document.getElementById('btnRefresh')?.click(); });
   document.getElementById('m-live')?.addEventListener('click', ()=>{ closeMenu(); document.getElementById('btnLive')?.click(); });
+  document.getElementById('btnCompact')?.addEventListener('click', ()=>{ document.documentElement.classList.toggle('compact'); closeMenu(); });
+
+  // Drawer (mobile)
+  const drawer  = document.getElementById('drawer');
+  const backdrop= document.getElementById('backdrop');
+  const burger  = document.getElementById('btnBurger');
+  const closeDr = document.getElementById('btnCloseDrawer');
+  function openDrawer(){ drawer.classList.add('open'); backdrop.classList.add('show'); burger.setAttribute('aria-expanded','true'); drawer.setAttribute('aria-hidden','false'); backdrop.hidden=false; }
+  function closeDrawer(){ drawer.classList.remove('open'); backdrop.classList.remove('show'); burger.setAttribute('aria-expanded','false'); drawer.setAttribute('aria-hidden','true'); backdrop.hidden=true; }
+  burger.addEventListener('click', openDrawer);
+  closeDr.addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeDrawer(); });
+
+  // Init
+  window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
 </script>
 </body>
 </html>
