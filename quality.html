@@ -24,56 +24,73 @@
       radial-gradient(1100px 540px at -12% -12%, #c7d2fe33 0%, transparent 60%),
       radial-gradient(820px 460px at 112% -6%, #bae6fd33 0%, transparent 55%),
       linear-gradient(120deg,#f8fafc,var(--bg));
+    overflow-x: hidden; /* cegah scrollbar horizontal saat overlay aktif */
   }
 
-  /* ===== Shell (header + sidebar + main) ===== */
+  /* ===== Shell (header + main). Sidebar pakai hover/drawer ===== */
   .app{
     display:grid;
-    grid-template-columns:260px 1fr;
     grid-template-rows:64px 1fr;
     grid-template-areas:
-      "header header"
-      "side   main";
+      "header"
+      "main";
     min-height:100vh;
   }
   header{
-    grid-area:header; position:sticky; top:0; z-index:50;
+    grid-area:header; position:sticky; top:0; z-index:60;
     backdrop-filter: blur(12px);
     background: color-mix(in srgb, var(--panel) 85%, transparent);
     border-bottom:1px solid var(--border);
   }
   .header-wrap{
     height:64px; max-width:1400px; margin:0 auto;
-    display:flex; align-items:center; gap:12px; padding:0 20px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 20px;
   }
   .brand{display:flex; align-items:center; gap:10px}
   .brand img{height:36px}
   .brand .ttl{font-weight:800}
-  .top-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-left:auto}
+
+  .top-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
   .btn{
     height:34px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:var(--panel);
     color:var(--ink); display:inline-flex; align-items:center; gap:8px; cursor:pointer; text-decoration:none;
   }
   .btn:hover{ border-color:var(--ring) }
 
-  /* Sidebar */
-  .side{
-    grid-area:side; position:sticky; top:64px; align-self:start;
-    height:calc(100vh - 64px); overflow:auto; padding:18px;
+  /* ===== Hover Sidebar (desktop) ===== */
+  .edge-hotspot{
+    position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:70;
   }
-  .side-card{
-    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-xl);
-    box-shadow:var(--shadow-1); padding:14px;
+  .hover-side{
+    position:fixed; left:0; top:64px; height:calc(100vh - 64px);
+    width:260px; padding:14px 12px; overflow:auto;
+    background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
+    transform:translateX(-100%); transition:transform .22s ease; z-index:71;
   }
-  .side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
+  .hover-side.open{ transform:translateX(0) }
+  .hover-side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
   .navlist{ display:grid; gap:4px }
   .slink{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink); text-decoration:none }
   .slink:hover{ background:#f1f5ff }
   [data-theme="dark"] .slink:hover{ background:#132033 }
   .ico{ width:22px; text-align:center }
+  .admin-only{ display:none } /* default hidden */
 
-  /* Main */
-  main{ grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 64px }
+  /* ===== Drawer (mobile) ===== */
+  .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px;
+          border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
+  .burger:active{transform:scale(.98)}
+  .drawer{ position:fixed; inset:0; z-index:80; display:none }
+  .drawer.open{ display:block }
+  .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
+  .drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
+                  background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto;
+                  transform:translateX(-100%); transition:transform .25s ease }
+  .drawer.open .panel{ transform:translateX(0) }
+  .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
+
+  /* ===== Main ===== */
+  main{ grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 64px; overflow-x: clip; }
   .card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-2); padding:18px }
   .card + .card{ margin-top:16px }
   .h1{ font-size:22px; margin:0 }
@@ -95,7 +112,7 @@
   .chart-head{ display:flex; align-items:center; gap:8px; margin-bottom:6px }
   .chart-head .sp{ margin-left:auto }
   .export{ height:28px; padding:0 10px; border:1px solid var(--border); border-radius:8px; background:var(--panel); cursor:pointer; font-size:12px }
-  .chart-canvas{ flex:1; min-height:300px }
+  .chart-canvas{ flex:1; min-height:300px; display:block; width:100% !important; height:320px !important; } /* kunci tinggi */
   @media (max-width:900px){ .chart-grid{ grid-template-columns:1fr } }
 
   /* Preview table */
@@ -103,8 +120,12 @@
   th,td{ border:1px solid var(--border); padding:8px 10px; text-align:left; font-size:13px }
   thead th{ background:#f8fafc }
   [data-theme="dark"] thead th{ background:#0b1624 }
-  details summary{ cursor:pointer; font-weight:600 }
-  @media (max-width:900px){ .app{ grid-template-columns:1fr; grid-template-areas:"header" "main"; } .side{ display:none } }
+
+  /* Responsiveness: sembunyikan hover-sidebar di mobile, tampilkan burger */
+  @media (max-width:900px){
+    .burger{ display:inline-flex }
+    .edge-hotspot, .hover-side{ display:none }
+  }
 </style>
 </head>
 
@@ -113,6 +134,7 @@
   <!-- ===== HEADER ===== -->
   <header>
     <div class="header-wrap">
+      <button id="btnBurger" class="burger" aria-label="メニュー"><span>☰</span></button>
       <div class="brand">
         <img src="tsh.png" alt="TSH"><strong class="ttl">品質管理生産技術</strong>
       </div>
@@ -122,25 +144,11 @@
         <a class="btn" href="./sagyoutejunsho.html">📝 作業手順書</a>
         <a class="btn" href="./charts.html">📈 チャート</a>
         <a class="btn" href="./quality.html" aria-current="page">🔎 品質情報</a>
+        <button id="btnAdmin" class="btn" type="button" title="Admin login/logout">管理</button>
         <span id="lastLoaded" class="small" style="margin-left:8px"></span>
       </nav>
     </div>
   </header>
-
-  <!-- ===== SIDEBAR ===== -->
-  <aside class="side">
-    <div class="side-card">
-      <h3>Pages</h3>
-      <div class="navlist">
-        <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong></a>
-        <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
-        <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
-        <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
-        <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-        <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
-      </div>
-    </div>
-  </aside>
 
   <!-- ===== MAIN ===== -->
   <main>
@@ -217,12 +225,103 @@
   </main>
 </div>
 
+<!-- ===== Hover Sidebar (desktop) ===== -->
+<div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
+<aside id="hoverSide" class="hover-side" aria-label="Pages">
+  <h3>Pages</h3>
+  <div class="navlist">
+    <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong></a>
+    <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+    <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+    <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+    <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+    <a class="slink admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+  </div>
+
+  <div class="admin-only" style="margin-top:12px">
+    <h3>Admin</h3>
+    <div class="navlist">
+      <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+      <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+      <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+      <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+    </div>
+  </div>
+</aside>
+
+<!-- ===== Drawer (mobile) ===== -->
+<div id="drawer" class="drawer" aria-hidden="true">
+  <div class="backdrop" data-close></div>
+  <aside class="panel">
+    <button class="close" data-close>✕</button>
+    <div class="side-card" style="box-shadow:none;border:0;padding-top:30px">
+      <h3>Pages</h3>
+      <div class="navlist">
+        <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong></a>
+        <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+        <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+        <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+        <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+        <a class="slink admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+      </div>
+
+      <div class="admin-only" style="margin-top:12px">
+        <h3>Admin</h3>
+        <div class="navlist">
+          <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+          <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+          <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+          <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
 <!-- Libs -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <script>
+/* ========= Drawer (mobile) ========= */
+const drawer = document.getElementById('drawer');
+document.getElementById('btnBurger')?.addEventListener('click', ()=>{
+  drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');
+});
+drawer?.addEventListener('click', (e)=>{
+  if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
+});
+
+/* ========= Admin gate (UI only) ========= */
+const ADMIN_CODE = "admin2025"; // ganti sesuai kebutuhan
+function setAdmin(on){
+  document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
+  localStorage.setItem('kensa_admin', on ? '1' : '0');
+  const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
+}
+function isAdmin(){ return localStorage.getItem('kensa_admin')==='1'; }
+document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
+  if(isAdmin()){
+    if(confirm('AdminをOFFにしますか？')) setAdmin(false);
+  }else{
+    const c = prompt('Admin code:');
+    if(c===ADMIN_CODE) setAdmin(true); else alert('コードが違います');
+  }
+});
+
+/* ========= EDGE-HOVER sidebar (desktop) ========= */
+const hot = document.getElementById('edgeHotspot');
+const fly = document.getElementById('hoverSide');
+let hideTimer = null;
+const HIDE_DELAY = 280; // ms
+function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
+function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
+hot?.addEventListener('mouseenter', openFly);
+hot?.addEventListener('mouseleave', scheduleClose);
+fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer));
+fly?.addEventListener('mouseleave', scheduleClose);
+
 /* ===== CSV URL + fallbacks ===== */
 const DIRECT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=1070847733&single=true&output=csv";
 function buildProxyUrls(url){
@@ -279,14 +378,21 @@ function uniqueValues(arr, key){
 }
 function downloadImageFromChart(chart, filename){ const a=document.createElement("a"); a.href=chart.toBase64Image(); a.download=filename; a.click(); }
 
-/* Palette for 部署 (fixed colors for readability) */
-const deptColorMap = {
-  "コンベヤー":"#3b82f6",
-  "シャトルガード":"#f50b59",
-};
+/* Palette for 部署 (fixed colors) */
+const deptColorMap = { "コンベヤー":"#3b82f6", "シャトルガード":"#f50b59" };
 const palette = ["#6366F1","#10B981","#EF4444","#8B5CF6","#06B6D4","#84CC16","#F97316","#14B8A6","#A855F7","#22C55E","#EAB308","#F43F5E"];
 const hexToRgba=(hex,a=0.55)=>{const h=hex.replace("#","");const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);return`rgba(${r},${g},${b},${a})`};
 function colorForDept(label,i){ const base = deptColorMap[label] || palette[i%palette.length]; return {bg:hexToRgba(base,0.55), bd:base }; }
+
+/* ===== Chart global defaults to prevent “moving” ===== */
+Chart.register(ChartDataLabels);
+Chart.defaults.animation = false;                 // no animation at all
+Chart.defaults.transitions = {
+  active: { animation: { duration: 0 } },
+  resize: { animation: { duration: 0 } }
+};
+Chart.defaults.responsive = true;
+Chart.defaults.maintainAspectRatio = false;
 
 /* ===== State ===== */
 let rawRows=[], headers=[], mapping={ym:"",type:"",model:"",dept:""};
@@ -333,6 +439,15 @@ function destroyCharts(){ [chartYM, chartType, chartModel, chartDept, chartParet
 /* ===== Charts ===== */
 function wrapJP(text,max=6){ const s=String(text??""); const out=[]; for(let i=0;i<s.length;i+=max) out.push(s.slice(i,i+max)); return out; }
 
+function barOpts(horiz=false){
+  return {
+    responsive:true, maintainAspectRatio:false, resizeDelay:200, /* throttle resize reflow */
+    animation:false, indexAxis:horiz?'y':'x',
+    scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ beginAtZero:true, ticks:{ precision:0 } } },
+    plugins:{ legend:{ display:false }, datalabels:{ anchor:'end', align:horiz?'right':'top', offset:4, formatter:v=>v, font:{ weight:'600' }, clamp:true, clip:false } }
+  };
+}
+
 function buildCharts(){
   const rows = applyFilters(rawRows);
 
@@ -359,13 +474,6 @@ function buildCharts(){
   const typeLabelsWrapped = typeLabels.map(l=>wrapJP(l, 6));
 
   destroyCharts();
-  try{ Chart.register(ChartDataLabels); }catch(_){}
-
-  const barOpts = (horiz=false)=>({
-    responsive:true, maintainAspectRatio:false, animation:false, indexAxis:horiz?'y':'x',
-    scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ beginAtZero:true, ticks:{ precision:0 } } },
-    plugins:{ legend:{ display:false }, datalabels:{ anchor:'end', align:horiz?'right':'top', offset:4, formatter:v=>v, font:{ weight:'600' } } }
-  });
 
   chartYM = new Chart($("#chartYM"), { type:"bar", data:{ labels:ymLabels, datasets:[{ label:"件数", data:ymData }] }, options:barOpts(false) });
 
@@ -373,12 +481,13 @@ function buildCharts(){
     type:"bar",
     data:{ labels:typeLabelsWrapped, datasets:[{ label:"件数", data:typeData }] },
     options:{
-      responsive:true, maintainAspectRatio:false, animation:false, indexAxis:'y',
+      responsive:true, maintainAspectRatio:false, resizeDelay:200,
+      animation:false, indexAxis:'y',
       scales:{ y:{ beginAtZero:true, ticks:{ autoSkip:false } }, x:{ beginAtZero:true, ticks:{ precision:0 } } },
       plugins:{
         legend:{ display:false },
         tooltip:{ callbacks:{ title:(items)=> typeLabels[items[0].dataIndex] || "" } },
-        datalabels:{ anchor:'end', align:'right', offset:4, formatter:v=>v, font:{ weight:'600' } }
+        datalabels:{ anchor:'end', align:'right', offset:4, formatter:v=>v, font:{ weight:'600' }, clamp:true, clip:false }
       }
     }
   });
@@ -402,12 +511,12 @@ function buildCharts(){
     data:{
       labels:pLabels,
       datasets:[
-        { type:"bar", label:"件数", data:pBars, yAxisID:"y", datalabels:{ align:'end', anchor:'end' } },
+        { type:"bar", label:"件数", data:pBars, yAxisID:"y", datalabels:{ align:'end', anchor:'end', clamp:true, clip:false } },
         { type:"line", label:"累積%", data:pCumPct, yAxisID:"y1", tension:0.3, pointRadius:3, datalabels:{ align:'top', formatter:v=>v+'%' } }
       ]
     },
     options:{
-      responsive:true, maintainAspectRatio:false, animation:false,
+      responsive:true, maintainAspectRatio:false, resizeDelay:200, animation:false,
       scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } }, y1:{ position:"right", beginAtZero:true, min:0, max:100, ticks:{ callback:v=>v+'%' }, grid:{ drawOnChartArea:false } } },
       plugins:{ legend:{ display:true } }
     }
@@ -418,7 +527,7 @@ function buildCharts(){
     type:"pie",
     data:{ labels:deptLabels, datasets:[{ data:deptData, backgroundColor:deptColors.map(c=>c.bg), borderColor:deptColors.map(c=>c.bd), borderWidth:1 }] },
     options:{
-      responsive:true, maintainAspectRatio:false,
+      responsive:true, maintainAspectRatio:false, animation:false, resizeDelay:200,
       plugins:{
         legend:{ position:"right" },
         datalabels:{ formatter:(v,ctx)=>{ const sum=ctx.dataset.data.reduce((a,b)=>a+b,0)||1; return Math.round(v/sum*100)+'%'; } }
@@ -429,7 +538,7 @@ function buildCharts(){
 
 /* ===== Load CSV ===== */
 async function loadCSV(url){
-  $("#lastLoaded").textContent = "読み込み中…";
+  document.getElementById("lastLoaded").textContent = "読み込み中…";
   try{
     const { url:used, text } = await fetchTextWithFallback(url);
     const parsed = Papa.parse(text, { header:true, skipEmptyLines:true });
@@ -439,26 +548,32 @@ async function loadCSV(url){
     mapping = autoMapHeaders(headers);
     refreshFilters();
     buildCharts();
-    $("#lastLoaded").textContent = `最終読込: ${new Date().toLocaleString()}（${used.includes("r.jina.ai")?"proxy":"direct"}）`;
+    document.getElementById("lastLoaded").textContent = `最終読込: ${new Date().toLocaleString()}（${used.includes("r.jina.ai")?"proxy":"direct"}）`;
   }catch(e){
     console.error(e);
-    $("#lastLoaded").textContent = "読み込み失敗: " + (e?.message || e);
+    document.getElementById("lastLoaded").textContent = "読み込み失敗: " + (e?.message || e);
   }
 }
 
 /* ===== Events ===== */
 ["#fYM","#fType","#fModel","#fDept"].forEach(sel=>{
-  $(sel).addEventListener("change", buildCharts);
+  document.querySelector(sel).addEventListener("change", buildCharts);
 });
-$("#clearFilters").addEventListener("click", ()=>{ ["#fYM","#fType","#fModel","#fDept"].forEach(s=>$(s).value=""); buildCharts(); });
-$$(".export").forEach(btn=>btn.addEventListener("click", ()=>{
+document.getElementById("clearFilters").addEventListener("click", ()=>{
+  ["#fYM","#fType","#fModel","#fDept"].forEach(s=>document.querySelector(s).value="");
+  buildCharts();
+});
+document.querySelectorAll(".export").forEach(btn=>btn.addEventListener("click", ()=>{
   const map = { ym:chartYM, type:chartType, model:chartModel, dept:chartDept, paretoType:chartParetoType, pieDept:chartPieDept };
   const inst = map[btn.dataset.chart];
   if(inst) downloadImageFromChart(inst, `chart-${btn.dataset.chart}.png`);
 }));
 
 /* ===== Init ===== */
-window.addEventListener("DOMContentLoaded", ()=> loadCSV(DIRECT_CSV));
+window.addEventListener("DOMContentLoaded", ()=>{
+  setAdmin(localStorage.getItem('kensa_admin')==='1'); // restore admin UI
+  loadCSV(DIRECT_CSV);
+});
 </script>
 </body>
 </html>
