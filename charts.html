@@ -29,18 +29,17 @@
   }
   body.has-ticker{ padding-bottom: calc(64px + var(--ticker-h) + 12px); }
 
-  /* ===== Shell (header + sidebar + main) ===== */
+  /* ===== Shell (header + main). Sidebar via hover/drawer ===== */
   .app{
     display:grid;
-    grid-template-columns:260px 1fr;
     grid-template-rows:64px 1fr;
     grid-template-areas:
-      "header header"
-      "side   main";
+      "header"
+      "main";
     min-height:100vh;
   }
   header{
-    grid-area:header; position:sticky; top:0; z-index:50;
+    grid-area:header; position:sticky; top:0; z-index:60;
     backdrop-filter: blur(12px);
     background: color-mix(in srgb, var(--panel) 85%, transparent);
     border-bottom:1px solid var(--border);
@@ -65,23 +64,38 @@
     color:var(--ink); background:#f1f5f9; border:1px solid var(--border); border-radius:999px}
   [data-theme="dark"] .badge{ background:#0b1624 }
 
-  /* Sidebar */
-  .side{
-    grid-area:side; position:sticky; top:64px; align-self:start;
-    height:calc(100vh - 64px); overflow:auto; padding:18px;
+  /* ===== Hover Sidebar (desktop) ===== */
+  .edge-hotspot{
+    position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:70;
   }
-  .side-card{
-    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-xl);
-    box-shadow:var(--shadow-1); padding:14px;
+  .hover-side{
+    position:fixed; left:0; top:64px; height:calc(100vh - 64px);
+    width:260px; padding:14px 12px; overflow:auto;
+    background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
+    transform:translateX(-100%); transition:transform .22s ease; z-index:71;
   }
-  .side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
+  .hover-side.open{ transform:translateX(0) }
+  .hover-side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
   .navlist{ display:grid; gap:4px }
   .slink{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink); text-decoration:none }
   .slink:hover{ background:#f1f5ff }
   [data-theme="dark"] .slink:hover{ background:#132033 }
   .ico{ width:22px; text-align:center }
 
-  /* Main */
+  /* ===== Drawer (mobile) ===== */
+  .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px;
+          border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
+  .burger:active{transform:scale(.98)}
+  .drawer{ position:fixed; inset:0; z-index:80; display:none }
+  .drawer.open{ display:block }
+  .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
+  .drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
+                  background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto;
+                  transform:translateX(-100%); transition:transform .25s ease }
+  .drawer.open .panel{ transform:translateX(0) }
+  .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
+
+  /* ===== Main ===== */
   main{ grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 96px }
   .card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-2); padding:18px }
   .card + .card{ margin-top:16px }
@@ -119,7 +133,15 @@
   .footer{ position:fixed; bottom:0; left:0; right:0; text-align:center; font-size:12px; color:var(--muted);
     background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border) }
   [data-theme="dark"] .footer{ background:#0b1220 }
-  @media (max-width:900px){ .app{ grid-template-columns:1fr; grid-template-areas:"header" "main"; } .side{ display:none } }
+
+  /* Admin auto-hide */
+  .admin-only{ display:none }
+
+  /* Hide hover sidebar on small screens (pakai drawer) */
+  @media (max-width:900px){
+    .burger{ display:inline-flex }
+    .edge-hotspot, .hover-side{ display:none }
+  }
 </style>
 </head>
 
@@ -128,6 +150,8 @@
   <!-- ===== HEADER ===== -->
   <header>
     <div class="header-wrap">
+      <button id="btnBurger" class="burger" aria-label="メニュー"><span>☰</span></button>
+
       <div class="brand">
         <img src="tsh.png" alt="TSH">
         <strong class="ttl">品質管理生産技術</strong>
@@ -145,32 +169,10 @@
         </label>
         <button id="btnRefresh" class="btn" type="button">⟳ Refresh</button>
         <button id="btnLive" class="btn" type="button" aria-pressed="false">Live: Off</button>
+        <button id="btnAdmin" class="btn" type="button" title="Admin login/logout">管理</button>
       </nav>
     </div>
   </header>
-
-  <!-- ===== SIDEBAR ===== -->
-  <aside class="side">
-    <div class="side-card">
-      <h3>Pages</h3>
-      <div class="navlist">
-        <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:var(--muted)">Dashboard</small></a>
-        <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
-        <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
-        <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
-        <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-        <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
-      </div>
-
-      <h3>Admin</h3>
-      <div class="navlist">
-        <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-        <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
-        <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
-        <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
-      </div>
-    </div>
-  </aside>
 
   <!-- ===== MAIN ===== -->
   <main>
@@ -238,6 +240,59 @@
   </main>
 </div>
 
+<!-- ===== Hover Sidebar (desktop) ===== -->
+<div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
+<aside id="hoverSide" class="hover-side" aria-label="Pages">
+  <h3>Pages</h3>
+  <div class="navlist">
+    <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
+    <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+    <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+    <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+    <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+    <a class="slink admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+  </div>
+
+  <div class="admin-only" style="margin-top:12px">
+    <h3>Admin</h3>
+    <div class="navlist">
+      <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+      <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+      <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+      <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+    </div>
+  </div>
+</aside>
+
+<!-- ===== Drawer (mobile) ===== -->
+<div id="drawer" class="drawer" aria-hidden="true">
+  <div class="backdrop" data-close></div>
+  <aside class="panel">
+    <button class="close" data-close>✕</button>
+    <div class="side-card" style="box-shadow:none;border:0;padding-top:30px">
+      <h3>Pages</h3>
+      <div class="navlist">
+        <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
+        <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+        <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+        <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+        <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+        <a class="slink admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+      </div>
+
+      <div class="admin-only" style="margin-top:12px">
+        <h3>Admin</h3>
+        <div class="navlist">
+          <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+          <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+          <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+          <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
 <!-- Ticker -->
 <div id="ticker" class="marquee hidden" role="status" aria-live="polite">
   <span>出荷検査（グラフ） - 最新データで自動更新</span>
@@ -254,6 +309,44 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
+/* ====== Drawer (mobile) ====== */
+const drawer = document.getElementById('drawer');
+document.getElementById('btnBurger')?.addEventListener('click', ()=>{
+  drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');
+});
+drawer?.addEventListener('click', (e)=>{
+  if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
+});
+
+/* ====== Admin gate (UI only) ====== */
+const ADMIN_CODE = "admin2025"; // ubah sesukamu
+function setAdmin(on){
+  document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
+  localStorage.setItem('kensa_admin', on ? '1' : '0');
+  const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
+}
+function isAdmin(){ return localStorage.getItem('kensa_admin')==='1'; }
+document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
+  if(isAdmin()){
+    if(confirm('AdminをOFFにしますか？')) setAdmin(false);
+  }else{
+    const c = prompt('Admin code:');
+    if(c===ADMIN_CODE) setAdmin(true); else alert('コードが違います');
+  }
+});
+
+/* ====== EDGE-HOVER sidebar (desktop) ====== */
+const hot = document.getElementById('edgeHotspot');
+const fly = document.getElementById('hoverSide');
+let hideTimer = null;
+const HIDE_DELAY = 280; // ms
+function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
+function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
+hot?.addEventListener('mouseenter', openFly);
+hot?.addEventListener('mouseleave', scheduleClose);
+fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer));
+fly?.addEventListener('mouseleave', scheduleClose);
+
 /* ===== Config & helpers ===== */
 const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
 const TAB_NAME ="最新情報";
@@ -343,8 +436,9 @@ let charts={ topCust:null, month:null, topCustYear:null };
 let lastAgg=null;
 
 /* ===== Aggregate （済のみ） ===== */
+const QUARTERS_MAP = {Q1:[1,2,3], Q2:[4,5,6], Q3:[7,8,9], Q4:[10,11,12]};
 function aggregate({rows, idx, topN, yearPick, quarterPick, monthPick, custPick}){
-  const monthList = quarterPick==='ALL' ? null : QUARTERS[quarterPick];
+  const monthList = quarterPick==='ALL' ? null : QUARTERS_MAP[quarterPick];
   const mapTopCust=new Map(), mapTopCustYear=new Map(), mapMonth=new Map();
 
   for(const r of rows){
@@ -662,6 +756,7 @@ document.getElementById('btnCloseTicker').addEventListener('click', ()=> setTick
 
 /* ===== Init ===== */
 window.addEventListener('DOMContentLoaded', ()=>{
+  setAdmin(localStorage.getItem('kensa_admin')==='1'); // restore admin UI
   const savedTicker = localStorage.getItem('tickerOn') === '1';
   setTickerVisible(savedTicker);
   load(); startAutoRefresh(60000);
