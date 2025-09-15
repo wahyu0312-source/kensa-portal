@@ -24,10 +24,9 @@
       radial-gradient(1100px 540px at -12% -12%, #c7d2fe33 0%, transparent 60%),
       radial-gradient(820px 460px at 112% -6%, #bae6fd33 0%, transparent 55%),
       linear-gradient(120deg,#f8fafc,var(--bg));
-    overflow-x: hidden; /* cegah scrollbar horizontal saat overlay aktif */
+    overflow-x: hidden;
   }
 
-  /* ===== Shell (header + main). Sidebar pakai hover/drawer ===== */
   .app{
     display:grid;
     grid-template-rows:64px 1fr;
@@ -57,7 +56,7 @@
   }
   .btn:hover{ border-color:var(--ring) }
 
-  /* ===== Hover Sidebar (desktop) ===== */
+  /* Hover Sidebar (desktop) */
   .edge-hotspot{
     position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:70;
   }
@@ -73,10 +72,9 @@
   .slink{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink); text-decoration:none }
   .slink:hover{ background:#f1f5ff }
   [data-theme="dark"] .slink:hover{ background:#132033 }
-  .ico{ width:22px; text-align:center }
   .admin-only{ display:none } /* default hidden */
 
-  /* ===== Drawer (mobile) ===== */
+  /* Drawer (mobile) */
   .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px;
           border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
   .burger:active{transform:scale(.98)}
@@ -89,14 +87,12 @@
   .drawer.open .panel{ transform:translateX(0) }
   .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
 
-  /* ===== Main ===== */
   main{ grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 64px; overflow-x: clip; }
   .card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-2); padding:18px }
   .card + .card{ margin-top:16px }
   .h1{ font-size:22px; margin:0 }
   .small{ font-size:12px; color:var(--muted) }
 
-  /* Filters */
   .grid{ display:grid; gap:12px; grid-template-columns:repeat(4,minmax(0,1fr)) }
   @media (max-width:1000px){ .grid{ grid-template-columns:repeat(2,minmax(0,1fr)) } }
   @media (max-width:620px){ .grid{ grid-template-columns:1fr } }
@@ -106,22 +102,19 @@
   .btn-ghost{ background:#f1f5f9 }
   [data-theme="dark"] .btn-ghost{ background:#0b1624 }
 
-  /* Chart boxes */
   .chart-grid{ display:grid; gap:16px; grid-template-columns:1fr 1fr }
   .chart-box{ background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:12px; min-height:360px; display:flex; flex-direction:column }
   .chart-head{ display:flex; align-items:center; gap:8px; margin-bottom:6px }
   .chart-head .sp{ margin-left:auto }
   .export{ height:28px; padding:0 10px; border:1px solid var(--border); border-radius:8px; background:var(--panel); cursor:pointer; font-size:12px }
-  .chart-canvas{ flex:1; min-height:300px; display:block; width:100% !important; height:320px !important; } /* kunci tinggi */
+  .chart-canvas{ flex:1; min-height:300px; display:block; width:100% !important; height:320px !important; }
   @media (max-width:900px){ .chart-grid{ grid-template-columns:1fr } }
 
-  /* Preview table */
   table{ width:100%; border-collapse:collapse; }
   th,td{ border:1px solid var(--border); padding:8px 10px; text-align:left; font-size:13px }
   thead th{ background:#f8fafc }
   [data-theme="dark"] thead th{ background:#0b1624 }
 
-  /* Responsiveness: sembunyikan hover-sidebar di mobile, tampilkan burger */
   @media (max-width:900px){
     .burger{ display:inline-flex }
     .edge-hotspot, .hover-side{ display:none }
@@ -131,7 +124,7 @@
 
 <body>
 <div class="app">
-  <!-- ===== HEADER ===== -->
+  <!-- HEADER -->
   <header>
     <div class="header-wrap">
       <button id="btnBurger" class="burger" aria-label="メニュー"><span>☰</span></button>
@@ -150,7 +143,7 @@
     </div>
   </header>
 
-  <!-- ===== MAIN ===== -->
+  <!-- MAIN -->
   <main>
     <section class="card">
       <div style="display:flex;align-items:end;gap:12px;justify-content:space-between;margin-bottom:12px">
@@ -225,7 +218,7 @@
   </main>
 </div>
 
-<!-- ===== Hover Sidebar (desktop) ===== -->
+<!-- Hover Sidebar (desktop) -->
 <div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
 <aside id="hoverSide" class="hover-side" aria-label="Pages">
   <h3>Pages</h3>
@@ -249,7 +242,7 @@
   </div>
 </aside>
 
-<!-- ===== Drawer (mobile) ===== -->
+<!-- Drawer (mobile) -->
 <div id="drawer" class="drawer" aria-hidden="true">
   <div class="backdrop" data-close></div>
   <aside class="panel">
@@ -294,7 +287,7 @@ drawer?.addEventListener('click', (e)=>{
 });
 
 /* ========= Admin gate (UI only) ========= */
-const ADMIN_CODE = "admin2025"; // ganti sesuai kebutuhan
+const ADMIN_CODE = "admin2025";
 function setAdmin(on){
   document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
   localStorage.setItem('kensa_admin', on ? '1' : '0');
@@ -314,7 +307,7 @@ document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
 const hot = document.getElementById('edgeHotspot');
 const fly = document.getElementById('hoverSide');
 let hideTimer = null;
-const HIDE_DELAY = 280; // ms
+const HIDE_DELAY = 280;
 function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
 function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
 hot?.addEventListener('mouseenter', openFly);
@@ -367,9 +360,16 @@ function normalizeYM(v){
   const d=new Date(s); if(!Number.isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
   return s;
 }
-function countsBy(arr, keyFn){
+
+/* countsBy: bisa keepEmpty */
+function countsBy(arr, keyFn, { keepEmpty=false } = {}){
   const map=new Map();
-  for(const a of arr){ const k=keyFn(a); if(!k) continue; map.set(k,(map.get(k)||0)+1); }
+  for(const a of arr){
+    const k = keyFn(a);
+    if (!keepEmpty && !k) continue;
+    const key = (k ?? "").toString();
+    map.set(key,(map.get(key)||0)+1);
+  }
   return Array.from(map.entries()).sort((a,b)=>a[0]>b[0]?1:-1);
 }
 function uniqueValues(arr, key){
@@ -378,15 +378,15 @@ function uniqueValues(arr, key){
 }
 function downloadImageFromChart(chart, filename){ const a=document.createElement("a"); a.href=chart.toBase64Image(); a.download=filename; a.click(); }
 
-/* Palette for 部署 (fixed colors) */
+/* Palette */
 const deptColorMap = { "コンベヤー":"#3b82f6", "シャトルガード":"#f50b59" };
 const palette = ["#6366F1","#10B981","#EF4444","#8B5CF6","#06B6D4","#84CC16","#F97316","#14B8A6","#A855F7","#22C55E","#EAB308","#F43F5E"];
 const hexToRgba=(hex,a=0.55)=>{const h=hex.replace("#","");const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);return`rgba(${r},${g},${b},${a})`};
 function colorForDept(label,i){ const base = deptColorMap[label] || palette[i%palette.length]; return {bg:hexToRgba(base,0.55), bd:base }; }
 
-/* ===== Chart global defaults to prevent “moving” ===== */
+/* Chart defaults */
 Chart.register(ChartDataLabels);
-Chart.defaults.animation = false;                 // no animation at all
+Chart.defaults.animation = false;
 Chart.defaults.transitions = {
   active: { animation: { duration: 0 } },
   resize: { animation: { duration: 0 } }
@@ -398,7 +398,7 @@ Chart.defaults.maintainAspectRatio = false;
 let rawRows=[], headers=[], mapping={ym:"",type:"",model:"",dept:""};
 let chartYM, chartType, chartModel, chartDept, chartParetoType, chartPieDept;
 
-/* ===== Render helpers ===== */
+/* ===== Preview ===== */
 function renderPreview(rows, max=10){
   const head=$("#previewHead"), body=$("#previewBody"); head.innerHTML=""; body.innerHTML="";
   if(!rows.length) return;
@@ -407,6 +407,8 @@ function renderPreview(rows, max=10){
   head.appendChild(tr);
   rows.slice(0,max).forEach(r=>{ const trb=document.createElement("tr"); headers.forEach(h=>{ const td=document.createElement("td"); td.textContent=r[h]??""; trb.appendChild(td); }); body.appendChild(trb); });
 }
+
+/* ===== Filters ===== */
 function currentFilters(){ return { ym:$("#fYM").value, type:$("#fType").value, model:$("#fModel").value, dept:$("#fDept").value }; }
 function applyFilters(rows){
   const f=currentFilters();
@@ -434,14 +436,26 @@ function refreshFilters(){
   fill($("#fModel"), modelValues);
   fill($("#fDept"), deptValues);
 }
-function destroyCharts(){ [chartYM, chartType, chartModel, chartDept, chartParetoType, chartPieDept].forEach(ch=>{ if(ch) ch.destroy(); }); }
+function destroyCharts(){ [chartYM, chartType, chartModel, chartDept, chartParetoType, chartPieDept].forEach(ch=>{ if(ch) ch.destroy?.(); }); }
+
+/* ===== Empty State ===== */
+function drawEmpty(canvas, msg="データなし"){
+  const rect = canvas.getBoundingClientRect();
+  const ctx = canvas.getContext('2d');
+  canvas.width = rect.width;  // ensure proper text centering
+  canvas.height = rect.height;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.font = '14px system-ui';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText(msg, canvas.width/2, canvas.height/2);
+}
 
 /* ===== Charts ===== */
 function wrapJP(text,max=6){ const s=String(text??""); const out=[]; for(let i=0;i<s.length;i+=max) out.push(s.slice(i,i+max)); return out; }
-
 function barOpts(horiz=false){
   return {
-    responsive:true, maintainAspectRatio:false, resizeDelay:200, /* throttle resize reflow */
+    responsive:true, maintainAspectRatio:false, resizeDelay:200,
     animation:false, indexAxis:horiz?'y':'x',
     scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ beginAtZero:true, ticks:{ precision:0 } } },
     plugins:{ legend:{ display:false }, datalabels:{ anchor:'end', align:horiz?'right':'top', offset:4, formatter:v=>v, font:{ weight:'600' }, clamp:true, clip:false } }
@@ -452,88 +466,101 @@ function buildCharts(){
   const rows = applyFilters(rawRows);
 
   // 年月
-  const ymCounts = countsBy(rows, r=>normalizeYM(r[mapping.ym]));
+  const ymCounts = countsBy(rows, r=>normalizeYM(r[mapping.ym]), { keepEmpty:false });
   const ymLabels = ymCounts.map(([k])=>k);
   const ymData   = ymCounts.map(([,v])=>v);
 
-  // 機種
-  const modelCounts = countsBy(rows, r=>(r[mapping.model]||"").toString().trim());
+  // 機種（kosong dihitung）
+  const modelCounts = countsBy(rows, r=>(r[mapping.model]??"").toString().trim(), { keepEmpty:true });
   const modelLabels = modelCounts.map(([k])=>k || "（未設定）");
   const modelData   = modelCounts.map(([,v])=>v);
 
-  // 部署
-  const deptCounts = countsBy(rows, r=>(r[mapping.dept]||"").toString().trim());
+  // 部署（kosong dihitung）
+  const deptCounts = countsBy(rows, r=>(r[mapping.dept]??"").toString().trim(), { keepEmpty:true });
   const deptLabels = deptCounts.map(([k])=>k || "（未設定）");
   const deptData   = deptCounts.map(([,v])=>v);
   const deptColors = deptLabels.map((l,i)=>colorForDept(l,i));
 
-  // 種類
-  const typeCounts = countsBy(rows, r=>(r[mapping.type]||"").toString().trim());
+  // 種類（kosong dihitung）
+  const typeCounts = countsBy(rows, r=>(r[mapping.type]??"").toString().trim(), { keepEmpty:true });
   const typeLabels = typeCounts.map(([k])=>k || "（未設定）");
   const typeData   = typeCounts.map(([,v])=>v);
   const typeLabelsWrapped = typeLabels.map(l=>wrapJP(l, 6));
 
   destroyCharts();
 
-  chartYM = new Chart($("#chartYM"), { type:"bar", data:{ labels:ymLabels, datasets:[{ label:"件数", data:ymData }] }, options:barOpts(false) });
+  // Render or empty
+  if(ymLabels.length===0) drawEmpty($("#chartYM")); else
+    chartYM = new Chart($("#chartYM"), { type:"bar", data:{ labels:ymLabels, datasets:[{ label:"件数", data:ymData }] }, options:barOpts(false) });
 
-  chartType = new Chart($("#chartType"), {
-    type:"bar",
-    data:{ labels:typeLabelsWrapped, datasets:[{ label:"件数", data:typeData }] },
-    options:{
-      responsive:true, maintainAspectRatio:false, resizeDelay:200,
-      animation:false, indexAxis:'y',
-      scales:{ y:{ beginAtZero:true, ticks:{ autoSkip:false } }, x:{ beginAtZero:true, ticks:{ precision:0 } } },
-      plugins:{
-        legend:{ display:false },
-        tooltip:{ callbacks:{ title:(items)=> typeLabels[items[0].dataIndex] || "" } },
-        datalabels:{ anchor:'end', align:'right', offset:4, formatter:v=>v, font:{ weight:'600' }, clamp:true, clip:false }
+  if(typeLabels.length===0) drawEmpty($("#chartType")); else
+    chartType = new Chart($("#chartType"), {
+      type:"bar",
+      data:{ labels:typeLabelsWrapped, datasets:[{ label:"件数", data:typeData }] },
+      options:{
+        responsive:true, maintainAspectRatio:false, resizeDelay:200,
+        animation:false, indexAxis:'y',
+        scales:{ y:{ beginAtZero:true, ticks:{ autoSkip:false } }, x:{ beginAtZero:true, ticks:{ precision:0 } } },
+        plugins:{
+          legend:{ display:false },
+          tooltip:{ callbacks:{ title:(items)=> typeLabels[items[0].dataIndex] || "" } },
+          datalabels:{ anchor:'end', align:'right', offset:4, formatter:v=>v, font:{ weight:'600' }, clamp:true, clip:false }
+        }
       }
-    }
-  });
+    });
 
   const modelHoriz = modelLabels.length>6;
-  chartModel = new Chart($("#chartModel"), { type:"bar", data:{ labels:modelLabels, datasets:[{ label:"件数", data:modelData }] }, options:barOpts(modelHoriz) });
+  if(modelLabels.length===0) drawEmpty($("#chartModel")); else
+    chartModel = new Chart($("#chartModel"), { type:"bar", data:{ labels:modelLabels, datasets:[{ label:"件数", data:modelData }] }, options:barOpts(modelHoriz) });
 
   const deptHoriz = deptLabels.length>6;
-  chartDept = new Chart($("#chartDept"), {
-    type:"bar",
-    data:{ labels:deptLabels, datasets:[{ label:"件数", data:deptData, backgroundColor:deptColors.map(c=>c.bg), borderColor:deptColors.map(c=>c.bd), borderWidth:1 }] },
-    options:barOpts(deptHoriz)
-  });
+  if(deptLabels.length===0) drawEmpty($("#chartDept")); else
+    chartDept = new Chart($("#chartDept"), {
+      type:"bar",
+      data:{ labels:deptLabels, datasets:[{ label:"件数", data:deptData, backgroundColor:deptColors.map(c=>c.bg), borderColor:deptColors.map(c=>c.bd), borderWidth:1 }] },
+      options:barOpts(deptHoriz)
+    });
 
   // Pareto (種類)
-  const totalType = typeData.reduce((a,b)=>a+b,0) || 1;
-  const pairs = typeLabels.map((l,i)=>[l, typeData[i]]).sort((a,b)=>b[1]-a[1]);
-  const pLabels = pairs.map(p=>p[0]); const pBars=pairs.map(p=>p[1]);
-  let cum=0; const pCumPct = pBars.map(v => (cum+=v, +(cum/totalType*100).toFixed(1)));
-  chartParetoType = new Chart($("#chartParetoType"), {
-    data:{
-      labels:pLabels,
-      datasets:[
-        { type:"bar", label:"件数", data:pBars, yAxisID:"y", datalabels:{ align:'end', anchor:'end', clamp:true, clip:false } },
-        { type:"line", label:"累積%", data:pCumPct, yAxisID:"y1", tension:0.3, pointRadius:3, datalabels:{ align:'top', formatter:v=>v+'%' } }
-      ]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false, resizeDelay:200, animation:false,
-      scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } }, y1:{ position:"right", beginAtZero:true, min:0, max:100, ticks:{ callback:v=>v+'%' }, grid:{ drawOnChartArea:false } } },
-      plugins:{ legend:{ display:true } }
-    }
-  });
+  if(typeLabels.length===0){
+    drawEmpty($("#chartParetoType"));
+  }else{
+    const totalType = typeData.reduce((a,b)=>a+b,0) || 1;
+    const pairs = typeLabels.map((l,i)=>[l, typeData[i]]).sort((a,b)=>b[1]-a[1]);
+    const pLabels = pairs.map(p=>p[0]); const pBars=pairs.map(p=>p[1]);
+    let cum=0; const pCumPct = pBars.map(v => (cum+=v, +(cum/totalType*100).toFixed(1)));
+    chartParetoType = new Chart($("#chartParetoType"), {
+      data:{
+        labels:pLabels,
+        datasets:[
+          { type:"bar", label:"件数", data:pBars, yAxisID:"y", datalabels:{ align:'end', anchor:'end', clamp:true, clip:false } },
+          { type:"line", label:"累積%", data:pCumPct, yAxisID:"y1", tension:0.3, pointRadius:3, datalabels:{ align:'top', formatter:v=>v+'%' } }
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false, resizeDelay:200, animation:false,
+        scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } }, y1:{ position:"right", beginAtZero:true, min:0, max:100, ticks:{ callback:v=>v+'%' }, grid:{ drawOnChartArea:false } } },
+        plugins:{ legend:{ display:true } }
+      }
+    });
+  }
 
   // Pie (部署)
-  chartPieDept = new Chart($("#chartPieDept"), {
-    type:"pie",
-    data:{ labels:deptLabels, datasets:[{ data:deptData, backgroundColor:deptColors.map(c=>c.bg), borderColor:deptColors.map(c=>c.bd), borderWidth:1 }] },
-    options:{
-      responsive:true, maintainAspectRatio:false, animation:false, resizeDelay:200,
-      plugins:{
-        legend:{ position:"right" },
-        datalabels:{ formatter:(v,ctx)=>{ const sum=ctx.dataset.data.reduce((a,b)=>a+b,0)||1; return Math.round(v/sum*100)+'%'; } }
+  if(deptLabels.length===0){
+    drawEmpty($("#chartPieDept"));
+  }else{
+    chartPieDept = new Chart($("#chartPieDept"), {
+      type:"pie",
+      data:{ labels:deptLabels, datasets:[{ data:deptData, backgroundColor:deptColors.map(c=>c.bg), borderColor:deptColors.map(c=>c.bd), borderWidth:1 }] },
+      options:{
+        responsive:true, maintainAspectRatio:false, animation:false, resizeDelay:200,
+        plugins:{
+          legend:{ position:"right" },
+          datalabels:{ formatter:(v,ctx)=>{ const sum=ctx.dataset.data.reduce((a,b)=>a+b,0)||1; return Math.round(v/sum*100)+'%'; } }
+        }
       }
-    }
-  });
+    });
+  }
 }
 
 /* ===== Load CSV ===== */
@@ -552,6 +579,8 @@ async function loadCSV(url){
   }catch(e){
     console.error(e);
     document.getElementById("lastLoaded").textContent = "読み込み失敗: " + (e?.message || e);
+    // draw empties to avoid blank canvases
+    ["#chartYM","#chartType","#chartModel","#chartDept","#chartParetoType","#chartPieDept"].forEach(sel=>drawEmpty(document.querySelector(sel), "読み込み失敗"));
   }
 }
 
@@ -567,11 +596,12 @@ document.querySelectorAll(".export").forEach(btn=>btn.addEventListener("click", 
   const map = { ym:chartYM, type:chartType, model:chartModel, dept:chartDept, paretoType:chartParetoType, pieDept:chartPieDept };
   const inst = map[btn.dataset.chart];
   if(inst) downloadImageFromChart(inst, `chart-${btn.dataset.chart}.png`);
+  else alert("このグラフは現在データがありません。");
 }));
 
 /* ===== Init ===== */
 window.addEventListener("DOMContentLoaded", ()=>{
-  setAdmin(localStorage.getItem('kensa_admin')==='1'); // restore admin UI
+  setAdmin(localStorage.getItem('kensa_admin')==='1');
   loadCSV(DIRECT_CSV);
 });
 </script>
