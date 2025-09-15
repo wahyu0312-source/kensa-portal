@@ -4,36 +4,131 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>品質情報</title>
+
   <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js -->
+  <!-- Chart.js & plugins -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <!-- Chart.js DataLabels plugin -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <!-- Papa Parse for CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
   <style>
-    .sticky-header { position: sticky; top: 0; z-index: 20; }
+    /* ===== Edge-hover sidebar (desktop) ===== */
+    .edge-hotspot{
+      position:fixed; left:0; top:64px; width:14px; height:calc(100vh - 64px); z-index:70;
+    }
+    .hover-side{
+      position:fixed; left:0; top:64px; height:calc(100vh - 64px);
+      width:260px; padding:14px 12px; overflow:auto;
+      background:#fff; border-right:1px solid #e5e7eb; box-shadow:0 12px 30px rgba(15,23,42,.08);
+      transform:translateX(-100%); transition:transform .22s ease; z-index:71;
+    }
+    .hover-side.open{ transform:translateX(0) }
     .chart-box { height: 360px; }
     canvas[data-empty="1"]{ opacity:.7 }
+    /* Hide hover sidebar & show burger on mobile */
+    @media (max-width: 1024px){
+      .edge-hotspot, .hover-side{ display:none }
+    }
   </style>
 </head>
+
 <body class="bg-slate-50 text-slate-800">
-  <header class="sticky-header bg-white/80 backdrop-blur border-b border-slate-200">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
-      <a href="index.html" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-50">
-        <span>🏠</span><span>Home</span>
-      </a>
-      <h1 class="text-xl font-semibold ml-2">品質情報</h1>
-      <span class="text-sm text-slate-500">（年月・クレーム種類・機種名・部署）</span>
-      <div class="ml-auto text-xs text-slate-500" id="lastLoaded"></div>
+  <!-- ===== Sticky Header ===== -->
+  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center gap-2">
+      <!-- Burger (mobile) -->
+      <button id="btnBurger" class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border hover:bg-slate-50" aria-label="メニュー">
+        ☰
+      </button>
+
+      <!-- Brand -->
+      <div class="flex items-center gap-2">
+        <img src="tsh.png" alt="TSH" class="h-8">
+        <strong class="text-lg">品質管理生産技術</strong>
+      </div>
+
+      <!-- Top nav quick links (optional) -->
+      <nav class="ml-auto hidden md:flex items-center gap-2">
+        <a href="./index.html"  class="px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-50">🏠 ホーム</a>
+        <a href="./forms.html"  class="px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-50">📄 出荷検査成績書</a>
+        <a href="./sagyoutejunsho.html" class="px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-50">📝 作業手順書</a>
+        <a href="./charts.html" class="px-3 py-1.5 rounded-lg border text-sm hover:bg-slate-50">📈 チャート</a>
+        <a href="./quality.html" aria-current="page" class="px-3 py-1.5 rounded-lg border text-sm bg-slate-100">🔎 品質情報</a>
+        <button id="btnAdmin" class="px-3 py-1.5 rounded-lg border text-sm">管理</button>
+      </nav>
+
+      <!-- Last loaded -->
+      <div id="lastLoaded" class="ml-4 text-xs text-slate-500"></div>
     </div>
   </header>
 
+  <!-- ===== Edge-hover sidebar (desktop) ===== -->
+  <div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
+  <aside id="hoverSide" class="hover-side" aria-label="Pages">
+    <h3 class="text-[12px] uppercase tracking-wider text-slate-500 px-2 mb-2">Pages</h3>
+    <nav class="grid gap-1">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./index.html">🏠 <span>ホーム</span></a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./forms.html">📄 <span>出荷検査成績書</span></a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./sagyoutejunsho.html">📝 <span>作業手順書</span></a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./charts.html">📈 <span>チャート</span></a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./quality.html">🔎 <span>品質情報</span></a>
+
+      <!-- Admin-only links (auto-hidden until admin ON) -->
+      <div class="mt-3 admin-only">
+        <h3 class="text-[12px] uppercase tracking-wider text-slate-500 px-2 mb-2">Admin</h3>
+        <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./admin-numbering.html"># <span>Admin Numbering</span></a>
+        <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./admin-prefix.html">🔧 <span>Admin Prefix</span></a>
+        <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./admin-serial-gas.html">⛽ <span>Admin Serial Gas</span></a>
+        <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./thanks.html">✨ <span>Thanks</span></a>
+        <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./claim.html">🧪 <span>Trial Page</span></a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ===== Drawer (mobile) ===== -->
+  <div id="drawer" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/40" data-close></div>
+    <aside class="absolute top-0 left-0 h-full w-[86%] max-w-[320px] bg-white border-r shadow-xl p-4 -translate-x-full transition-transform" id="drawerPanel">
+      <div class="flex items-center justify-between mb-4">
+        <strong>メニュー</strong>
+        <button class="px-3 py-1.5 rounded-lg border" data-close>✕</button>
+      </div>
+
+      <nav class="grid gap-1">
+        <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./index.html">🏠 <span>ホーム</span></a>
+        <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./forms.html">📄 <span>出荷検査成績書</span></a>
+        <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./sagyoutejunsho.html">📝 <span>作業手順書</span></a>
+        <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./charts.html">📈 <span>チャート</span></a>
+        <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./quality.html">🔎 <span>品質情報</span></a>
+
+        <!-- Admin-only in drawer -->
+        <div class="mt-3 admin-only">
+          <h3 class="text-[12px] uppercase tracking-wider text-slate-500 px-2 mb-2">Admin</h3>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./admin-numbering.html"># <span>Admin Numbering</span></a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./admin-prefix.html">🔧 <span>Admin Prefix</span></a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./admin-serial-gas.html">⛽ <span>Admin Serial Gas</span></a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./thanks.html">✨ <span>Thanks</span></a>
+          <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50" href="./claim.html">🧪 <span>Trial Page</span></a>
+        </div>
+      </nav>
+    </aside>
+  </div>
+
+  <!-- ===== Main ===== -->
   <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
-    <!-- フィルタ -->
+    <!-- Filter card -->
     <section class="bg-white rounded-2xl shadow p-4">
-      <h2 class="text-lg font-semibold mb-3">フィルタ</h2>
+      <div class="flex items-end gap-3 justify-between mb-2">
+        <div>
+          <h2 class="text-lg font-semibold">品質情報</h2>
+          <p class="text-sm text-slate-500">（年月・クレーム種類・機種名・部署）</p>
+        </div>
+        <!-- tombol Admin (untuk layar kecil) -->
+        <button id="btnAdminSm" class="md:hidden px-3 py-1.5 rounded-lg border text-sm">管理</button>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <div>
           <label class="block text-sm font-medium mb-1" for="fYM">年月</label>
@@ -121,10 +216,51 @@
     </section>
   </main>
 
-  <template id="optionTpl"><option></option></template>
-
+  <!-- ===== Scripts ===== -->
   <script>
-    // ======= CSV URL & CORS fallbacks =======
+    /* ========= Drawer (mobile) ========= */
+    const drawer     = document.getElementById('drawer');
+    const drawerPanel= document.getElementById('drawerPanel');
+    const openDrawer = ()=>{ drawer.classList.remove('hidden'); requestAnimationFrame(()=> drawerPanel.classList.remove('-translate-x-full')); };
+    const closeDrawer= ()=>{ drawerPanel.classList.add('-translate-x-full'); setTimeout(()=>drawer.classList.add('hidden'), 220); };
+    document.getElementById('btnBurger')?.addEventListener('click', openDrawer);
+    drawer?.addEventListener('click', (e)=>{ if(e.target.hasAttribute('data-close')) closeDrawer(); });
+
+    /* ========= Admin gate (UI only) ========= */
+    const ADMIN_CODE = "admin2025"; // ubah sesuai kebutuhan
+    function setAdmin(on){
+      document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
+      localStorage.setItem('kensa_admin', on ? '1' : '0');
+      const setBtn = (id, onText='管理（ON）', offText='管理')=>{
+        const b=document.getElementById(id); if(b) b.textContent = on ? onText : offText;
+      };
+      setBtn('btnAdmin'); setBtn('btnAdminSm');
+    }
+    function isAdmin(){ return localStorage.getItem('kensa_admin')==='1'; }
+    function toggleAdmin(){
+      if(isAdmin()){
+        if(confirm('AdminをOFFにしますか？')) setAdmin(false);
+      }else{
+        const c = prompt('Admin code:');
+        if(c===ADMIN_CODE) setAdmin(true); else alert('コードが違います');
+      }
+    }
+    document.getElementById('btnAdmin')?.addEventListener('click', toggleAdmin);
+    document.getElementById('btnAdminSm')?.addEventListener('click', toggleAdmin);
+
+    /* ========= EDGE-HOVER sidebar (desktop) ========= */
+    const hot = document.getElementById('edgeHotspot');
+    const fly = document.getElementById('hoverSide');
+    let hideTimer = null;
+    const HIDE_DELAY = 260; // ms
+    function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
+    function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
+    hot?.addEventListener('mouseenter', openFly);
+    hot?.addEventListener('mouseleave', scheduleClose);
+    fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer));
+    fly?.addEventListener('mouseleave', scheduleClose);
+
+    /* ======= CSV URL & CORS fallbacks ======= */
     const DIRECT_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGwY4tjwfHVYZMuJpqSVo9uqHexcD2bmHdCiIg85oo036PLkxe4YXhHCpJbFi1mT1VgyjfNYLHOtNb/pub?gid=1070847733&single=true&output=csv";
     function buildProxyUrls(url){
       const noProto = url.replace(/^https?:\/\//, "");
@@ -144,10 +280,9 @@
       throw lastErr || new Error("Fetch failed");
     }
 
-    // ======= Utils =======
+    /* ======= Utils ======= */
     const $  = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-
     const requiredKeys = {
       ym: ["年月","yearmonth","year-month","年月日","ym"],
       type: ["クレーム種類","クレーム種別","クレーム","種別","claimtype"],
@@ -160,28 +295,18 @@
       const pick = (cands)=>{ for(const c of cands){ const f = norm.find(x=>x.n.includes(normalizeHeader(c))); if(f) return f.raw; } return headers[0]||""; };
       return { ym:pick(requiredKeys.ym), type:pick(requiredKeys.type), model:pick(requiredKeys.model), dept:pick(requiredKeys.dept) };
     }
-
-    // === Normalize any date-like value → YYYY-MM ===
     function normalizeYM(v){
       if(v==null) return "";
-      const s = String(v).trim();
-      if(!s) return "";
-      const m1 = s.match(/^(\d{4})[-\/.](\d{1,2})(?:[-\/.]\d{1,2})?$/);
-      if(m1){ const y=m1[1]; const m=m1[2].padStart(2,"0"); return `${y}-${m}`; }
-      const m2 = s.match(/(\d{4})\s*年\s*(\d{1,2})\s*月?/);
-      if(m2){ const y=m2[1]; const m=m2[2].padStart(2,"0"); return `${y}-${m}`; }
-      const m3 = s.match(/^(\d{4})(\d{2})(\d{0,2})?$/);
-      if(m3){ const y=m3[1]; const m=m3[2]; return `${y}-${m}`; }
-      const m4 = s.match(/^(\d{4})[-\/.](\d{1,2})$/);
-      if(m4){ const y=m4[1]; const m=m4[2].padStart(2,"0"); return `${y}-${m}`; }
-      const d = new Date(s);
-      if(!Number.isNaN(d.getTime())){ const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,"0"); return `${y}-${m}`; }
+      const s = String(v).trim(); if(!s) return "";
+      const m1 = s.match(/^(\d{4})[-\/.](\d{1,2})(?:[-\/.]\d{1,2})?$/); if(m1) return `${m1[1]}-${m1[2].padStart(2,"0")}`;
+      const m2 = s.match(/(\d{4})\s*年\s*(\d{1,2})\s*月?/); if(m2) return `${m2[1]}-${m2[2].padStart(2,"0")}`;
+      const m3 = s.match(/^(\d{4})(\d{2})(\d{0,2})?$/); if(m3) return `${m3[1]}-${m3[2]}`;
+      const m4 = s.match(/^(\d{4})[-\/.](\d{1,2})$/);   if(m4) return `${m4[1]}-${m4[2].padStart(2,"0")}`;
+      const d=new Date(s); if(!Number.isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
       return s;
     }
-
-    // countsBy: versi yang bisa menghitung kosong jika perlu
     function countsBy(arr, keyFn, { keepEmpty=false } = {}){
-      const map = new Map();
+      const map=new Map();
       for(const a of arr){
         const k = keyFn(a);
         if (!keepEmpty && !k) continue;
@@ -194,55 +319,36 @@
       const s=new Set(); arr.forEach(r=>{ const v=(r[key]??"").toString().trim(); if(v) s.add(v); });
       return Array.from(s).sort();
     }
-    function fillSelect(sel, values, {withAll=true,labelAll="(すべて)"}={}){
-      sel.innerHTML=""; if(withAll){ const o=document.createElement("option"); o.value=""; o.textContent=labelAll; sel.appendChild(o); }
-      for(const v of values){ const o=document.createElement("option"); o.value=v; o.textContent=v; sel.appendChild(o); }
-    }
     function downloadImageFromChart(chart, filename){ const a=document.createElement("a"); a.href=chart.toBase64Image(); a.download=filename; a.click(); }
-
-    // --- Colors: special mapping for 部署 ---
-    const deptColorMap = {
-      "コンベヤー":   "#3b82f6",
-      "シャトルガード": "#f50b59"
-    };
+    const deptColorMap = { "コンベヤー":"#3b82f6", "シャトルガード":"#f50b59" };
     const fallbackPalette = ["#6366F1","#10B981","#EF4444","#8B5CF6","#06B6D4","#84CC16","#F97316","#14B8A6","#A855F7","#22C55E","#EAB308","#F43F5E"];
-    function hexToRgba(hex, alpha=0.6){
-      const m = hex.replace("#",""); const r=parseInt(m.substring(0,2),16), g=parseInt(m.substring(2,4),16), b=parseInt(m.substring(4,6),16);
-      return `rgba(${r},${g},${b},${alpha})`;
-    }
-    function colorForDept(label, alphaBg=true, idx=0){
-      const base = deptColorMap[label] || fallbackPalette[idx % fallbackPalette.length];
-      return alphaBg ? hexToRgba(base,0.55) : base;
-    }
-
+    const hexToRgba=(hex,a=0.55)=>{const h=hex.replace("#","");const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);return`rgba(${r},${g},${b},${a})`};
+    function colorForDept(label,i){ const base = deptColorMap[label] || fallbackPalette[i%fallbackPalette.length]; return {bg:hexToRgba(base,0.55), bd:base }; }
     function drawEmpty(canvas, msg="データなし"){
       const ctx = canvas.getContext('2d');
       const { width, height } = canvas.getBoundingClientRect();
       canvas.width = width; canvas.height = height;
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.font = '14px system-ui';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#94a3b8';
+      ctx.font = '14px system-ui'; ctx.textAlign='center'; ctx.fillStyle='#94a3b8';
       ctx.fillText(msg, canvas.width/2, canvas.height/2);
       canvas.setAttribute('data-empty','1');
     }
 
-    // ======= State =======
+    /* ======= State ======= */
     let rawRows=[], headers=[], mapping={ym:"",type:"",model:"",dept:""};
     let chartYM, chartType, chartModel, chartDept, chartParetoType, chartPieDept;
 
-    // ======= Rendering =======
+    /* ======= UI Helpers ======= */
     function renderPreview(rows, max=10){
-      const head=$("#previewHead"), body=$("#previewBody"); head.innerHTML=""; body.innerHTML="";
+      const head=$("#previewHead"), body=$("#previewBody"); if(!head||!body) return;
+      head.innerHTML=""; body.innerHTML="";
       if(!rows.length) return;
       const tr=document.createElement("tr");
       headers.forEach(h=>{ const th=document.createElement("th"); th.className="px-2 py-1 border text-left font-medium"; th.textContent=h; tr.appendChild(th); });
       head.appendChild(tr);
       rows.slice(0,max).forEach(r=>{ const trb=document.createElement("tr"); headers.forEach(h=>{ const td=document.createElement("td"); td.className="px-2 py-1 border"; td.textContent=r[h]??""; trb.appendChild(td); }); body.appendChild(trb); });
     }
-
     function currentFilters(){ return { ym:$("#fYM").value, type:$("#fType").value, model:$("#fModel").value, dept:$("#fDept").value }; }
-
     function applyFilters(rows){
       const f=currentFilters();
       return rows.filter(r=>{
@@ -253,67 +359,68 @@
         return true;
       });
     }
-
     function refreshFilters(){
       const rows=rawRows;
       const ymValues = Array.from(new Set(rows.map(r=>normalizeYM(r[mapping.ym])).filter(Boolean))).sort();
       const typeValues = uniqueValues(rows, mapping.type);
       const modelValues = uniqueValues(rows, mapping.model);
       const deptValues = uniqueValues(rows, mapping.dept);
-      fillSelect($("#fYM"), ymValues);
-      fillSelect($("#fType"), typeValues);
-      fillSelect($("#fModel"), modelValues);
-      fillSelect($("#fDept"), deptValues);
+      const fill=(id,vals)=>{ const sel=$(id); if(!sel) return; sel.innerHTML=""; const all=document.createElement("option"); all.value=""; all.textContent="(すべて)"; sel.appendChild(all); vals.forEach(v=>{ const o=document.createElement("option"); o.value=v; o.textContent=v; sel.appendChild(o); }); };
+      fill("#fYM", ymValues); fill("#fType", typeValues); fill("#fModel", modelValues); fill("#fDept", deptValues);
     }
+    function destroyCharts(){ [chartYM, chartType, chartModel, chartDept, chartParetoType, chartPieDept].forEach(ch=>{ if(ch) ch.destroy?.(); }); }
 
-    function destroyCharts(){
-      [chartYM, chartType, chartModel, chartDept, chartParetoType, chartPieDept].forEach(ch=>{ if(ch) ch.destroy?.(); });
-      chartYM=chartType=chartModel=chartDept=chartParetoType=chartPieDept=undefined;
-      // clear empty flag
-      ["#chartYM","#chartType","#chartModel","#chartDept","#chartParetoType","#chartPieDept"].forEach(s=>$(s)?.removeAttribute('data-empty'));
+    /* ======= Charts ======= */
+    function wrapJP(text,max=6){ const s=String(text??""); const out=[]; for(let i=0;i<s.length;i+=max) out.push(s.slice(i,i+max)); return out; }
+    function barOpts(horiz=false){
+      return {
+        responsive:true, maintainAspectRatio:false, animation:false, indexAxis:horiz?'y':'x',
+        scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ beginAtZero:true, ticks:{ precision:0 } } },
+        plugins:{ legend:{ display:false }, datalabels:{ anchor:'end', align:horiz?'right':'top', offset:4, formatter:v=>v, font:{ weight:'600' }, clamp:true, clip:false } }
+      };
     }
 
     function buildCharts(){
       Chart.register(ChartDataLabels);
       const rows = applyFilters(rawRows);
 
-      // 年月（skip empty）
+      // 年月
       const ymCounts = countsBy(rows, r=>normalizeYM(r[mapping.ym]));
       const ymLabels = ymCounts.map(([k])=>k);
       const ymData   = ymCounts.map(([,v])=>v);
 
-      // 機種/部署/種類（count empty as “未設定”）
+      // 機種
       const modelCounts = countsBy(rows, r=>(r[mapping.model]??"").toString().trim(), { keepEmpty:true });
       const modelLabels = modelCounts.map(([k])=>k || "（未設定）");
       const modelData   = modelCounts.map(([,v])=>v);
 
-      const deptCounts  = countsBy(rows, r=>(r[mapping.dept]??"").toString().trim(), { keepEmpty:true });
-      const deptLabels  = deptCounts.map(([k])=>k || "（未設定）");
-      const deptData    = deptCounts.map(([,v])=>v);
-      const deptBG = deptLabels.map((l,i)=>colorForDept(l,true,i));
-      const deptBD = deptLabels.map((l,i)=>colorForDept(l,false,i));
-
-      const typeCounts  = countsBy(rows, r=>(r[mapping.type]??"").toString().trim(), { keepEmpty:true });
-      const typeLabels  = typeCounts.map(([k])=>k || "（未設定）");
-      const typeData    = typeCounts.map(([, v]) => v);
-      const typeLabelsWrapped = typeLabels.map(l => {
-        const s = String(l); const out=[]; for(let i=0;i<s.length;i+=6) out.push(s.slice(i,i+6)); return out;
-      });
-
-      destroyCharts();
-      const opts = (h=false)=>({
-        responsive:true, maintainAspectRatio:false, animation:false, indexAxis:h?'y':'x',
-        scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ beginAtZero:true, ticks:{ precision:0 } } },
-        plugins:{ legend:{ display:false }, datalabels:{ anchor:'end', align:h?'right':'top', offset:4, formatter:v=>v, font:{ weight:'600' } } }
-      });
-
-      // YM
-      if(ymLabels.length===0) drawEmpty($("#chartYM")); else
-        chartYM = new Chart($("#chartYM"), { type:"bar", data:{ labels:ymLabels, datasets:[{ label:"件数", data:ymData }] }, options:opts(false) });
+      // 部署
+      const deptCounts = countsBy(rows, r=>(r[mapping.dept]??"").toString().trim(), { keepEmpty:true });
+      const deptLabels = deptCounts.map(([k])=>k || "（未設定）");
+      const deptData   = deptCounts.map(([,v])=>v);
+      const deptColors = deptLabels.map((l,i)=>colorForDept(l,i));
 
       // 種類
-      if(typeLabels.length===0) drawEmpty($("#chartType")); else
-        chartType = new Chart($("#chartType"), {
+      const typeCounts = countsBy(rows, r=>(r[mapping.type]??"").toString().trim(), { keepEmpty:true });
+      const typeLabels = typeCounts.map(([k])=>k || "（未設定）");
+      const typeData   = typeCounts.map(([,v])=>v);
+      const typeLabelsWrapped = typeLabels.map(l=>wrapJP(l, 6));
+
+      destroyCharts();
+
+      // Empty drawing helpers
+      function ensureOrDraw(id, labels, fn){
+        const el = document.getElementById(id);
+        if(!labels.length){ drawEmpty(el); return null; }
+        return fn(el);
+      }
+
+      chartYM = ensureOrDraw("chartYM", ymLabels, el =>
+        new Chart(el, { type:"bar", data:{ labels:ymLabels, datasets:[{ label:"件数", data:ymData }] }, options:barOpts(false) })
+      );
+
+      chartType = ensureOrDraw("chartType", typeLabels, el =>
+        new Chart(el, {
           type:"bar",
           data:{ labels:typeLabelsWrapped, datasets:[{ label:"件数", data:typeData }] },
           options:{
@@ -325,64 +432,66 @@
               datalabels:{ anchor:'end', align:'right', offset:4, formatter:v=>v, font:{ weight:'600' } }
             }
           }
-        });
+        })
+      );
 
-      // 機種
-      if(modelLabels.length===0) drawEmpty($("#chartModel")); else
-        chartModel = new Chart($("#chartModel"), { type:"bar", data:{ labels:modelLabels, datasets:[{ label:"件数", data:modelData }] }, options:opts(modelLabels.length>6) });
+      chartModel = ensureOrDraw("chartModel", modelLabels, el =>
+        new Chart(el, { type:"bar", data:{ labels:modelLabels, datasets:[{ label:"件数", data:modelData }] }, options:barOpts(modelLabels.length>6) })
+      );
 
-      // 部署
-      if(deptLabels.length===0) drawEmpty($("#chartDept")); else
-        chartDept = new Chart($("#chartDept"), {
+      chartDept = ensureOrDraw("chartDept", deptLabels, el =>
+        new Chart(el, {
           type:"bar",
-          data:{ labels:deptLabels, datasets:[{ label:"件数", data:deptData, backgroundColor:deptBG, borderColor:deptBD, borderWidth:1 }] },
-          options:opts(deptLabels.length>6)
-        });
+          data:{ labels:deptLabels, datasets:[{ label:"件数", data:deptData, backgroundColor:deptColors.map(c=>c.bg), borderColor:deptColors.map(c=>c.bd), borderWidth:1 }] },
+          options:barOpts(deptLabels.length>6)
+        })
+      );
 
-      // Pareto（種類）
-      if(typeLabels.length===0) drawEmpty($("#chartParetoType")); else {
+      // Pareto (種類)
+      if(!typeLabels.length){ drawEmpty(document.getElementById("chartParetoType")); }
+      else{
         const totalType = typeData.reduce((a,b)=>a+b,0) || 1;
         const pairs = typeLabels.map((l,i)=>[l, typeData[i]]).sort((a,b)=>b[1]-a[1]);
-        const pLabels = pairs.map(p=>p[0]);
-        const pBars   = pairs.map(p=>p[1]);
+        const pLabels = pairs.map(p=>p[0]); const pBars=pairs.map(p=>p[1]);
         let cum=0; const pCumPct = pBars.map(v => (cum+=v, +(cum/totalType*100).toFixed(1)));
-        chartParetoType = new Chart($("#chartParetoType"), {
-          data: {
-            labels: pLabels,
-            datasets: [
-              { type:"bar",  label:"件数", data:pBars, yAxisID:"y", datalabels:{ align:'end', anchor:'end' } },
+        chartParetoType = new Chart(document.getElementById("chartParetoType"), {
+          data:{
+            labels:pLabels,
+            datasets:[
+              { type:"bar", label:"件数", data:pBars, yAxisID:"y", datalabels:{ align:'end', anchor:'end', clamp:true, clip:false } },
               { type:"line", label:"累積%", data:pCumPct, yAxisID:"y1", tension:0.3, pointRadius:3, datalabels:{ align:'top', formatter:v=>v+'%' } }
             ]
           },
-          options: {
+          options:{
             responsive:true, maintainAspectRatio:false, animation:false,
-            scales: { y: { beginAtZero:true, ticks:{ precision:0 } },
-                     y1:{ position:"right", beginAtZero:true, min:0, max:100, ticks:{ callback:v=>v+'%' }, grid:{ drawOnChartArea:false } } },
+            scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } }, y1:{ position:"right", beginAtZero:true, min:0, max:100, ticks:{ callback:v=>v+'%' }, grid:{ drawOnChartArea:false } } },
             plugins:{ legend:{ display:true } }
           }
         });
       }
 
-      // Pie（部署）
-      if(deptLabels.length===0) drawEmpty($("#chartPieDept")); else
-        chartPieDept = new Chart($("#chartPieDept"), {
+      // Pie (部署)
+      if(!deptLabels.length){ drawEmpty(document.getElementById("chartPieDept")); }
+      else{
+        const pieColorsBG = deptLabels.map((l,i)=>colorForDept(l,i).bg);
+        const pieColorsBD = deptLabels.map((l,i)=>colorForDept(l,i).bd);
+        chartPieDept = new Chart(document.getElementById("chartPieDept"), {
           type:"pie",
-          data:{ labels:deptLabels, datasets:[{ data:deptData, backgroundColor:deptBG, borderColor:deptBD, borderWidth:1 }] },
+          data:{ labels:deptLabels, datasets:[{ data:deptData, backgroundColor:pieColorsBG, borderColor:pieColorsBD, borderWidth:1 }] },
           options:{
-            responsive:true, maintainAspectRatio:false,
+            responsive:true, maintainAspectRatio:false, animation:false,
             plugins:{
               legend:{ position:"right" },
-              datalabels:{ formatter:(v,ctx)=>{ const sum=ctx.dataset.data.reduce((a,b)=>a+b,0)||1; const pct=(v/sum*100).toFixed(0); return pct+'%'; } }
+              datalabels:{ formatter:(v,ctx)=>{ const sum=ctx.dataset.data.reduce((a,b)=>a+b,0)||1; return Math.round(v/sum*100)+'%'; } }
             }
           }
         });
+      }
     }
 
-    function applyMappingAndRender(){ refreshFilters(); buildCharts(); }
-
-    // ======= Load CSV =======
+    /* ======= Load CSV ======= */
     async function loadCSV(url){
-      $("#lastLoaded").textContent = "読み込み中…";
+      document.getElementById("lastLoaded").textContent = "読み込み中…";
       try{
         const { url:used, text } = await fetchTextWithFallback(url);
         const parsed = Papa.parse(text, { header:true, skipEmptyLines:true });
@@ -390,28 +499,38 @@
         headers = parsed.meta.fields || Object.keys(rawRows[0]||{});
         renderPreview(rawRows);
         mapping = autoMapHeaders(headers);
-        applyMappingAndRender();
-        $("#lastLoaded").textContent = `最終読込: ${new Date().toLocaleString()}（${used.includes("r.jina.ai")?"proxy":"direct"}）`;
+        refreshFilters();
+        buildCharts();
+        document.getElementById("lastLoaded").textContent = `最終読込: ${new Date().toLocaleString()}（${used.includes("r.jina.ai")?"proxy":"direct"}）`;
       }catch(e){
         console.error(e);
-        $("#lastLoaded").textContent = "読み込み失敗: " + (e?.message || e);
-        // tampilkan empty state di semua canvas
-        ["#chartYM","#chartType","#chartModel","#chartDept","#chartParetoType","#chartPieDept"].forEach(sel=> drawEmpty($(sel), "読み込み失敗"));
+        document.getElementById("lastLoaded").textContent = "読み込み失敗: " + (e?.message || e);
+        // show empties
+        ["chartYM","chartType","chartModel","chartDept","chartParetoType","chartPieDept"].forEach(id=>drawEmpty(document.getElementById(id), "読み込み失敗"));
       }
     }
 
-    // Events
-    $$("#fYM, #fType, #fModel, #fDept").forEach(sel=>sel.addEventListener("change", buildCharts));
-    $("#clearFilters").addEventListener("click", ()=>{ $$("#fYM, #fType, #fModel, #fDept").forEach(s=>s.value=""); buildCharts(); });
-    $$(".exportBtn").forEach(btn=>btn.addEventListener("click", ()=>{
+    /* ======= Events ======= */
+    ["#fYM","#fType","#fModel","#fDept"].forEach(sel=>{
+      document.querySelector(sel).addEventListener("change", buildCharts);
+    });
+    document.getElementById("clearFilters").addEventListener("click", ()=>{
+      ["#fYM","#fType","#fModel","#fDept"].forEach(s=>document.querySelector(s).value="");
+      buildCharts();
+    });
+    document.querySelectorAll(".exportBtn").forEach(btn=>btn.addEventListener("click", ()=>{
       const map = { ym:chartYM, type:chartType, model:chartModel, dept:chartDept, paretoType:chartParetoType, pieDept:chartPieDept };
       const inst = map[btn.dataset.chart];
       if(inst) downloadImageFromChart(inst, `chart-${btn.dataset.chart}.png`);
       else alert("このグラフは現在データがありません。");
     }));
 
-    // 初期読み込み
-    window.addEventListener("DOMContentLoaded", ()=> loadCSV(DIRECT_CSV));
+    /* ======= Init ======= */
+    window.addEventListener("DOMContentLoaded", ()=>{
+      // restore Admin UI state
+      setAdmin(localStorage.getItem('kensa_admin')==='1');
+      loadCSV(DIRECT_CSV);
+    });
   </script>
 </body>
 </html>
