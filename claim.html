@@ -31,19 +31,25 @@
       radial-gradient(820px 460px at 112% -6%, #bae6fd33 0%, transparent 55%),
       linear-gradient(120deg,var(--bg1),var(--bg2));
     padding-bottom:56px;
+    overflow-x:hidden; /* biar overlay tidak bikin scroll horizontal */
   }
 
-  /* ===== Header/Nav ===== */
-  header{position:sticky;top:0;z-index:50;background:#ffffffcc;backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  /* ===== Header / Top nav ===== */
+  header{position:sticky;top:0;z-index:60;background:#ffffffcc;backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
   @media (prefers-color-scheme: dark){ header{background:#0f172acc} }
   .wrap{max-width:1200px;margin:0 auto;padding:12px 20px}
   .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
   .brand{display:flex;align-items:center;gap:10px}
   .brand img{height:36px}
-  nav a{margin-left:14px;color:var(--accent);font-weight:700;text-decoration:none}
-  nav a:hover{text-decoration:underline}
 
-  /* ===== Layout ===== */
+  .top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto}
+  .btn-top{
+    height:34px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:var(--panel);
+    color:var(--ink);display:inline-flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none
+  }
+  .btn-top:hover{border-color:#c7d2fe}
+
+  /* ===== Layout (main) ===== */
   main{max-width:1200px;margin:20px auto;padding:0 20px}
   .grid{display:grid;gap:16px;grid-template-columns:1fr 1fr}
   @media (max-width:960px){ .grid{grid-template-columns:1fr} }
@@ -89,32 +95,126 @@
   .sub{color:var(--muted);font-size:12px}
 
   /* ===== Toast ===== */
-  .toast{position:fixed;right:18px;bottom:18px;z-index:60;display:flex;flex-direction:column;gap:10px}
+  .toast{position:fixed;right:18px;bottom:18px;z-index:65;display:flex;flex-direction:column;gap:10px}
   .toast .t{background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-1);padding:10px 12px;font-size:14px}
   .t.ok{border-color:#bbf7d0}
   .t.err{border-color:#fecaca}
 
   .footer{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:var(--muted);background:#f1f5f9;padding:4px 0;z-index:21}
   @media (prefers-color-scheme: dark){ .footer{background:#0b1220} }
+
+  /* ===== Edge-hover sidebar (desktop) ===== */
+  .edge-hotspot{
+    position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px);
+    z-index:70;
+  }
+  .hover-side{
+    position:fixed; left:0; top:64px; height:calc(100vh - 64px);
+    width:260px; padding:14px 12px; overflow:auto;
+    background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
+    transform:translateX(-100%); transition:transform .22s ease; z-index:71;
+  }
+  .hover-side.open{ transform:translateX(0) }
+  .hover-side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
+  .navlist{ display:grid; gap:4px }
+  .slink{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink); text-decoration:none }
+  .slink:hover{ background:#f1f5ff }
+  .ico{ width:22px; text-align:center }
+  .admin-only{ display:none } /* akan muncul saat admin ON */
+
+  /* ===== Drawer (mobile) ===== */
+  .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px;
+          border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
+  .burger:active{transform:scale(.98)}
+  .drawer{ position:fixed; inset:0; z-index:80; display:none }
+  .drawer.open{ display:block }
+  .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
+  .drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
+                  background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto;
+                  transform:translateX(-100%); transition:transform .25s ease }
+  .drawer.open .panel{ transform:translateX(0) }
+  .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
+
+  /* Hide top nav on small screens; use burger instead */
+  @media (max-width:900px){
+    nav.top-actions{ display:none }
+    .burger{ display:inline-flex }
+    .edge-hotspot, .hover-side{ display:none }
+  }
 </style>
 </head>
 <body>
 <header>
   <div class="wrap row">
     <div class="brand">
+      <button id="btnBurger" class="burger" aria-label="メニュー"><span>☰</span></button>
       <img src="tsh.png" alt="TSH">
       <strong>品質管理生産技術</strong>
     </div>
-    <nav>
-      <a href="./index.html">ホーム</a>
-      <a href="./forms.html">出荷検査成績書</a>
-      <a href="./sagyoutejunsho.html">作業手順書</a>
-      <a href="./charts.html">チャート</a>
-      <a href="./quality.html">品質情報</a>
-      <a href="./claim.html"><strong>不具合・対策</strong></a>
+    <nav class="top-actions">
+      <a class="btn-top" href="./index.html">🏠 ホーム</a>
+      <a class="btn-top" href="./forms.html">📄 出荷検査成績書</a>
+      <a class="btn-top" href="./sagyoutejunsho.html">📝 作業手順書</a>
+      <a class="btn-top" href="./charts.html">📈 チャート</a>
+      <a class="btn-top" href="./quality.html">🔎 品質情報</a>
+      <a class="btn-top" href="./claim.html"><strong>🧪 不具合・対策</strong></a>
+      <button id="btnAdmin" class="btn-top" type="button" title="Admin login/logout">管理</button>
     </nav>
   </div>
 </header>
+
+<!-- ===== Hover Sidebar (desktop) ===== -->
+<div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
+<aside id="hoverSide" class="hover-side" aria-label="Pages">
+  <h3>Pages</h3>
+  <div class="navlist">
+    <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong></a>
+    <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+    <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+    <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+    <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+    <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>不具合・対策</strong></a>
+  </div>
+
+  <div class="admin-only" style="margin-top:12px">
+    <h3>Admin</h3>
+    <div class="navlist">
+      <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+      <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+      <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+      <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+    </div>
+  </div>
+</aside>
+
+<!-- ===== Drawer (mobile) ===== -->
+<div id="drawer" class="drawer" aria-hidden="true">
+  <div class="backdrop" data-close></div>
+  <aside class="panel">
+    <button class="close" data-close>✕</button>
+    <div class="side-card" style="box-shadow:none;border:0;padding-top:30px">
+      <h3>Pages</h3>
+      <div class="navlist">
+        <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong></a>
+        <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+        <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+        <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+        <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+        <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>不具合・対策</strong></a>
+      </div>
+
+      <div class="admin-only" style="margin-top:12px">
+        <h3>Admin</h3>
+        <div class="navlist">
+          <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+          <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+          <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+          <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
 
 <main class="wrap">
   <div class="grid">
@@ -153,7 +253,6 @@
           </select>
         </div>
 
-        <!-- 状況は「対応」フェーズのみ -->
         <div id="statusField">
           <label>状況</label>
           <select name="status">
@@ -233,9 +332,49 @@
 <div class="toast" id="toast"></div>
 <div class="footer">Design by Wahyu</div>
 
+<!-- Libs -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-/* ===== Config (Apps Script Type A) ===== */
+/* ===== Drawer (mobile) ===== */
+const drawer = document.getElementById('drawer');
+document.getElementById('btnBurger')?.addEventListener('click', ()=>{
+  drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');
+});
+drawer?.addEventListener('click', (e)=>{
+  if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
+});
+
+/* ===== Admin gate (UI only) ===== */
+const ADMIN_CODE = "admin2025"; // ganti sesuai kebutuhan
+function setAdmin(on){
+  document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
+  localStorage.setItem('kensa_admin', on ? '1' : '0');
+  const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
+}
+function isAdmin(){ return localStorage.getItem('kensa_admin')==='1'; }
+document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
+  if(isAdmin()){
+    if(confirm('AdminをOFFにしますか？')) setAdmin(false);
+  }else{
+    const c = prompt('Admin code:');
+    if(c===ADMIN_CODE) setAdmin(true); else alert('コードが違います');
+  }
+});
+
+/* ===== EDGE-HOVER sidebar (desktop) ===== */
+const hot = document.getElementById('edgeHotspot');
+const fly = document.getElementById('hoverSide');
+let hideTimer = null;
+const HIDE_DELAY = 280; // ms
+function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
+function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
+hot?.addEventListener('mouseenter', openFly);
+hot?.addEventListener('mouseleave', scheduleClose);
+fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer));
+fly?.addEventListener('mouseleave', scheduleClose);
+
+/* ===== App Script endpoint (masih sama) ===== */
 const Apps = { sheetUrl: 'https://script.google.com/macros/s/AKfycbxdZvt2CzA59f6AoUXOwmN_IxmTLu8GSFZgcdc1OfoHwrq71A5dLpt2T3X3m2Q5XhNHHQ/exec' };
 const ConfigTypes = { customer:'各先クレーム', internal:'社内クレーム', design:'設計変更', kaizen:'改善', supplier:'協力会社クレーム' };
 
@@ -302,13 +441,11 @@ function toast(msg,type='ok'){ const t=document.createElement('div'); t.classNam
   });
 })();
 
-/* ===== Draft autosave (localStorage) ===== */
+/* ===== Draft autosave ===== */
 (function initDraft(){
   const KEY='claim_draft_v1';
   const form=$('#reportForm');
   const note=$('#draftNote');
-
-  // restore
   try{
     const saved=localStorage.getItem(KEY);
     if(saved){
@@ -321,8 +458,6 @@ function toast(msg,type='ok'){ const t=document.createElement('div'); t.classNam
       toast('一時保存を復元', 'ok');
     }
   }catch(_){ localStorage.removeItem(KEY); }
-
-  // save on input
   form.addEventListener('input', ()=>{
     const fd=new FormData(form);
     const obj=Object.fromEntries(fd.entries());
@@ -330,18 +465,12 @@ function toast(msg,type='ok'){ const t=document.createElement('div'); t.classNam
     localStorage.setItem(KEY, JSON.stringify(obj));
     note.textContent='自動保存中…';
   });
-
-  // clear draft
   $('#btnClearDraft').addEventListener('click', ()=>{
     localStorage.removeItem(KEY);
     note.textContent='一時保存を削除しました';
     toast('一時保存クリア', 'ok');
   });
-
-  // reset should also clear attach info
-  form.addEventListener('reset', ()=>{
-    setTimeout(()=>{ $('#attachInfo').textContent=''; }, 0);
-  });
+  form.addEventListener('reset', ()=>{ setTimeout(()=>{ $('#attachInfo').textContent=''; }, 0); });
 })();
 
 /* ===== Send to Apps Script ===== */
@@ -360,7 +489,6 @@ async function sendToSheet(rec){
   try{
     const res = await fetch(Apps.sheetUrl,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     if(!res.ok){
-      // fallback no-cors
       await fetch(Apps.sheetUrl,{ method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     }
     toast('送信しました（オンライン）','ok');
@@ -409,7 +537,7 @@ function render(){
   chartType=new Chart($('#chartByType'),{
     type:'bar',
     data:{labels:labelsType, datasets:[{label:'件数（報告）', data:countsType}]},
-    options:{responsive:true,plugins:{legend:{display:false}}}
+    options:{responsive:true,plugins:{legend:{display:false}},animation:false}
   });
 
   // Chart 2: Monthly trend
@@ -423,7 +551,7 @@ function render(){
       {label:'報告', data:countsReport,   tension:.25, pointRadius:2},
       {label:'対応', data:countsHandling, tension:.25, pointRadius:2}
     ]},
-    options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}}}
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}},animation:false}
   });
 
   // Chart 3: Status pie
@@ -434,12 +562,12 @@ function render(){
   chartStatus=new Chart($('#chartStatus'),{
     type:'pie',
     data:{ labels:['未','進行中','完了'], datasets:[{ data:[sOpen,sProg,sDone] }] },
-    options:{responsive:true,maintainAspectRatio:false}
+    options:{responsive:true,maintainAspectRatio:false,animation:false}
   });
 }
 
 /* ===== Export CSV (current view) ===== */
-$('#btnExport').addEventListener('click', ()=>{
+document.getElementById('btnExport').addEventListener('click', ()=>{
   const q=$('#search').value.toLowerCase();
   const arr=state.data.filter(r=>!q || [r.title,r.dept,r.pic,r.reporter].some(v=>String(v||'').toLowerCase().includes(q)));
   const headers=['id','createdAt','type','phase','title','date','reporter','email','dept','category','priority','status','isClaim','problem','rootcause','containment','corrective','preventive','pic','due'];
@@ -456,12 +584,11 @@ $('#btnExport').addEventListener('click', ()=>{
 });
 
 /* ===== Submit ===== */
-$('#reportForm').addEventListener('submit', async e=>{
+document.getElementById('reportForm').addEventListener('submit', async e=>{
   e.preventDefault();
   const fd=new FormData(e.target);
   const rec=Object.fromEntries(fd.entries());
 
-  // JP status normalize
   if(rec.status==='Open') rec.status='未';
   if(rec.status==='In Progress') rec.status='進行中';
   if(rec.status==='Done') rec.status='完了';
@@ -476,17 +603,19 @@ $('#reportForm').addEventListener('submit', async e=>{
   await sendToSheet(rec);
 
   e.target.reset();
-  // default tabs
   document.querySelector('[data-tab="customer"]').click();
   document.querySelector('[data-mode="report"]').click();
   toast('ローカルに保存しました','ok');
 });
 
 /* ===== Search live ===== */
-$('#search').addEventListener('input', render);
+document.getElementById('search').addEventListener('input', render);
 
 /* ===== Init ===== */
-render();
+window.addEventListener('DOMContentLoaded', ()=>{
+  setAdmin(localStorage.getItem('kensa_admin')==='1'); // restore admin UI
+  render();
+});
 </script>
 </body>
 </html>
