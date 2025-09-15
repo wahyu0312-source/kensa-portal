@@ -213,7 +213,7 @@
     <h3>Admin</h3>
     <div class="navlist">
       <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-      <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+      <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix / 製造No</strong></a>
       <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
       <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
     </div>
@@ -240,7 +240,7 @@
       <h3>Admin</h3>
       <div class="navlist">
         <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-        <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+        <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix / 製造No</strong></a>
         <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
         <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
       </div>
@@ -266,20 +266,49 @@
     if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
   });
 
-  /* ========= Admin gate (UI only) ========= */
-  const ADMIN_CODE = "admin2025"; // ubah sesuai kebutuhan
+  /* ========= Admin & Prefix (standardisasi + reset sekali per sesi) ========= */
+  const ADMIN_FLAG_KEY = 'kensa_admin';
+  const PREFIX_KEY     = 'kensa_prefix';
+  const LEGACY_ADMIN_KEYS  = ['admin_okuma','kensa_admin_okuma','admin_flag'];
+  const LEGACY_PREFIX_KEYS = ['prefix','okuma_prefix','kensa_prefix_okuma'];
+
+  (function resetAdminOncePerSession(){
+    if (!sessionStorage.getItem('kensa_boot_done')) {
+      localStorage.removeItem(ADMIN_FLAG_KEY);
+      LEGACY_ADMIN_KEYS.forEach(k => localStorage.removeItem(k));
+      sessionStorage.setItem('kensa_boot_done','1');
+    }
+  })();
+
+  (function migratePrefix(){
+    if (!localStorage.getItem(PREFIX_KEY)) {
+      for (const k of LEGACY_PREFIX_KEYS) {
+        const v = localStorage.getItem(k);
+        if (v && v.trim()) { localStorage.setItem(PREFIX_KEY, v.trim()); break; }
+      }
+    }
+  })();
+
   function setAdmin(on){
     document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
-    localStorage.setItem('kensa_admin', on ? '1' : '0');
+    if (on){
+      localStorage.setItem(ADMIN_FLAG_KEY,'1');
+      LEGACY_ADMIN_KEYS.forEach(k=>localStorage.setItem(k,'1'));
+    } else {
+      localStorage.removeItem(ADMIN_FLAG_KEY);
+      LEGACY_ADMIN_KEYS.forEach(k=>localStorage.removeItem(k));
+    }
     const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
   }
-  function isAdmin(){ return localStorage.getItem('kensa_admin')==='1'; }
+  function isAdmin(){ return localStorage.getItem(ADMIN_FLAG_KEY)==='1'; }
+
   document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
     if(isAdmin()){
-      if(confirm('AdminをOFFにしますか？')) setAdmin(false);
+      if(confirm('Admin akan dimatikan. Lanjut?')) setAdmin(false);
     }else{
-      const c = prompt('Admin code:');
-      if(c===ADMIN_CODE) setAdmin(true); else alert('コードが違います');
+      const code = prompt('Admin code:');
+      const ADMIN_CODE = 'admin2025';
+      if(code===ADMIN_CODE) setAdmin(true); else alert('Kode tidak sesuai');
     }
   });
 
@@ -471,7 +500,7 @@
 
   // Init
   window.addEventListener('DOMContentLoaded', ()=>{
-    setAdmin(isAdmin());   // restore admin UI state
+    setAdmin(isAdmin());   // restore admin UI state (after session reset => default OFF)
     load(); startAutoRefresh(60000);
   });
 </script>
