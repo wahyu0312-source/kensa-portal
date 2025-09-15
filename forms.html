@@ -24,22 +24,17 @@
       radial-gradient(820px 460px at 112% -6%, #bae6fd 0%, transparent 55%),
       linear-gradient(120deg,#f8fafc,var(--bg));
   }
-  a{color:inherit}
+  a{color:inherit; text-decoration:none}
 
-  /* ===== Shell (Header + Sidebar + Content) */
+  /* ===== Shell (Header + Content; sidebar via hover overlay) ===== */
   .app{
     display:grid;
-    grid-template-columns:260px 1fr;
     grid-template-rows:64px 1fr;
     grid-template-areas:
-      "header header"
-      "side   main";
+      "header"
+      "main";
     min-height:100vh;
   }
-  /* ⬇⬇ Collapsed state (desktop) */
-  .app.side-collapsed{ grid-template-columns:0 1fr; }
-  .app.side-collapsed .side{ display:none; }
-  .app.side-collapsed main{ max-width:min(1600px, calc(100vw - 40px)); }
 
   header{
     grid-area:header; position:sticky; top:0; z-index:60;
@@ -62,26 +57,28 @@
   .btn.primary{background:var(--accent); color:#fff; border-color:#1e40af; box-shadow:0 6px 16px rgba(37,99,235,.25)}
   .btn:hover{border-color:var(--ring)}
 
-  /* Desktop "Hide/Show Pages" button */
-  .collapse-btn{order:-1}
-  @media (max-width:900px){ .collapse-btn{ display:none } }
-
-  /* Burger */
+  /* Burger (mobile) */
   .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px;
           border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
   .burger:active{transform:scale(.98)}
 
-  /* Sidebar (desktop) */
-  .side{ grid-area:side; position:sticky; top:64px; align-self:start; height:calc(100vh - 64px); overflow:auto; padding:18px }
-  .side-card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-1); padding:14px }
-  .side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
+  /* ===== Hover Sidebar (desktop) ===== */
+  .edge-hotspot{ position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:70 }
+  .hover-side{
+    position:fixed; left:0; top:64px; height:calc(100vh - 64px);
+    width:260px; padding:14px 12px; overflow:auto;
+    background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
+    transform:translateX(-100%); transition:transform .22s ease; z-index:71;
+  }
+  .hover-side.open{ transform:translateX(0) }
+  .hover-side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
   .navlist{ display:grid; gap:4px }
-  .link{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink); text-decoration:none }
+  .link{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink) }
   .link small{ color:var(--muted) }
   .link:hover{ background:#f1f5ff }
   .ico{ width:22px; text-align:center }
 
-  /* Drawer (mobile) */
+  /* ===== Drawer (mobile) ===== */
   .drawer{ position:fixed; inset:0; z-index:70; display:none }
   .drawer.open{ display:block }
   .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
@@ -91,7 +88,7 @@
   .drawer.open .panel{ transform:translateX(0) }
   .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
 
-  /* Main */
+  /* ===== Main ===== */
   main{ grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 96px }
   .page-head{ display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:14px }
   .h1{ font-size:22px; margin:0 }
@@ -105,11 +102,11 @@
   .input{ height:38px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:var(--ink); outline:none }
   .input:focus{ border-color:var(--ring); box-shadow:0 0 0 3px #93c5fd55 }
   .lock .msg{ min-width:80px; font-weight:700 }
+  .hidden{ display:none !important }
 
   /* Search */
   .searchbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
   .searchbar .search{ flex:1; min-width:220px; height:40px; padding:0 14px; border:2px solid #0b12221a; border-radius:9999px; outline:none; background:#fff }
-  .hidden{ display:none !important }
 
   /* Accordion folders */
   .folder{ background:#fff; border:1px solid var(--border); border-radius:16px; margin-bottom:12px; overflow:hidden }
@@ -133,16 +130,15 @@
 
   /* Responsive */
   @media (max-width:900px){
-    .app{ grid-template-columns:1fr; grid-template-areas:"header" "main" }
-    .side{ display:none }
     .top-actions{ display:none }   /* hide top nav; use drawer */
     .burger{ display:inline-flex }
+    .edge-hotspot, .hover-side{ display:none } /* desktop-only hover */
   }
 </style>
 </head>
 
 <body>
-<div class="app" id="appRoot">
+<div class="app">
   <!-- ===== HEADER ===== -->
   <header>
     <div class="header-wrap">
@@ -153,9 +149,6 @@
       </div>
 
       <nav class="top-actions" aria-label="Top navigation">
-        <!-- NEW: Hide/Show Pages (desktop) -->
-        <button id="toggleSide" class="btn collapse-btn" type="button" title="Hide/Show Pages">⮜ Hide Pages</button>
-
         <a class="btn" href="./index.html">🏠 ホーム</a>
         <a class="btn primary" href="./forms.html" aria-current="page">📄 出荷検査成績書</a>
         <a class="btn" href="./sagyoutejunsho.html">📝 作業手順書</a>
@@ -165,60 +158,6 @@
       </nav>
     </div>
   </header>
-
-  <!-- ===== DRAWER (mobile) ===== -->
-  <div id="drawer" class="drawer" aria-hidden="true">
-    <div class="backdrop" data-close></div>
-    <aside class="panel">
-      <button class="close" data-close>✕</button>
-      <div class="side-card" style="box-shadow:none;border:0;padding-top:30px">
-        <h3>Pages</h3>
-        <div class="navlist">
-          <a class="link" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small>Dashboard</small></a>
-          <a class="link" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
-          <a class="link" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
-          <a class="link" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
-          <a class="link" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-          <a class="link" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
-        </div>
-
-        <div class="admin-only">
-          <h3>Admin</h3>
-          <div class="navlist">
-            <a class="link" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-            <a class="link" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
-            <a class="link" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
-            <a class="link" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
-          </div>
-        </div>
-      </div>
-    </aside>
-  </div>
-
-  <!-- ===== SIDEBAR (desktop) ===== -->
-  <aside class="side">
-    <div class="side-card">
-      <h3>Pages</h3>
-      <div class="navlist">
-        <a class="link" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small>Dashboard</small></a>
-        <a class="link" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
-        <a class="link" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
-        <a class="link" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
-        <a class="link" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-        <a class="link" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
-      </div>
-
-      <div class="admin-only">
-        <h3>Admin</h3>
-        <div class="navlist">
-          <a class="link" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-          <a class="link" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
-          <a class="link" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
-          <a class="link" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
-        </div>
-      </div>
-    </div>
-  </aside>
 
   <!-- ===== MAIN ===== -->
   <main>
@@ -255,6 +194,59 @@
   </main>
 </div>
 
+<!-- ===== Hover Sidebar (desktop) ===== -->
+<div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
+<aside id="hoverSide" class="hover-side" aria-label="Pages">
+  <h3>Pages</h3>
+  <div class="navlist">
+    <a class="link" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small>Dashboard</small></a>
+    <a class="link" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+    <a class="link" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+    <a class="link" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+    <a class="link" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+    <a class="link admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+  </div>
+
+  <div class="admin-only" style="margin-top:12px">
+    <h3>Admin</h3>
+    <div class="navlist">
+      <a class="link" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+      <a class="link" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+      <a class="link" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+      <a class="link" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+    </div>
+  </div>
+</aside>
+
+<!-- ===== Drawer (mobile) ===== -->
+<div id="drawer" class="drawer" aria-hidden="true">
+  <div class="backdrop" data-close></div>
+  <aside class="panel">
+    <button class="close" data-close>✕</button>
+    <div class="side-card" style="box-shadow:none;border:0;padding-top:30px">
+      <h3>Pages</h3>
+      <div class="navlist">
+        <a class="link" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small>Dashboard</small></a>
+        <a class="link" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+        <a class="link" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+        <a class="link" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+        <a class="link" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+        <a class="link admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+      </div>
+
+      <div class="admin-only">
+        <h3>Admin</h3>
+        <div class="navlist">
+          <a class="link" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+          <a class="link" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
+          <a class="link" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+          <a class="link" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
 <div class="marquee"><span>⚙️ 品質管理生産技術ポータルへようこそ ｜ 本日も安全第一でお願いします ｜ 水分補給して下さいお願い致します</span></div>
 <div class="footer">Design by Wahyu</div>
 
@@ -282,18 +274,19 @@
     }
   });
 
-  /* ================= Sidebar collapse (desktop) ================= */
-  const appRoot = document.getElementById('appRoot');
-  const toggleSideBtn = document.getElementById('toggleSide');
-  function applySideCollapsed(collapsed){
-    appRoot.classList.toggle('side-collapsed', collapsed);
-    if(toggleSideBtn){ toggleSideBtn.textContent = collapsed ? '☰ Show Pages' : '⮜ Hide Pages'; }
-    localStorage.setItem('side_collapsed', collapsed ? '1' : '0');
-  }
-  toggleSideBtn?.addEventListener('click', ()=>{
-    const collapsed = !appRoot.classList.contains('side-collapsed');
-    applySideCollapsed(collapsed);
-  });
+  /* ================= EDGE-HOVER sidebar (desktop) ================= */
+  const hot = document.getElementById('edgeHotspot');
+  const fly = document.getElementById('hoverSide');
+  let hideTimer = null;
+  const HIDE_DELAY = 280; // ms
+
+  function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
+  function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
+
+  hot?.addEventListener('mouseenter', openFly);
+  hot?.addEventListener('mouseleave', scheduleClose);
+  fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer));
+  fly?.addEventListener('mouseleave', scheduleClose);
 
   /* ================= Password lock for folder content ================= */
   const PASSWORD = "kensa2025"; // ganti jika perlu
@@ -356,7 +349,6 @@
   // ---------- Init ----------
   (function init(){
     setAdmin(readAdmin());
-    applySideCollapsed(localStorage.getItem('side_collapsed')==='1');
 
     // Enter handlers
     elPwd.addEventListener('keydown', e => { if (e.key === "Enter") unlock(); });
@@ -367,7 +359,7 @@
     btnSearch.addEventListener('click', search);
     btnReset.addEventListener('click', resetView);
 
-    // toggle show/hide
+    // toggle show/hide password
     btnToggle.addEventListener('click', () => {
       const show = elPwd.type === 'password';
       elPwd.type = show ? 'text' : 'password';
@@ -508,6 +500,9 @@
       [...elFolders.querySelectorAll('.caret')].forEach(c => c.style.transform='rotate(0deg)');
     }
   }
+
+  // Init admin UI on load (in case of reload)
+  window.addEventListener('DOMContentLoaded', ()=> setAdmin(readAdmin()));
 </script>
 </body>
 </html>
