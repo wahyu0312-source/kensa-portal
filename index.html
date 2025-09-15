@@ -117,7 +117,7 @@
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
   .footer{position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:var(--muted); background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border)}
 
-  /* Admin hide by default */
+  /* Admin hide by default (akan muncul saat Admin ON) */
   .admin-only{ display:none }
 
   /* Hide edge-hover on small screens (use drawer) */
@@ -204,9 +204,11 @@
     <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
     <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
     <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-    <a class="slink admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+    <!-- Trial Page: selalu tampil -->
+    <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
   </div>
 
+  <!-- Grup Admin: muncul saat Admin ON -->
   <div class="admin-only" style="margin-top:12px">
     <h3>Admin</h3>
     <div class="navlist">
@@ -229,9 +231,11 @@
       <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
       <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
       <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-      <a class="slink admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+      <!-- Trial Page: selalu tampil -->
+      <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
     </div>
 
+    <!-- Grup Admin: muncul saat Admin ON -->
     <div class="admin-only" style="margin-top:12px">
       <h3>Admin</h3>
       <div class="navlist">
@@ -263,7 +267,7 @@
   });
 
   /* ========= Admin gate (UI only) ========= */
-  const ADMIN_CODE = "admin2025"; // ganti sesuai kebutuhan
+  const ADMIN_CODE = "admin2025"; // ubah sesuai kebutuhan
   function setAdmin(on){
     document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
     localStorage.setItem('kensa_admin', on ? '1' : '0');
@@ -402,7 +406,7 @@
       const urgentCount=rows.reduce((n,r)=> n + (idx.status_flag!=null && isUrgent(valAt(r, idx.status_flag)) ? 1 : 0), 0);
       const banner=document.getElementById('urgent-banner');
       banner.style.display=urgentCount>0?'block':'none';
-      banner.textContent=urgentCount>0?`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`:'';      
+      banner.textContent=urgentCount>0?`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`:'';
 
       renderTodaySection(); applyFilter(null);
 
@@ -467,7 +471,7 @@
 
   // Init
   window.addEventListener('DOMContentLoaded', ()=>{
-    setAdmin(isAdmin());   // restore admin UI
+    setAdmin(isAdmin());   // restore admin UI state
     load(); startAutoRefresh(60000);
   });
 </script>
