@@ -104,12 +104,11 @@
   .lock .msg{ min-width:80px; font-weight:700 }
   .hidden{ display:none !important }
 
-  /* Search */
+  /* Search row */
   .searchbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
   .searchbar .search{ flex:1; min-width:220px; height:40px; padding:0 14px; border:2px solid #0b12221a; border-radius:9999px; outline:none; background:#fff }
-
-  /* Prefix box */
-  .prefixbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+  /* Prefix mini di kanan search */
+  .prefixmini{ display:flex; gap:8px; align-items:center; margin-left:auto }
   .badge{ height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--ink); background:#f1f5f9; border:1px solid var(--border); border-radius:999px }
 
   /* Accordion folders */
@@ -137,6 +136,7 @@
     .top-actions{ display:none }
     .burger{ display:inline-flex }
     .edge-hotspot, .hover-side{ display:none }
+    .prefixmini{ width:100%; margin-left:0; justify-content:flex-start }
   }
 </style>
 </head>
@@ -182,23 +182,19 @@
       </div>
     </section>
 
-    <!-- Active Prefix (for 図番 先頭桁) -->
-    <section id="prefixPanel" class="panel hidden" aria-label="Prefix panel">
-      <div class="prefixbar">
-        <span class="badge">図番 先頭桁</span>
-        <input id="inpPrefix" class="input" type="text" placeholder="例: 2825-" style="width:12em">
-        <button id="btnSavePrefix" class="btn" type="button">保存</button>
-        <span class="small">この値は <code>localStorage.kensa_prefix</code> に保存され、フォームで利用されます。</span>
-      </div>
-    </section>
-
-    <!-- Search -->
+    <!-- Search (dengan Prefix mini di kanan) -->
     <section id="searchWrap" class="panel hidden" aria-label="検索パネル">
       <div class="searchbar">
         <input id="q" class="search" type="search" placeholder="検索（顧客名／サブフォルダ／フォーム名／説明）" aria-label="検索語">
         <button id="btnSearch" class="btn" type="button">検索</button>
         <button id="btnReset"  class="btn" type="button">リセット</button>
         <span id="hit" class="small" aria-live="polite"></span>
+
+        <div class="prefixmini" title="図番の先頭桁（例: 2825-）">
+          <span class="badge">図番 先頭桁</span>
+          <input id="inpPrefix" class="input" type="text" placeholder="例: 2825-" style="width:10em">
+          <button id="btnSavePrefix" class="btn" type="button">保存</button>
+        </div>
       </div>
     </section>
 
@@ -359,7 +355,6 @@
 
   // ---------- Elements ----------
   const elLock = document.getElementById('lock');
-  const elPrefixPanel = document.getElementById('prefixPanel');
   const elFoldersPanel = document.getElementById('foldersPanel');
   const elFolders = document.getElementById('folders');
   const elSearchWrap = document.getElementById('searchWrap');
@@ -412,7 +407,7 @@
     const savedQuery = localStorage.getItem('kensa_query') || "";
     const savedOpen = getJSON('kensa_open', []);
 
-    // prefix: migrate + fill input (selalu tampil kalau unlocked)
+    // prefix: load & bind
     inpPrefix.value = getActivePrefix();
     btnSavePrefix.addEventListener('click', ()=>{
       const v = S(inpPrefix.value);
@@ -422,7 +417,6 @@
 
     if (unlocked) {
       elLock.classList.add('hidden');
-      elPrefixPanel.classList.remove('hidden');
       elFoldersPanel.classList.remove('hidden');
       elSearchWrap.classList.remove('hidden');
 
@@ -439,7 +433,6 @@
     if (v !== PASSWORD) { elMsg.textContent = '× 違います'; elMsg.style.color = 'var(--ng)'; return; }
     elMsg.textContent = '✓ 正しい'; elMsg.style.color = 'var(--ok)';
     elLock.classList.add('hidden');
-    elPrefixPanel.classList.remove('hidden');
     elFoldersPanel.classList.remove('hidden');
     elSearchWrap.classList.remove('hidden');
     localStorage.setItem('kensa_unlocked','1');
