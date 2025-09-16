@@ -112,7 +112,8 @@
         <a class="btn" href="./sagyoutejunsho.html">📝 作業手順書</a>
         <a class="btn" href="./charts.html">📈 チャート</a>
         <a class="btn" href="./quality.html">🔎 品質情報</a>
-        <!-- Admin button REMOVED -->
+        <!-- NEW: Admin Prefix always visible -->
+        <a class="btn" href="./admin-prefix.html">🔑 Admin Prefix</a>
       </nav>
     </div>
   </header>
@@ -135,7 +136,7 @@
       </div>
     </section>
 
-    <!-- Search (prefix badge REMOVED) -->
+    <!-- Search -->
     <section id="searchWrap" class="panel hidden" aria-label="検索パネル">
       <div class="searchbar">
         <input id="q" class="search" type="search" placeholder="検索（顧客名／サブフォルダ／フォーム名／説明）" aria-label="検索語">
@@ -162,7 +163,8 @@
     <a class="link" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
     <a class="link" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
     <a class="link" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-    <!-- admin-only links REMOVED -->
+    <!-- NEW -->
+    <a class="link" href="./admin-prefix.html"><span class="ico">🔑</span><strong>Admin Prefix</strong><small>6桁プレフィックス管理</small></a>
   </div>
 </aside>
 
@@ -174,12 +176,13 @@
     <div class="side-card" style="box-shadow:none;border:0;padding-top:30px">
       <h3>Pages</h3>
       <div class="navlist">
-        <a class="link" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small>Dashboard</small></a>
+        <a class="link" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong></a>
         <a class="link" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
         <a class="link" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
         <a class="link" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
         <a class="link" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-        <!-- admin-only links REMOVED -->
+        <!-- NEW -->
+        <a class="link" href="./admin-prefix.html"><span class="ico">🔑</span><strong>Admin Prefix</strong></a>
       </div>
     </div>
   </aside>
@@ -196,7 +199,7 @@
   drawer?.addEventListener('click', (e)=>{ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); } });
 
   /* ================= Password lock (content only) ================= */
-  const PASSWORD = "kensa2025"; // ganti jika perlu
+  const PASSWORD = "kensa2025";
 
   function getJSON(key, fallback){
     try{
@@ -207,7 +210,6 @@
   }
   const S = s=>String(s??'').trim();
 
-  /* ====== DATA ====== */
   const DATA = [
     {customer:"オークマ株式会社",folders:[
       {name:"Y軸",links:[
@@ -232,7 +234,6 @@
     ]}
   ];
 
-  /* ====== Elements ====== */
   const elLock = document.getElementById('lock');
   const elFoldersPanel = document.getElementById('foldersPanel');
   const elFolders = document.getElementById('folders');
@@ -246,22 +247,17 @@
   const btnToggle = document.getElementById('btnToggle');
   const btnUnlock = document.getElementById('btnUnlock');
 
-  /* ====== State ====== */
   let lastQuery = "";
   let openCustomers = new Set();
 
-  /* ====== Init ====== */
   (function init(){
-    // Enter handlers
     elPwd.addEventListener('keydown', e => { if (e.key === "Enter") unlock(); });
     elQ.addEventListener('keydown',  e => { if (e.key === "Enter") search(); });
 
-    // Buttons
     btnUnlock.addEventListener('click', unlock);
     btnSearch.addEventListener('click', search);
     btnReset.addEventListener('click', resetView);
 
-    // show/hide pwd
     btnToggle.addEventListener('click', () => {
       const show = elPwd.type === 'password';
       elPwd.type = show ? 'text' : 'password';
@@ -269,7 +265,6 @@
       btnToggle.setAttribute('aria-pressed', show ? 'true' : 'false');
     });
 
-    // live validate
     elPwd.addEventListener('input', () => {
       if (!elPwd.value) { elMsg.textContent = ''; return; }
       const ok = elPwd.value === PASSWORD;
@@ -277,7 +272,6 @@
       elMsg.style.color = ok ? 'var(--ok)' : 'var(--ng)';
     });
 
-    // Restore state
     const unlocked = localStorage.getItem('kensa_unlocked') === '1';
     const savedQuery = localStorage.getItem('kensa_query') || "";
     const savedOpen = getJSON('kensa_open', []);
@@ -294,7 +288,6 @@
     }
   })();
 
-  /* ====== Actions ====== */
   function unlock(){
     if (elPwd.value !== PASSWORD) { elMsg.textContent = '× 違います'; elMsg.style.color = 'var(--ng)'; return; }
     elMsg.textContent = '✓ 正しい'; elMsg.style.color = 'var(--ok)';
@@ -401,6 +394,18 @@
       [...elFolders.querySelectorAll('.caret')].forEach(c => c.style.transform='rotate(0deg)');
     }
   }
+
+  /* ===== Edge-hover sidebar (desktop) ===== */
+  const hotspot = document.getElementById('edgeHotspot');
+  const side = document.getElementById('hoverSide');
+  let hoverTimer=null;
+  hotspot?.addEventListener('mouseenter', ()=>{
+    clearTimeout(hoverTimer);
+    side.classList.add('open');
+  });
+  side?.addEventListener('mouseleave', ()=>{
+    hoverTimer=setTimeout(()=>side.classList.remove('open'), 180);
+  });
 </script>
 </body>
 </html>
