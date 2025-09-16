@@ -22,7 +22,7 @@
   .card{background:var(--card);border:1px solid var(--b);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
   .hint{color:var(--muted);font-size:12px;margin-top:8px}
   .list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
-  .row{display:grid;grid-template-columns: 240px 1fr 95px 95px auto;gap:8px;align-items:center;border:1px solid var(--b);border-radius:12px;padding:8px;background:#fff}
+  .row{display:grid;grid-template-columns: 240px 1fr 95px 95px 70px auto;gap:8px;align-items:center;border:1px solid var(--b);border-radius:12px;padding:8px;background:#fff}
   .row .prefix{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f8fafc;padding:8px;border-radius:10px;border:1px solid var(--b)}
   .row input[type="text"], .row input[type="number"]{width:100%;padding:8px;border-radius:10px;border:1px solid var(--b)}
   .row .btns{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
@@ -48,7 +48,7 @@
   .menu a:hover, .menu button:hover{ background:#f1f5f9 }
   .sep{ height:1px; background:var(--b); margin:6px }
   .admin-only{display:none}
-  @media (max-width: 900px){ .row{grid-template-columns: 1fr 1fr 95px 95px auto} .row .prefix{font-size:12px}}
+  @media (max-width: 900px){ .row{grid-template-columns: 1fr 1fr 95px 95px 70px auto} .row .prefix{font-size:12px}}
 </style>
 </head>
 <body>
@@ -85,11 +85,11 @@
 <main>
   <!-- ACTIVE PREFIX (dipakai oleh forms) -->
   <section class="card" id="activeBox">
-    <h2 style="margin:4px 0">Prefix aktif untuk フォーム（図番 先頭桁）</h2>
+    <h2 style="margin:4px 0">Prefix aktif untuk フォーム（6桁 + "-"）</h2>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
-      <input id="activePrefix" type="text" placeholder="contoh: 2825-" style="flex:1; min-width:220px; padding:10px; border:1px solid var(--b); border-radius:10px">
+      <input id="activePrefix" type="text" placeholder="例: 282520-" style="flex:1; min-width:220px; padding:10px; border:1px solid var(--b); border-radius:10px">
       <button id="btnSaveActive" class="btn">Simpan Prefix Aktif</button>
-      <span class="hint">Disimpan ke <code>localStorage.kensa_prefix</code>. Halaman forms akan membacanya.</span>
+      <span class="hint">Disimpan ke <code>localStorage.kensa_prefix</code>. Form mewajibkan 6桁+ハイフン（例: 282520-）。</span>
     </div>
   </section>
 
@@ -112,7 +112,6 @@
 /* ================== KONFIG ================== */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxWxAa_dWQNoUPhWnkw3P22jgeW4vb44Z5ISuUyUWsAAroFzzE6iIVWMIpqqio6E5OgqA/exec';
 const STORE   = 'ADMIN_PREFIX_LIST_V2';
-// Kunci sinkron dengan index/forms
 const ADMIN_FLAG_KEY = 'kensa_admin';
 const PREFIX_KEY     = 'kensa_prefix';
 const LEGACY_PREFIX_KEYS = ['prefix','okuma_prefix','kensa_prefix_okuma'];
@@ -125,8 +124,6 @@ function setAdmin(on){
   const s=document.getElementById('admState'); if(s){ s.textContent = on? '管理: ON' : '管理: OFF'; s.className = 'pill ' + (on?'ok':'warn'); }
 }
 function isAdmin(){ return localStorage.getItem(ADMIN_FLAG_KEY)==='1'; }
-
-// Tombol 管理
 window.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
     if(isAdmin()){
@@ -141,6 +138,13 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
 /* ================ UTIL & API ================ */
 const S = v => String(v ?? '').trim();
+
+function isValid6(v){ return /^\d{6}-$/.test(S(v)); }
+function normalizeTo6(v){
+  const d = S(v).replace(/\D/g,''); // ambil semua digit
+  if(d.length >= 6) return d.slice(0,6) + '-';
+  return ''; // tak cukup 6 digit → gagal
+}
 
 async function api(payload){
   const r = await fetch(GAS_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify(payload), redirect:'follow' });
@@ -157,29 +161,16 @@ function escapeAttr(s){ return escapeHtml(s).replace(/\"/g,'&quot;'); }
 /* ================ SAMPLE / SYNC ================ */
 function defaultSamples(){
   return [
-    { prefix:'2742-20::2742-',        label:'Okuma MU6300V (2742-20)', digits:4 },
-    { prefix:'2743-20::2743-',        label:'Okuma MU6300V (2743-20)', digits:4 },
-    { prefix:'359670X3156V::Y355571-',label:'Tomei WY-150VX3（図番→Y+digits-）' },
-    { prefix:'3555-7tomei::355571-',  label:'Tomei NTY3-100V', digits:4 },
-    { prefix:'330580V::XR3305-',      label:'Okuma MB-80V（XR3305-*）' },
-    { prefix:'mb46v::2825-',          label:'2825-20 MB46V', digits:4 }
+    { prefix:'2742-20::274220-',        label:'Okuma MU6300V (2742-20)', digits:4 },
+    { prefix:'2743-20::274320-',        label:'Okuma MU6300V (2743-20)', digits:4 },
+    { prefix:'359670X3156V::Y355571-',  label:'Tomei WY-150VX3（図番→Y+digits-）' },
+    { prefix:'3555-7tomei::355571-',    label:'Tomei NTY3-100V', digits:4 },
+    { prefix:'330580V::XR3305-',        label:'Okuma MB-80V（XR3305-*）' },
+    { prefix:'mb46v::282520-',          label:'2825-20 MB-46V', digits:4 }  /* ← penting: 6桁 */
   ];
 }
 
 function seedIfEmpty(){ const data = loadStore(); if(data.length===0){ const samples = defaultSamples(); saveStore(samples); } }
-
-async function syncFromServer(){
-  try{
-    const res = await api({ action:'listPrefixes' }); // {items:[{prefix,last,next,digits}]}
-    if(!res || !Array.isArray(res.items)){ toast('Tidak ada data dari server'); return; }
-    const local = loadStore();
-    res.items.forEach(it=>{
-      if(!local.some(x=>x.prefix===it.prefix)) local.push({ prefix: it.prefix, label:'(server)', digits: it.digits||'' });
-      else { const idx = local.findIndex(x=>x.prefix===it.prefix); if(!local[idx].digits && it.digits) local[idx].digits = it.digits; }
-    });
-    saveStore(local); render(); toast(`Sync OK: ${res.items.length} item`);
-  }catch(e){ toast('Gagal sync: '+e.message); }
-}
 
 /* ================ ACTIVE PREFIX box ================ */
 function migrateActivePrefix(){
@@ -197,16 +188,24 @@ function render(){
   document.getElementById('count').textContent = `${data.length} prefix`;
   list.innerHTML = '';
 
-  if(!data.length){ list.innerHTML = '<div class="row" style="justify-content:center;color:#64748b">Belum ada data. Klik “＋ Contoh” atau “Sync Server”.</div>'; return; }
+  if(!data.length){
+    list.innerHTML = '<div class="row" style="justify-content:center;color:#64748b">Belum ada data. Klik “＋ Contoh” atau “Sync Server”.</div>';
+    return;
+  }
 
   data.forEach((it, idx)=>{
     const row = document.createElement('div');
     row.className = 'row';
+
+    const serialPref = String(it.prefix).split('::')[1] || '';
+    const valid = isValid6(serialPref) || isValid6(normalizeTo6(serialPref));
+
     row.innerHTML = `
       <div class="prefix" title="APP_NS::SERIAL_PREFIX">${escapeHtml(it.prefix)}</div>
       <input type="text" class="inpLabel" placeholder="Label / catatan" value="${escapeAttr(it.label||'')}">
       <input type="number" class="inpNext" placeholder="Set 次番号" min="1" step="1" value="${escapeAttr(it.next||'')}">
       <input type="number" class="inpDigits" placeholder="桁数" min="1" max="12" step="1" value="${escapeAttr(it.digits||'')}">
+      <span class="pill ${valid?'ok':'bad'}" title="Validasi 6桁+ハイフン">${valid?'OK':'NG'}</span>
       <div class="btns">
         <button class="btn btnUse">Gunakan ▶</button>
         <button class="btn btnInfo admin-only">Info</button>
@@ -226,19 +225,32 @@ function render(){
     inpNext.addEventListener('change',  ()=>{ const d=loadStore(); d[idx].next =S(inpNext.value);  saveStore(d); });
     inpDigits.addEventListener('change',()=>{ const d=loadStore(); d[idx].digits=S(inpDigits.value);saveStore(d); });
 
-    // Set aktif untuk forms
+    // Set aktif untuk forms (tulis ke kensa_prefix), dengan validasi/normalisasi 6桁
     row.querySelector('.btnUse').addEventListener('click', ()=>{
       const parts = String(it.prefix).split('::');
-      const serialPrefix = parts[1] || parts[0] || '';
-      if(!serialPrefix){ return alert('Format prefix tidak valid.'); }
+      let serialPrefix = parts[1] || parts[0] || '';
+      if(!isValid6(serialPrefix)){
+        const fixed = normalizeTo6(serialPrefix);
+        if(fixed){
+          if(confirm(`Prefix "${serialPrefix}" akan dinormalisasi menjadi "${fixed}". Gunakan ini?`)){
+            serialPrefix = fixed;
+          }else{
+            return;
+          }
+        }else{
+          alert('Format prefix tidak valid.\nForm mewajibkan 6桁+ハイフン（例: 282520-）');
+          return;
+        }
+      }
       saveActive(serialPrefix);
       document.getElementById('activePrefix').value = serialPrefix;
-      alert('Prefix aktif disimpan: '+serialPrefix+"\n(Form akan memakainya sebagai 図番 先頭桁)");
+      alert('Prefix aktif disimpan: '+serialPrefix+'\n(Form akan memakainya sebagai 図番 先頭桁)');
     });
 
     // ==== Operasi server (khusus admin) ====
     row.querySelector('.btnInfo').addEventListener('click', async ()=>{
-      try{ const res = await api({ action:'getInfo', prefix: it.prefix });
+      try{
+        const res = await api({ action:'getInfo', prefix: it.prefix });
         alert(`Prefix: ${it.prefix}\nLast: ${res.last}\nNext: ${res.next}\nDigits: ${res.digits ?? '(belum disetel)'}`);
         if(res.digits && !inpDigits.value){ inpDigits.value = res.digits; const d=loadStore(); d[idx].digits=res.digits; saveStore(d); }
       }catch(e){ toast('Gagal getInfo: '+e.message); }
@@ -257,7 +269,8 @@ function render(){
     });
 
     row.querySelector('.btnIssue').addEventListener('click', async ()=>{
-      try{ const res = await api({ action:'nextSuffix', prefix: it.prefix });
+      try{
+        const res = await api({ action:'nextSuffix', prefix: it.prefix });
         let pad = parseInt(inpDigits.value||'0',10)||0;
         if(!pad){ const info = await api({ action:'getInfo', prefix: it.prefix }); pad = parseInt(info.digits||'0',10)||0; if(pad){ inpDigits.value = pad; const d=loadStore(); d[idx].digits=pad; saveStore(d); } }
         alert(`Issued: ${String(res.suffix).padStart(pad,'0')}`);
@@ -278,7 +291,7 @@ function render(){
 
 /* ================ AKSI TOOLBAR ================ */
 document.getElementById('btnAdd').addEventListener('click', ()=>{
-  const full = prompt('Masukkan FULL prefix (format: APP_NS::SERIAL_PREFIX)\ncontoh: mb46v::2825-'); if(!full) return;
+  const full = prompt('Masukkan FULL prefix (format: APP_NS::SERIAL_PREFIX)\ncontoh: mb46v::282520-'); if(!full) return;
   const label = prompt('Label/Note (opsional):',''); const data = loadStore();
   if(data.some(x=>x.prefix===full)){ toast('Prefix sudah ada di daftar'); return; }
   data.push({ prefix: full, label: S(label) }); saveStore(data); render();
@@ -291,12 +304,30 @@ document.getElementById('btnSample').addEventListener('click', ()=>{
 });
 
 document.getElementById('btnSync').addEventListener('click', ()=>{ syncFromServer(); });
+async function syncFromServer(){
+  try{
+    const res = await api({ action:'listPrefixes' }); // {items:[{prefix,last,next,digits}]}
+    if(!res || !Array.isArray(res.items)){ toast('Tidak ada data dari server'); return; }
+    const local = loadStore();
+    res.items.forEach(it=>{
+      if(!local.some(x=>x.prefix===it.prefix)) local.push({ prefix: it.prefix, label:'(server)', digits: it.digits||'' });
+      else { const idx = local.findIndex(x=>x.prefix===it.prefix); if(!local[idx].digits && it.digits) local[idx].digits = it.digits; }
+    });
+    saveStore(local); render(); toast(`Sync OK: ${res.items.length} item`);
+  }catch(e){ toast('Gagal sync: '+e.message); }
+}
 
 document.getElementById('btnRefresh').addEventListener('click', async ()=>{
   const data = loadStore(); if(!data.length) return;
-  try{ for(const it of data){ try{ const res = await api({ action:'getInfo', prefix: it.prefix }); if(res.digits && !it.digits){ it.digits = res.digits; } }catch(e){ console.warn('getInfo error', it.prefix, e); } }
-    saveStore(data); render(); toast('Refresh selesai.'); }
-  catch(e){ toast('Gagal refresh: '+e.message); }
+  try{
+    for(const it of data){
+      try{
+        const res = await api({ action:'getInfo', prefix: it.prefix });
+        if(res.digits && !it.digits){ it.digits = res.digits; }
+      }catch(e){ console.warn('getInfo error', it.prefix, e); }
+    }
+    saveStore(data); render(); toast('Refresh selesai.');
+  }catch(e){ toast('Gagal refresh: '+e.message); }
 });
 
 document.getElementById('btnExport').addEventListener('click', ()=>{
@@ -305,12 +336,14 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
   const a = Object.assign(document.createElement('a'), { href:url, download:'admin-prefix-backup.json' });
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
-
 document.getElementById('btnImport').addEventListener('click', ()=>{ document.getElementById('fileImport').click(); });
 document.getElementById('fileImport').addEventListener('change', async (ev)=>{
   const f = ev.target.files[0]; if(!f) return;
-  try{ const text = await f.text(); const arr = JSON.parse(text); if(!Array.isArray(arr)) throw new Error('Format tidak valid'); saveStore(arr); render(); toast('Import OK'); }
-  catch(e){ toast('Gagal import: '+e.message); }
+  try{
+    const text = await f.text(); const arr = JSON.parse(text);
+    if(!Array.isArray(arr)) throw new Error('Format tidak valid');
+    saveStore(arr); render(); toast('Import OK');
+  }catch(e){ toast('Gagal import: '+e.message); }
   ev.target.value='';
 });
 
@@ -325,21 +358,40 @@ document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); })
 /* ================ BOOT ================= */
 async function pingServer(){
   document.getElementById('gasUrlShow').textContent = GAS_URL;
-  try{ const r = await fetch(GAS_URL, { method:'GET', redirect:'follow' }); const txt = await r.text(); const ok = /"ok"\s*:\s*true/.test(txt);
-    const pill = document.getElementById('ping'); pill.textContent = ok ? 'backend: OK' : 'backend: ?'; pill.className = 'pill ' + (ok ? 'ok' : 'warn'); }
-  catch(e){ const pill = document.getElementById('ping'); pill.textContent = 'backend: NG'; pill.className = 'pill bad'; }
+  try{
+    const r = await fetch(GAS_URL, { method:'GET', redirect:'follow' });
+    const txt = await r.text();
+    const ok = /"ok"\s*:\s*true/.test(txt);
+    const pill = document.getElementById('ping');
+    pill.textContent = ok ? 'backend: OK' : 'backend: ?';
+    pill.className = 'pill ' + (ok ? 'ok' : 'warn');
+  }catch(e){
+    const pill = document.getElementById('ping');
+    pill.textContent = 'backend: NG';
+    pill.className = 'pill bad';
+  }
 }
 
 window.addEventListener('DOMContentLoaded', ()=>{
-  // Admin sinkron & visibilitas
   setAdmin(isAdmin());
-  // Active prefix migrate + load
   migrateActivePrefix();
   document.getElementById('activePrefix').value = loadActive();
   document.getElementById('btnSaveActive').addEventListener('click', ()=>{
-    const v = S(document.getElementById('activePrefix').value);
-    if(!v) { alert('Isi prefix aktif, contoh: 2825-'); return; }
-    saveActive(v); alert('Disimpan: '+v+' \n(Form akan memakainya sebagai 図番 先頭桁)');
+    let v = S(document.getElementById('activePrefix').value);
+    if(!isValid6(v)){
+      const fixed = normalizeTo6(v);
+      if(fixed){
+        if(confirm(`Prefix "${v}" akan dinormalisasi menjadi "${fixed}". Simpan?`)){
+          v = fixed;
+        }else{
+          alert('Format wajib 6桁+ハイフン（例: 282520-）'); return;
+        }
+      }else{
+        alert('Format wajib 6桁+ハイフン（例: 282520-）'); return;
+      }
+    }
+    saveActive(v);
+    alert('Disimpan: '+v+' \n(Form akan memakainya sebagai 図番 先頭桁)');
   });
 
   seedIfEmpty();
