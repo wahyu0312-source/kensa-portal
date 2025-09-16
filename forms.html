@@ -7,11 +7,8 @@
 
 <style>
   :root{
-    /* Core */
     --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb; --ring:#c7d2fe;
-    /* Brand */
     --accent:#2563eb; --accent-2:#1d4ed8; --ok:#16a34a; --ng:#b91c1c;
-    /* UI */
     --radius-xl:22px; --radius:12px; --shadow-1:0 12px 30px rgba(15,23,42,.08); --shadow-2:0 30px 60px rgba(15,23,42,.10);
   }
   *{box-sizing:border-box}
@@ -26,117 +23,77 @@
   }
   a{color:inherit; text-decoration:none}
 
-  /* ===== Shell (Header + Content; sidebar via hover overlay) ===== */
-  .app{
-    display:grid;
-    grid-template-rows:64px 1fr;
-    grid-template-areas:
-      "header"
-      "main";
-    min-height:100vh;
-  }
-
-  header{
-    grid-area:header; position:sticky; top:0; z-index:60;
-    backdrop-filter:blur(12px); background:#ffffffc7; border-bottom:1px solid var(--border);
-  }
-  .header-wrap{
-    height:64px; max-width:1400px; margin:0 auto;
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    padding:0 14px;
-  }
-  .brand{display:flex; align-items:center; gap:10px}
+  .app{display:grid;grid-template-rows:64px 1fr;grid-template-areas:"header" "main";min-height:100vh}
+  header{grid-area:header;position:sticky;top:0;z-index:60;backdrop-filter:blur(12px);background:#ffffffc7;border-bottom:1px solid var(--border)}
+  .header-wrap{height:64px;max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px}
+  .brand{display:flex;align-items:center;gap:10px}
   .brand img{height:36px}
   .brand .ttl{font-weight:800}
 
-  .top-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-  .btn{
-    height:34px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff;
-    display:inline-flex; align-items:center; gap:8px; cursor:pointer; text-decoration:none;
-  }
-  .btn.primary{background:var(--accent); color:#fff; border-color:#1e40af; box-shadow:0 6px 16px rgba(37,99,235,.25)}
+  .top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btn{height:34px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:#fff;display:inline-flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none}
+  .btn.primary{background:var(--accent);color:#fff;border-color:#1e40af;box-shadow:0 6px 16px rgba(37,99,235,.25)}
   .btn:hover{border-color:var(--ring)}
 
-  /* Burger (mobile) */
-  .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px;
-          border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
+  .burger{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
   .burger:active{transform:scale(.98)}
 
-  /* ===== Hover Sidebar (desktop) ===== */
-  .edge-hotspot{ position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:70 }
-  .hover-side{
-    position:fixed; left:0; top:64px; height:calc(100vh - 64px);
-    width:260px; padding:14px 12px; overflow:auto;
-    background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
-    transform:translateX(-100%); transition:transform .22s ease; z-index:71;
-  }
-  .hover-side.open{ transform:translateX(0) }
-  .hover-side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
-  .navlist{ display:grid; gap:4px }
-  .link{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink) }
-  .link small{ color:var(--muted) }
-  .link:hover{ background:#f1f5ff }
-  .ico{ width:22px; text-align:center }
+  .edge-hotspot{position:fixed;left:0;top:64px;width:12px;height:calc(100vh - 64px);z-index:70}
+  .hover-side{position:fixed;left:0;top:64px;height:calc(100vh - 64px);width:260px;padding:14px 12px;overflow:auto;background:var(--panel);border-right:1px solid var(--border);box-shadow:var(--shadow-1);transform:translateX(-100%);transition:transform .22s ease;z-index:71}
+  .hover-side.open{transform:translateX(0)}
+  .hover-side h3{margin:4px 8px 10px;font-size:12px;letter-spacing:.08em;color:#6b7280;text-transform:uppercase}
+  .navlist{display:grid;gap:4px}
+  .link{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;color:var(--ink)}
+  .link small{color:var(--muted)}
+  .link:hover{background:#f1f5ff}
+  .ico{width:22px;text-align:center}
 
-  /* ===== Drawer (mobile) ===== */
-  .drawer{ position:fixed; inset:0; z-index:70; display:none }
-  .drawer.open{ display:block }
-  .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
-  .drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
-                  background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto;
-                  transform:translateX(-100%); transition:transform .25s ease }
-  .drawer.open .panel{ transform:translateX(0) }
-  .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
+  .drawer{position:fixed;inset:0;z-index:70;display:none}
+  .drawer.open{display:block}
+  .drawer .backdrop{position:absolute;inset:0;background:#0006}
+  .drawer .panel{position:absolute;top:0;left:0;height:100%;width:min(86%,320px);background:#fff;border-right:1px solid var(--border);box-shadow:var(--shadow-2);padding:14px 12px;overflow:auto;transform:translateX(-100%);transition:transform .25s ease}
+  .drawer.open .panel{transform:translateX(0)}
+  .drawer .close{position:absolute;right:10px;top:10px;border:0;background:#f1f5f9;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer}
 
-  /* ===== Main ===== */
-  main{ grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 96px }
-  .page-head{ display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:14px }
-  .h1{ font-size:22px; margin:0 }
-  .small{ font-size:12px; color:var(--muted) }
+  main{grid-area:main;max-width:1400px;margin:0 auto;padding:22px 20px 96px}
+  .page-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:14px}
+  .h1{font-size:22px;margin:0}
+  .small{font-size:12px;color:var(--muted)}
 
-  .panel{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-2); padding:18px }
-  .panel + .panel{ margin-top:16px }
+  .panel{background:#fff;border:1px solid var(--border);border-radius:var(--radius-xl);box-shadow:var(--shadow-2);padding:18px}
+  .panel + .panel{margin-top:16px}
 
-  /* Lock */
-  .lock{ display:flex; flex-wrap:wrap; gap:8px; align-items:center }
-  .input{ height:38px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:var(--ink); outline:none }
-  .input:focus{ border-color:var(--ring); box-shadow:0 0 0 3px #93c5fd55 }
-  .lock .msg{ min-width:80px; font-weight:700 }
-  .hidden{ display:none !important }
+  .lock{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .input{height:38px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--ink);outline:none}
+  .input:focus{border-color:var(--ring);box-shadow:0 0 0 3px #93c5fd55}
+  .lock .msg{min-width:80px;font-weight:700}
+  .hidden{display:none !important}
 
-  /* Search row */
-  .searchbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
-  .searchbar .search{ flex:1; min-width:220px; height:40px; padding:0 14px; border:2px solid #0b12221a; border-radius:9999px; outline:none; background:#fff }
-  /* Prefix mini di kanan search */
-  .prefixmini{ display:flex; gap:8px; align-items:center; margin-left:auto }
-  .badge{ height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--ink); background:#f1f5f9; border:1px solid var(--border); border-radius:999px }
+  .searchbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .searchbar .search{flex:1;min-width:220px;height:40px;padding:0 14px;border:2px solid #0b12221a;border-radius:9999px;outline:none;background:#fff}
+  .badge{height:28px;padding:0 10px;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink);background:#f1f5f9;border:1px solid var(--border);border-radius:999px}
 
-  /* Accordion folders */
-  .folder{ background:#fff; border:1px solid var(--border); border-radius:16px; margin-bottom:12px; overflow:hidden }
-  .folder-head{ padding:14px 16px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:#f9fafb; font-weight:800; border:0; width:100%; text-align:left }
-  .folder-head .caret{ transition:transform .2s }
-  .folder-body{ display:none; padding:12px }
-  .subfolder{ margin-bottom:10px }
-  .subfolder strong{ display:block; margin-bottom:6px }
-  .linkfile{ display:block; padding:10px 12px; border:1px solid var(--border); border-radius:10px; margin-bottom:6px; text-decoration:none; color:var(--ink); background:#fff }
-  .linkfile span{ display:block; font-size:12px; color:var(--muted) }
-  .linkfile:hover{ background:#f0f9ff; border-color:#93c5fd }
+  .folder{background:#fff;border:1px solid var(--border);border-radius:16px;margin-bottom:12px;overflow:hidden}
+  .folder-head{padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:#f9fafb;font-weight:800;border:0;width:100%;text-align:left}
+  .folder-head .caret{transition:transform .2s}
+  .folder-body{display:none;padding:12px}
+  .subfolder{margin-bottom:10px}
+  .subfolder strong{display:block;margin-bottom:6px}
+  .linkfile{display:block;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;text-decoration:none;color:var(--ink);background:#fff}
+  .linkfile span{display:block;font-size:12px;color:var(--muted)}
+  .linkfile:hover{background:#f0f9ff;border-color:#93c5fd}
 
-  /* Ticker & footer */
-  .marquee{ position:fixed; left:20px; right:20px; bottom:20px; z-index:30; background:var(--accent); color:#fff; font-weight:800; border-radius:12px; box-shadow:var(--shadow-1); white-space:nowrap; overflow:hidden }
-  .marquee span{ display:inline-block; padding:8px 0 8px 100%; animation:marquee 18s linear infinite }
-  @keyframes marquee{ 0%{transform:translateX(0)} 100%{transform:translateX(-100%)} }
-  .footer{ position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:var(--muted); background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border) }
+  .marquee{position:fixed;left:20px;right:20px;bottom:20px;z-index:30;background:var(--accent);color:#fff;font-weight:800;border-radius:12px;box-shadow:var(--shadow-1);white-space:nowrap;overflow:hidden}
+  .marquee span{display:inline-block;padding:8px 0 8px 100%;animation:marquee 18s linear infinite}
+  @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+  .footer{position:fixed;bottom:0;left:0;right:0;z-index:31;text-align:center;font-size:12px;color:var(--muted);background:#f1f5f9;padding:4px 0;border-top:1px solid var(--border)}
 
-  /* Admin hide */
-  .admin-only{ display:none }
+  .admin-only{display:none}
 
-  /* Responsive */
   @media (max-width:900px){
-    .top-actions{ display:none }
-    .burger{ display:inline-flex }
-    .edge-hotspot, .hover-side{ display:none }
-    .prefixmini{ width:100%; margin-left:0; justify-content:flex-start }
+    .top-actions{display:none}
+    .burger{display:inline-flex}
+    .edge-hotspot,.hover-side{display:none}
   }
 </style>
 </head>
@@ -182,7 +139,7 @@
       </div>
     </section>
 
-    <!-- Search (dengan Prefix mini di kanan) -->
+    <!-- Search + Read-only prefix badge -->
     <section id="searchWrap" class="panel hidden" aria-label="検索パネル">
       <div class="searchbar">
         <input id="q" class="search" type="search" placeholder="検索（顧客名／サブフォルダ／フォーム名／説明）" aria-label="検索語">
@@ -190,11 +147,8 @@
         <button id="btnReset"  class="btn" type="button">リセット</button>
         <span id="hit" class="small" aria-live="polite"></span>
 
-        <div class="prefixmini" title="図番の先頭桁（例: 2825-）">
-          <span class="badge">図番 先頭桁</span>
-          <input id="inpPrefix" class="input" type="text" placeholder="例: 2825-" style="width:10em">
-          <button id="btnSavePrefix" class="btn" type="button">保存</button>
-        </div>
+        <!-- badge read-only -->
+        <span id="prefixBadge" class="badge" style="margin-left:auto;display:none"></span>
       </div>
     </section>
 
@@ -269,7 +223,7 @@
   drawer?.addEventListener('click', (e)=>{ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); } });
 
   /* ================= Admin gate (UI only) ================= */
-  const ADMIN_CODE = "admin2025"; // ← ganti kodenya
+  const ADMIN_CODE = "admin2025";
   function setAdmin(on){
     document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
     localStorage.setItem('kensa_admin', on ? '1' : '0');
@@ -285,11 +239,9 @@
     }
   });
 
-  /* ================= Active Prefix helpers (図番 先頭桁) ================= */
+  /* ================= Active Prefix (read-only badge) ================= */
   const PREFIX_KEY = 'kensa_prefix';
   const LEGACY_PREFIX_KEYS = ['prefix','okuma_prefix','kensa_prefix_okuma'];
-  const S = (s)=>String(s??'').trim();
-
   function getActivePrefix(){
     let v = (localStorage.getItem(PREFIX_KEY)||'').trim();
     if(!v){
@@ -300,13 +252,20 @@
     }
     return v;
   }
-  function setActivePrefix(v){ v=S(v); if(v){ localStorage.setItem(PREFIX_KEY,v); } else { localStorage.removeItem(PREFIX_KEY); } }
+  function showPrefixBadge(){
+    const el = document.getElementById('prefixBadge');
+    const v = getActivePrefix();
+    if(v){ el.textContent = '図番 先頭桁: '+v; el.style.display='inline-flex'; }
+    else{ el.textContent=''; el.style.display='none'; }
+  }
+  // realtime update bila diset dari halaman Admin
+  window.addEventListener('storage', ev=>{ if(ev.key===PREFIX_KEY) showPrefixBadge(); });
 
   /* ================= EDGE-HOVER sidebar (desktop) ================= */
   const hot = document.getElementById('edgeHotspot');
   const fly = document.getElementById('hoverSide');
   let hideTimer = null;
-  const HIDE_DELAY = 280; // ms
+  const HIDE_DELAY = 280;
   function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
   function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
   hot?.addEventListener('mouseenter', openFly);
@@ -314,10 +273,9 @@
   fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer));
   fly?.addEventListener('mouseleave', scheduleClose);
 
-  /* ================= Password lock for folder content ================= */
-  const PASSWORD = "kensa2025"; // ganti jika perlu
+  /* ================= Password lock & content ================= */
+  const PASSWORD = "kensa2025";
 
-  // ---------- Helpers ----------
   function getJSON(key, fallback){
     try{
       const val = localStorage.getItem(key);
@@ -327,8 +285,8 @@
       localStorage.removeItem(key); return fallback;
     }
   }
+  const S = s=>String(s??'').trim();
 
-  // ---------- Data ----------
   const DATA = [
     {customer:"オークマ株式会社",folders:[
       {name:"Y軸",links:[
@@ -353,7 +311,6 @@
     ]}
   ];
 
-  // ---------- Elements ----------
   const elLock = document.getElementById('lock');
   const elFoldersPanel = document.getElementById('foldersPanel');
   const elFolders = document.getElementById('folders');
@@ -366,14 +323,10 @@
   const btnReset = document.getElementById('btnReset');
   const btnToggle = document.getElementById('btnToggle');
   const btnUnlock = document.getElementById('btnUnlock');
-  const inpPrefix = document.getElementById('inpPrefix');
-  const btnSavePrefix = document.getElementById('btnSavePrefix');
 
-  // ---------- State ----------
   let lastQuery = "";
   let openCustomers = new Set();
 
-  // ---------- Init ----------
   (function init(){
     setAdmin(readAdmin());
 
@@ -386,7 +339,7 @@
     btnSearch.addEventListener('click', search);
     btnReset.addEventListener('click', resetView);
 
-    // toggle show/hide password
+    // show/hide pwd
     btnToggle.addEventListener('click', () => {
       const show = elPwd.type === 'password';
       elPwd.type = show ? 'text' : 'password';
@@ -402,18 +355,10 @@
       elMsg.style.color = ok ? 'var(--ok)' : 'var(--ng)';
     });
 
-    // Restore state safely
+    // Restore state
     const unlocked = localStorage.getItem('kensa_unlocked') === '1';
     const savedQuery = localStorage.getItem('kensa_query') || "";
     const savedOpen = getJSON('kensa_open', []);
-
-    // prefix: load & bind
-    inpPrefix.value = getActivePrefix();
-    btnSavePrefix.addEventListener('click', ()=>{
-      const v = S(inpPrefix.value);
-      if(!v){ alert('Prefixを入力してください（例: 2825-）'); return; }
-      setActivePrefix(v); alert('保存しました: '+v);
-    });
 
     if (unlocked) {
       elLock.classList.add('hidden');
@@ -425,18 +370,20 @@
       openCustomers = new Set(savedOpen);
       render(DATA);
     }
+
+    // tampilkan badge prefix
+    showPrefixBadge();
   })();
 
-  // ---------- Actions ----------
   function unlock(){
-    const v = elPwd.value;
-    if (v !== PASSWORD) { elMsg.textContent = '× 違います'; elMsg.style.color = 'var(--ng)'; return; }
+    if (elPwd.value !== PASSWORD) { elMsg.textContent = '× 違います'; elMsg.style.color = 'var(--ng)'; return; }
     elMsg.textContent = '✓ 正しい'; elMsg.style.color = 'var(--ok)';
     elLock.classList.add('hidden');
     elFoldersPanel.classList.remove('hidden');
     elSearchWrap.classList.remove('hidden');
     localStorage.setItem('kensa_unlocked','1');
     render(DATA);
+    showPrefixBadge();
   }
 
   function search(){
@@ -536,7 +483,7 @@
     }
   }
 
-  // Init admin UI on load (in case of reload)
+  // Init admin UI on reload
   window.addEventListener('DOMContentLoaded', ()=> setAdmin(readAdmin()));
 </script>
 </body>
