@@ -67,6 +67,8 @@
       <button id="btnRefresh" class="btn admin-only">Refresh Semua</button>
       <button id="btnExport" class="btn admin-only">Export</button>
       <button id="btnImport" class="btn admin-only">Import</button>
+      <!-- Tambahan: hapus permanen semua NG -->
+      <button id="btnPurgeNg" class="btn admin-only">Bersihkan NG</button>
       <button id="btnAdmin" class="btn" title="Admin login/logout">管理</button>
 
       <div class="menubar">
@@ -194,16 +196,24 @@ function saveActive(v){ if(v) localStorage.setItem(PREFIX_KEY,S(v)); else localS
 /* ================ RENDER LIST ================ */
 function render(){
   const list = document.getElementById('list');
-  const data = loadStore();
-  document.getElementById('count').textContent = `${data.length} prefix`;
+
+  // === HANYA TAMPILKAN PREFIX OK ===
+  const RAW  = loadStore();
+  const data = RAW.filter(it => {
+    const serialPref = String(it.prefix).split('::')[1] || '';
+    return isValid6(serialPref);
+  });
+
+  document.getElementById('count').textContent = `${data.length} prefix (OK saja)`;
   list.innerHTML = '';
 
   if(!data.length){
-    list.innerHTML = '<div class="row" style="justify-content:center;color:#64748b">Belum ada data. Klik “＋ Contoh” atau “Sync Server”.</div>';
+    list.innerHTML = '<div class="row" style="justify-content:center;color:#64748b">Tidak ada item OK. Tambah data atau Sync Server.</div>';
     return;
   }
 
-  data.forEach((it, idx)=>{
+  data.forEach((it, idxInFiltered)=>{
+    const idx = loadStore().findIndex(x=> x.prefix===it.prefix); // indeks asli untuk update store
     const row = document.createElement('div');
     row.className = 'row';
 
@@ -262,13 +272,13 @@ function render(){
       try{
         const res = await api({ action:'getInfo', prefix: it.prefix });
         alert(`Prefix: ${it.prefix}\nLast: ${res.last}\nNext: ${res.next}\nDigits: ${res.digits ?? '(belum disetel)'}`);
-        if(res.digits && !inpDigits.value){ inpDigits.value = res.digits; const d=loadStore(); d[idx].digits=res.digits; saveStore(d); }
+        if(res.digits && !inpDigits.value){ inpDigits.value = res.digits; const d=loadStore(); const j=d.findIndex(x=>x.prefix===it.prefix); d[j].digits=res.digits; saveStore(d); }
       }catch(e){ toast('Gagal getInfo: '+e.message); }
     });
 
     row.querySelector('.btnDigits').addEventListener('click', async ()=>{
-      const d = parseInt(inpDigits.value,10); if(!(d>=1 && d<=12)){ toast('Masukkan桁数 1..12'); return; }
-      try{ const res = await api({ action:'setDigits', prefix: it.prefix, digits: d }); if(res && (res.ok||res.digits||res.result)){ toast('Set桁 OK'); } else { toast('Set桁 selesai'); } }
+      const dgt = parseInt(inpDigits.value,10); if(!(dgt>=1 && dgt<=12)){ toast('Masukkan桁数 1..12'); return; }
+      try{ const res = await api({ action:'setDigits', prefix: it.prefix, digits: dgt }); if(res && (res.ok||res.digits||res.result)){ toast('Set桁 OK'); } else { toast('Set桁 selesai'); } }
       catch(e){ toast('Gagal setDigits: '+e.message); }
     });
 
@@ -285,7 +295,7 @@ function render(){
         if(!pad){
           const info = await api({ action:'getInfo', prefix: it.prefix });
           pad = parseInt(info.digits||'0',10)||0;
-          if(pad){ inpDigits.value = pad; const d=loadStore(); d[idx].digits=pad; saveStore(d); }
+          if(pad){ inpDigits.value = pad; const d=loadStore(); const j=d.findIndex(x=>x.prefix===it.prefix); d[j].digits=pad; saveStore(d); }
         }
         alert(`Issued: ${String(res.suffix).padStart(pad,'0')}`);
       }catch(e){ toast('Gagal issue: '+e.message); }
@@ -295,7 +305,7 @@ function render(){
       if(!confirm(`Hapus prefix ini di SERVER dan daftar lokal?\n${it.prefix}\n(counter & digits akan dihapus di server)`)) return;
       try{ await api({ action:'deletePrefix', prefix: it.prefix }); }
       catch(e){ if(!confirm('Gagal hapus di server ('+(e.message||e)+').\nTetap hapus dari daftar lokal?')) return; }
-      const d=loadStore(); d.splice(idx,1); saveStore(d); render(); toast('Dihapus.');
+      const d=loadStore(); const j=d.findIndex(x=>x.prefix===it.prefix); d.splice(j,1); saveStore(d); render(); toast('Dihapus.');
     });
   });
 
@@ -359,6 +369,19 @@ document.getElementById('fileImport').addEventListener('change', async (ev)=>{
     saveStore(arr); render(); toast('Import OK');
   }catch(e){ toast('Gagal import: '+e.message); }
   ev.target.value='';
+});
+
+/* ===== Tambahan: PURGE NG dari localStorage ===== */
+document.getElementById('btnPurgeNg').addEventListener('click', ()=>{
+  const all  = loadStore();
+  const keep = all.filter(it => isValid6((String(it.prefix).split('::')[1] || '')));
+  const removed = all.length - keep.length;
+  if(!removed){ toast('Tidak ada item NG.'); return; }
+  if(confirm(`Hapus permanen ${removed} item NG dari daftar lokal?`)){
+    saveStore(keep);
+    render();
+    toast(`Dihapus: ${removed} item NG`);
+  }
 });
 
 /* ====== ACTIVE INPUT auto-format (live) ====== */
