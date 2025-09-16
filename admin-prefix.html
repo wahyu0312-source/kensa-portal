@@ -49,6 +49,10 @@
   .sep{ height:1px; background:var(--b); margin:6px }
   .admin-only{display:none}
   @media (max-width: 900px){ .row{grid-template-columns: 1fr 1fr 95px 95px 70px auto} .row .prefix{font-size:12px}}
+
+  /* NEW: icon-only small button */
+  .btn-icon{padding:6px 9px;border:1px solid var(--b);border-radius:10px;background:#fff;cursor:pointer}
+  .btn-icon:hover{background:#f1f5f9}
 </style>
 </head>
 <body>
@@ -209,6 +213,11 @@ function render(){
         <button class="btn btnDigits admin-only">Set桁</button>
         <button class="btn btnNext admin-only">Set次</button>
         <button class="btn btnIssue admin-only" style="border-color:#fecaca;background:#fff5f5">Issue</button>
+
+        <!-- NEW: selalu muncul, hapus LOKAL saja -->
+        <button class="btn-icon btnDelLocal" title="Hapus dari daftar lokal (tidak ke server)">🗑️</button>
+
+        <!-- existing: hapus server + lokal (hanya saat Admin ON) -->
         <button class="btn btnDel admin-only">Hapus</button>
       </div>
     `;
@@ -276,6 +285,14 @@ function render(){
       }catch(e){ toast('Gagal issue: '+e.message); }
     });
 
+    // NEW: hapus lokal (tanpa server)
+    row.querySelector('.btnDelLocal').addEventListener('click', ()=>{
+      if(!confirm(`Hapus dari daftar lokal?\n${it.prefix}\n(Data server tidak diubah)`)) return;
+      const d=loadStore(); const j=d.findIndex(x=>x.prefix===it.prefix);
+      if(j>=0){ d.splice(j,1); saveStore(d); render(); toast('Dihapus (lokal).'); }
+    });
+
+    // existing: hapus server + lokal (admin)
     row.querySelector('.btnDel').addEventListener('click', async ()=>{
       if(!confirm(`Hapus prefix ini di SERVER dan daftar lokal?\n${it.prefix}\n(counter & digits akan dihapus di server)`)) return;
       try{ await api({ action:'deletePrefix', prefix: it.prefix }); }
@@ -417,6 +434,19 @@ function renderFormsMenu(items){
     a.textContent = `📄 ${it.title || it.id}`;
     m.appendChild(a);
   });
+
+  // NEW: Clear semua lokal
+  const clr = document.createElement('button');
+  clr.setAttribute('role','menuitem'); clr.setAttribute('data-role','dyn');
+  clr.textContent = '🧹 Clear semua (lokal)';
+  clr.addEventListener('click', ()=>{ clearAllLocal(); });
+  m.appendChild(clr);
+}
+
+/* NEW: helper reset total lokal */
+function clearAllLocal(){
+  if(!confirm('Hapus SEMUA prefix dari penyimpanan lokal?')) return;
+  saveStore([]); render(); toast('Semua prefix lokal dihapus.');
 }
 
 /* ================ BOOT ================= */
@@ -437,6 +467,14 @@ async function pingServer(){
 }
 
 window.addEventListener('DOMContentLoaded', async ()=>{
+  // burger menu toggle
+  const menuBtn = document.getElementById('menuBtn');
+  const menu    = document.getElementById('menu');
+  menuBtn?.addEventListener('click', ()=> menu.classList.toggle('open'));
+  document.addEventListener('click', (e)=>{
+    if(!menu.contains(e.target) && e.target !== menuBtn){ menu.classList.remove('open'); }
+  });
+
   setAdmin(isAdmin());
   migrateActivePrefix();
   const current = loadActive();
@@ -473,4 +511,3 @@ window.addEventListener('DOMContentLoaded', async ()=>{
 </script>
 </body>
 </html>
-
