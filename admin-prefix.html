@@ -61,13 +61,13 @@
       <span id="admState" class="pill warn">管理: OFF</span>
     </div>
     <div class="toolbar">
-      <button id="btnAdd" class="btn admin-only">＋ Tambah Prefix</button>
-      <button id="btnSample" class="btn admin-only">＋ Contoh</button>
+      <button id="btnSyncForms" class="btn">Sync Forms (Sheet)</button>
       <button id="btnSync" class="btn admin-only">Sync Server</button>
       <button id="btnRefresh" class="btn admin-only">Refresh Semua</button>
+      <button id="btnAdd" class="btn admin-only">＋ Tambah Prefix</button>
+      <button id="btnSample" class="btn admin-only">＋ Contoh</button>
       <button id="btnExport" class="btn admin-only">Export</button>
       <button id="btnImport" class="btn admin-only">Import</button>
-      <!-- Tambahan: hapus permanen semua NG -->
       <button id="btnPurgeNg" class="btn admin-only">Bersihkan NG</button>
       <button id="btnAdmin" class="btn" title="Admin login/logout">管理</button>
 
@@ -75,9 +75,7 @@
         <button id="menuBtn" class="menu-btn" type="button">ナビ ▾</button>
         <div id="menu" class="menu" role="menu" aria-hidden="true">
           <div class="sec">ナビ</div>
-          <a href="./" role="menuitem">🏠 トップ</a>
-          <a href="./forms.html" role="menuitem">📄 出荷検査成績書</a>
-          <a href="./quality.html" role="menuitem">📊 品質情報</a>
+          <!-- Link dinamis akan disisipkan lewat JS -->
         </div>
       </div>
     </div>
@@ -85,7 +83,6 @@
 </header>
 
 <main>
-  <!-- ACTIVE PREFIX (dipakai oleh forms) -->
   <section class="card" id="activeBox">
     <h2 style="margin:4px 0">Prefix aktif untuk フォーム（6桁 + "-"）</h2>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
@@ -112,15 +109,13 @@
 
 <script>
 /* ================== KONFIG ================== */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxWxAa_dWQNoUPhWnkw3P22jgeW4vb44Z5ISuUyUWsAAroFzzE6iIVWMIpqqio6E5OgqA/exec';
+const GAS_URL = 'PASTE_YOUR_WEB_APP_URL_HERE'; // contoh: https://script.google.com/macros/s/AKfycb.../exec
 const STORE   = 'ADMIN_PREFIX_LIST_V2';
-
-// sinkron dengan forms/index
 const ADMIN_FLAG_KEY = 'kensa_admin';
 const PREFIX_KEY     = 'kensa_prefix';
 const LEGACY_PREFIX_KEYS = ['prefix','okuma_prefix','kensa_prefix_okuma'];
 
-/* ===== Admin gate (UI only, sinkron) ===== */
+/* ===== Admin gate ===== */
 function setAdmin(on){
   document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
   if(on){ localStorage.setItem(ADMIN_FLAG_KEY,'1'); } else { localStorage.removeItem(ADMIN_FLAG_KEY); }
@@ -140,21 +135,17 @@ window.addEventListener('DOMContentLoaded', ()=>{
   });
 });
 
-/* ================ UTIL & API ================ */
+/* ===== Utils & API ===== */
 const S = v => String(v ?? '').trim();
-
 function isValid6(v){ return /^\d{6}-$/.test(S(v)); }
-function normalizeTo6(v){
-  const d = S(v).replace(/\D/g,'');          // ambil digit saja
-  if(d.length >= 6) return d.slice(0,6) + '-';
-  return '';                                  // kurang dari 6 → gagal
-}
+function normalizeTo6(v){ const d = S(v).replace(/\D/g,''); return d.length >= 6 ? d.slice(0,6) + '-' : ''; }
 
 async function api(payload){
   const r = await fetch(GAS_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify(payload), redirect:'follow' });
   if(!r.ok){ const t = await r.text().catch(()=> ''); throw new Error(`HTTP ${r.status} ${r.statusText} :: ${t.slice(0,200)}`); }
   const text = await r.text(); try{ return JSON.parse(text); } catch{ throw new Error('Bad JSON: '+text.slice(0,200)); }
 }
+async function apiForms(p){ return api(p); } // sama endpoint
 
 function loadStore(){ try{ const arr = JSON.parse(localStorage.getItem(STORE)||'[]'); if(Array.isArray(arr)) return arr; }catch(e){} return []; }
 function saveStore(arr){ localStorage.setItem(STORE, JSON.stringify(arr)); }
@@ -162,20 +153,17 @@ function toast(msg){ try{ console.log(msg); }catch(e){} alert(msg); }
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;'); }
 function escapeAttr(s){ return escapeHtml(s).replace(/\"/g,'&quot;'); }
 
-/* ================ SAMPLE / SYNC ================ */
+/* ===== Samples (opsional) ===== */
 function defaultSamples(){
   return [
     { prefix:'2742-20::274220-',        label:'Okuma MU6300V (2742-20)', digits:4 },
     { prefix:'2743-20::274320-',        label:'Okuma MU6300V (2743-20)', digits:4 },
-    { prefix:'359670X3156V::Y355571-',  label:'Tomei WY-150VX3（図番→Y+digits-）' },   // contoh NG (bukan 6 digit)
-    { prefix:'3555-7tomei::355571-',    label:'Tomei NTY3-100V', digits:4 },          // contoh NG
-    { prefix:'330580V::XR3305-',        label:'Okuma MB-80V（XR3305-*）' },            // contoh NG
-    { prefix:'mb46v::282520-',          label:'2825-20 MB-46V', digits:4 }            // OK (6桁)
+    { prefix:'mb46v::282520-',          label:'2825-20 MB-46V', digits:4 }
   ];
 }
 function seedIfEmpty(){ const data = loadStore(); if(data.length===0){ saveStore(defaultSamples()); } }
 
-/* ================ ACTIVE PREFIX box (super ketat) ================ */
+/* ===== Active prefix box ===== */
 function migrateActivePrefix(){
   if(!localStorage.getItem(PREFIX_KEY)){
     for(const k of LEGACY_PREFIX_KEYS){
@@ -186,34 +174,23 @@ function migrateActivePrefix(){
 }
 function loadActive(){ return S(localStorage.getItem(PREFIX_KEY)||''); }
 function saveActive(v){ if(v) localStorage.setItem(PREFIX_KEY,S(v)); else localStorage.removeItem(PREFIX_KEY); }
+(function sanitizeStoredActive(){ const v = loadActive(); if(!isValid6(v)) localStorage.removeItem(PREFIX_KEY); })();
 
-// sanitasi saat boot: jika ada sampah non-6digit, hapus supaya tidak ganggu forms
-(function sanitizeStoredActive(){
-  const v = loadActive();
-  if(!isValid6(v)) localStorage.removeItem(PREFIX_KEY);
-})();
-
-/* ================ RENDER LIST ================ */
+/* ===== Render list (OK only) ===== */
 function render(){
   const list = document.getElementById('list');
-
-  // === HANYA TAMPILKAN PREFIX OK ===
   const RAW  = loadStore();
-  const data = RAW.filter(it => {
-    const serialPref = String(it.prefix).split('::')[1] || '';
-    return isValid6(serialPref);
-  });
-
+  const data = RAW.filter(it => isValid6((String(it.prefix).split('::')[1] || '')));
   document.getElementById('count').textContent = `${data.length} prefix (OK saja)`;
   list.innerHTML = '';
 
   if(!data.length){
-    list.innerHTML = '<div class="row" style="justify-content:center;color:#64748b">Tidak ada item OK. Tambah data atau Sync Server.</div>';
+    list.innerHTML = '<div class="row" style="justify-content:center;color:#64748b">Tidak ada item OK. Tambah data / Sync.</div>';
     return;
   }
 
-  data.forEach((it, idxInFiltered)=>{
-    const idx = loadStore().findIndex(x=> x.prefix===it.prefix); // indeks asli untuk update store
+  data.forEach((it)=>{
+    const idx = loadStore().findIndex(x=> x.prefix===it.prefix);
     const row = document.createElement('div');
     row.className = 'row';
 
@@ -245,7 +222,6 @@ function render(){
     inpNext.addEventListener('change',  ()=>{ const d=loadStore(); d[idx].next =S(inpNext.value);  saveStore(d); });
     inpDigits.addEventListener('change',()=>{ const d=loadStore(); d[idx].digits=S(inpDigits.value);saveStore(d); });
 
-    // Set aktif untuk forms (W A J I B 6 digit + "-")
     row.querySelector('.btnUse').addEventListener('click', ()=>{
       const parts = String(it.prefix).split('::');
       let serialPrefix = parts[1] || parts[0] || '';
@@ -267,7 +243,6 @@ function render(){
       alert('Prefix aktif disimpan: '+serialPrefix+'\n(Form akan memakainya sebagai 図番 先頭桁)');
     });
 
-    // ==== Operasi server (khusus admin) ====
     row.querySelector('.btnInfo').addEventListener('click', async ()=>{
       try{
         const res = await api({ action:'getInfo', prefix: it.prefix });
@@ -309,11 +284,10 @@ function render(){
     });
   });
 
-  // Terapkan visibilitas admin-only
   document.querySelectorAll('.admin-only').forEach(el=> el.style.display = isAdmin()? '' : 'none');
 }
 
-/* ================ AKSI TOOLBAR ================ */
+/* ===== Toolbar actions ===== */
 document.getElementById('btnAdd').addEventListener('click', ()=>{
   const full = prompt('Masukkan FULL prefix (format: APP_NS::SERIAL_PREFIX)\ncontoh: mb46v::282520-'); if(!full) return;
   const label = prompt('Label/Note (opsional):',''); const data = loadStore();
@@ -337,10 +311,44 @@ async function syncFromServer(){
       if(!local.some(x=>x.prefix===it.prefix)) local.push({ prefix: it.prefix, label:'(server)', digits: it.digits||'' });
       else { const idx = local.findIndex(x=>x.prefix===it.prefix); if(!local[idx].digits && it.digits) local[idx].digits = it.digits; }
     });
-    saveStore(local); render(); toast(`Sync OK: ${res.items.length} item`);
-  }catch(e){ toast('Gagal sync: '+e.message); }
+    saveStore(local); render(); toast(`Sync Server OK: ${res.items.length} item`);
+  }catch(e){ toast('Gagal sync server: '+e.message); }
 }
 
+/* === NEW: Sync Forms (Sheet) -> inject ke daftar lokal === */
+document.getElementById('btnSyncForms').addEventListener('click', async ()=>{
+  try{
+    const res = await apiForms({ action:'listForms' });
+    const forms = (res.items || []).filter(x => x.enabled !== false);
+    const local = loadStore();
+    let added = 0, patched = 0;
+
+    // render menu dinamis juga
+    renderFormsMenu(forms);
+
+    forms.forEach(it=>{
+      const sp = String(it.serial_prefix||'').trim();
+      if(!sp) return;
+      const full = `${it.id}::${sp}`; // APP_NS::SERIAL_PREFIX
+      const i = local.findIndex(x => x.prefix === full);
+      if(i < 0){
+        local.push({ prefix: full, label: it.title || it.id, digits: it.digits || '' });
+        added++;
+      }else{
+        if(!local[i].label && it.title) local[i].label = it.title;
+        if(!local[i].digits && it.digits) local[i].digits = it.digits;
+        patched++;
+      }
+    });
+
+    saveStore(local); render();
+    toast(`Sync Forms OK: +${added} baru, ${patched} diperbarui`);
+  }catch(e){
+    toast('Gagal Sync Forms: ' + (e.message||e));
+  }
+});
+
+/* Refresh digits by getInfo (optional) */
 document.getElementById('btnRefresh').addEventListener('click', async ()=>{
   const data = loadStore(); if(!data.length) return;
   try{
@@ -371,7 +379,7 @@ document.getElementById('fileImport').addEventListener('change', async (ev)=>{
   ev.target.value='';
 });
 
-/* ===== Tambahan: PURGE NG dari localStorage ===== */
+/* Purge NG (lokal) */
 document.getElementById('btnPurgeNg').addEventListener('click', ()=>{
   const all  = loadStore();
   const keep = all.filter(it => isValid6((String(it.prefix).split('::')[1] || '')));
@@ -384,20 +392,32 @@ document.getElementById('btnPurgeNg').addEventListener('click', ()=>{
   }
 });
 
-/* ====== ACTIVE INPUT auto-format (live) ====== */
+/* Active input auto-format */
 const activeInput = document.getElementById('activePrefix');
 activeInput.addEventListener('input', ()=>{
   const d = activeInput.value.replace(/\D/g,'').slice(0,6);
-  activeInput.value = d.length===6 ? (d+'-') : d;  // tulis live, tambahkan "-" jika 6 digit
+  activeInput.value = d.length===6 ? (d+'-') : d;
 });
 
-/* ================ MENU kecil ================ */
-const _menuBtn = document.getElementById('menuBtn');
-const _menu    = document.getElementById('menu');
-function closeMenu(){ _menu?.classList.remove('open'); _menu?.setAttribute('aria-hidden','true'); }
-_menuBtn?.addEventListener('click', (e)=>{ e.stopPropagation(); _menu.classList.toggle('open'); _menu.setAttribute('aria-hidden', _menu.classList.contains('open')?'false':'true'); });
-document.addEventListener('click', closeMenu);
-document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
+/* ================ MENU (dinamis dari listForms) ================ */
+function renderFormsMenu(items){
+  const m = document.getElementById('menu'); if(!m) return;
+  m.querySelectorAll('[data-role="dyn"]').forEach(x => x.remove());
+
+  // Top
+  const top = document.createElement('a');
+  top.setAttribute('role','menuitem'); top.setAttribute('data-role','dyn');
+  top.href = './'; top.textContent = '🏠 トップ';
+  m.appendChild(top);
+
+  (items || []).forEach(it=>{
+    const a = document.createElement('a');
+    a.setAttribute('role','menuitem'); a.setAttribute('data-role','dyn');
+    a.href = it.url || '#';
+    a.textContent = `📄 ${it.title || it.id}`;
+    m.appendChild(a);
+  });
+}
 
 /* ================ BOOT ================= */
 async function pingServer(){
@@ -416,11 +436,8 @@ async function pingServer(){
   }
 }
 
-window.addEventListener('DOMContentLoaded', ()=>{
-  // Admin state
+window.addEventListener('DOMContentLoaded', async ()=>{
   setAdmin(isAdmin());
-
-  // Active prefix migrate + tampilkan (tapi ketat)
   migrateActivePrefix();
   const current = loadActive();
   document.getElementById('activePrefix').value = isValid6(current) ? current : '';
@@ -446,6 +463,12 @@ window.addEventListener('DOMContentLoaded', ()=>{
   seedIfEmpty();
   render();
   pingServer();
+
+  // Tarik menu forms saat load (biar langsung muncul)
+  try{
+    const res = await apiForms({ action:'listForms' });
+    renderFormsMenu((res.items||[]).filter(x=>x.enabled!==false));
+  }catch(e){ /* silent */ }
 });
 </script>
 </body>
