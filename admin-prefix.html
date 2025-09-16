@@ -87,10 +87,9 @@
   <section class="card" id="activeBox">
     <h2 style="margin:4px 0">Prefix aktif untuk フォーム（6桁 + "-"）</h2>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
-      <input id="activePrefix" type="text" placeholder="例: 282520-" inputmode="numeric" pattern="\d{6}-"
-             style="flex:1; min-width:220px; padding:10px; border:1px solid var(--b); border-radius:10px">
+      <input id="activePrefix" type="text" inputmode="numeric" placeholder="例: 282520-" style="flex:1; min-width:220px; padding:10px; border:1px solid var(--b); border-radius:10px">
       <button id="btnSaveActive" class="btn">Simpan Prefix Aktif</button>
-      <span class="hint">Disimpan ke <code>localStorage.kensa_prefix</code>. Form mewajibkan 6桁+ハイフン（例: 282520-）。</span>
+      <span class="hint">Disimpan ke <code>localStorage.kensa_prefix</code>. Wajib <b>persis</b> 6 digit + 「-」 (contoh: <code>282520-</code>).</span>
     </div>
   </section>
 
@@ -113,6 +112,8 @@
 /* ================== KONFIG ================== */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxWxAa_dWQNoUPhWnkw3P22jgeW4vb44Z5ISuUyUWsAAroFzzE6iIVWMIpqqio6E5OgqA/exec';
 const STORE   = 'ADMIN_PREFIX_LIST_V2';
+
+// sinkron dengan forms/index
 const ADMIN_FLAG_KEY = 'kensa_admin';
 const PREFIX_KEY     = 'kensa_prefix';
 const LEGACY_PREFIX_KEYS = ['prefix','okuma_prefix','kensa_prefix_okuma'];
@@ -142,9 +143,9 @@ const S = v => String(v ?? '').trim();
 
 function isValid6(v){ return /^\d{6}-$/.test(S(v)); }
 function normalizeTo6(v){
-  const d = S(v).replace(/\D/g,''); // ambil semua digit
+  const d = S(v).replace(/\D/g,'');          // ambil digit saja
   if(d.length >= 6) return d.slice(0,6) + '-';
-  return ''; // tak cukup 6 digit → gagal normalisasi
+  return '';                                  // kurang dari 6 → gagal
 }
 
 async function api(payload){
@@ -164,23 +165,31 @@ function defaultSamples(){
   return [
     { prefix:'2742-20::274220-',        label:'Okuma MU6300V (2742-20)', digits:4 },
     { prefix:'2743-20::274320-',        label:'Okuma MU6300V (2743-20)', digits:4 },
-    { prefix:'359670X3156V::Y355571-',  label:'Tomei WY-150VX3（図番→Y+digits-）' },
-    { prefix:'3555-7tomei::355571-',    label:'Tomei NTY3-100V', digits:4 },
-    { prefix:'330580V::XR3305-',        label:'Okuma MB-80V（XR3305-*）' },
-    { prefix:'mb46v::282520-',          label:'2825-20 MB-46V', digits:4 }  /* ← penting: 6桁 */
+    { prefix:'359670X3156V::Y355571-',  label:'Tomei WY-150VX3（図番→Y+digits-）' },   // contoh NG (bukan 6 digit)
+    { prefix:'3555-7tomei::355571-',    label:'Tomei NTY3-100V', digits:4 },          // contoh NG
+    { prefix:'330580V::XR3305-',        label:'Okuma MB-80V（XR3305-*）' },            // contoh NG
+    { prefix:'mb46v::282520-',          label:'2825-20 MB-46V', digits:4 }            // OK (6桁)
   ];
 }
+function seedIfEmpty(){ const data = loadStore(); if(data.length===0){ saveStore(defaultSamples()); } }
 
-function seedIfEmpty(){ const data = loadStore(); if(data.length===0){ const samples = defaultSamples(); saveStore(samples); } }
-
-/* ================ ACTIVE PREFIX box ================ */
+/* ================ ACTIVE PREFIX box (super ketat) ================ */
 function migrateActivePrefix(){
   if(!localStorage.getItem(PREFIX_KEY)){
-    for(const k of LEGACY_PREFIX_KEYS){ const v = localStorage.getItem(k); if(v && v.trim()){ localStorage.setItem(PREFIX_KEY, v.trim()); break; } }
+    for(const k of LEGACY_PREFIX_KEYS){
+      const v = localStorage.getItem(k);
+      if(v && v.trim()){ localStorage.setItem(PREFIX_KEY, v.trim()); break; }
+    }
   }
 }
 function loadActive(){ return S(localStorage.getItem(PREFIX_KEY)||''); }
 function saveActive(v){ if(v) localStorage.setItem(PREFIX_KEY,S(v)); else localStorage.removeItem(PREFIX_KEY); }
+
+// sanitasi saat boot: jika ada sampah non-6digit, hapus supaya tidak ganggu forms
+(function sanitizeStoredActive(){
+  const v = loadActive();
+  if(!isValid6(v)) localStorage.removeItem(PREFIX_KEY);
+})();
 
 /* ================ RENDER LIST ================ */
 function render(){
@@ -199,18 +208,14 @@ function render(){
     row.className = 'row';
 
     const serialPref = String(it.prefix).split('::')[1] || '';
-    const normalized = normalizeTo6(serialPref);         // "" jika tak bisa
-    const valid = isValid6(serialPref) || !!normalized;
+    const valid = isValid6(serialPref);
 
     row.innerHTML = `
       <div class="prefix" title="APP_NS::SERIAL_PREFIX">${escapeHtml(it.prefix)}</div>
       <input type="text" class="inpLabel" placeholder="Label / catatan" value="${escapeAttr(it.label||'')}">
       <input type="number" class="inpNext" placeholder="Set 次番号" min="1" step="1" value="${escapeAttr(it.next||'')}">
       <input type="number" class="inpDigits" placeholder="桁数" min="1" max="12" step="1" value="${escapeAttr(it.digits||'')}">
-      <span class="pill ${valid?'ok':'bad'}"
-            title="${normalized && !isValid6(serialPref) ? 'Auto → '+normalized : 'Validasi 6桁+ハイフン'}">
-        ${valid ? (normalized && !isValid6(serialPref) ? 'OK→'+normalized : 'OK') : 'NG'}
-      </span>
+      <span class="pill ${valid?'ok':'bad'}" title="Validasi 6桁+ハイフン">${valid?'OK':'NG'}</span>
       <div class="btns">
         <button class="btn btnUse">Gunakan ▶</button>
         <button class="btn btnInfo admin-only">Info</button>
@@ -230,29 +235,23 @@ function render(){
     inpNext.addEventListener('change',  ()=>{ const d=loadStore(); d[idx].next =S(inpNext.value);  saveStore(d); });
     inpDigits.addEventListener('change',()=>{ const d=loadStore(); d[idx].digits=S(inpDigits.value);saveStore(d); });
 
-    // Set aktif untuk forms (tulis ke kensa_prefix), dengan validasi/normalisasi 6桁
+    // Set aktif untuk forms (W A J I B 6 digit + "-")
     row.querySelector('.btnUse').addEventListener('click', ()=>{
       const parts = String(it.prefix).split('::');
-      const appNs = parts[0] || '';
       let serialPrefix = parts[1] || parts[0] || '';
-
       if(!isValid6(serialPrefix)){
         const fixed = normalizeTo6(serialPrefix);
         if(fixed){
-          if(!confirm(`Prefix "${serialPrefix}" akan dinormalisasi menjadi "${fixed}". Gunakan ini?`)) return;
-          serialPrefix = fixed;
-
-          // update daftar lokal supaya konsisten (APP_NS::SERIAL_PREFIX)
-          const d=loadStore();
-          d[idx].prefix = `${appNs}::${serialPrefix}`;
-          saveStore(d);
-          render(); // perbarui badge/hint
+          if(confirm(`Prefix "${serialPrefix}" akan dinormalisasi menjadi "${fixed}". Gunakan ini?`)){
+            serialPrefix = fixed;
+          }else{
+            return;
+          }
         }else{
           alert('Format prefix tidak valid.\nForm mewajibkan 6桁+ハイフン（例: 282520-）');
           return;
         }
       }
-
       saveActive(serialPrefix);
       document.getElementById('activePrefix').value = serialPrefix;
       alert('Prefix aktif disimpan: '+serialPrefix+'\n(Form akan memakainya sebagai 図番 先頭桁)');
@@ -362,6 +361,13 @@ document.getElementById('fileImport').addEventListener('change', async (ev)=>{
   ev.target.value='';
 });
 
+/* ====== ACTIVE INPUT auto-format (live) ====== */
+const activeInput = document.getElementById('activePrefix');
+activeInput.addEventListener('input', ()=>{
+  const d = activeInput.value.replace(/\D/g,'').slice(0,6);
+  activeInput.value = d.length===6 ? (d+'-') : d;  // tulis live, tambahkan "-" jika 6 digit
+});
+
 /* ================ MENU kecil ================ */
 const _menuBtn = document.getElementById('menuBtn');
 const _menu    = document.getElementById('menu');
@@ -388,16 +394,13 @@ async function pingServer(){
 }
 
 window.addEventListener('DOMContentLoaded', ()=>{
+  // Admin state
   setAdmin(isAdmin());
-  migrateActivePrefix();
 
-  // Auto-fix prefix aktif lama jika tidak sesuai 6桁
-  let current = loadActive();
-  if(current && !isValid6(current)){
-    const fx = normalizeTo6(current);
-    if(fx){ saveActive(fx); current = fx; }
-  }
-  document.getElementById('activePrefix').value = current;
+  // Active prefix migrate + tampilkan (tapi ketat)
+  migrateActivePrefix();
+  const current = loadActive();
+  document.getElementById('activePrefix').value = isValid6(current) ? current : '';
 
   document.getElementById('btnSaveActive').addEventListener('click', ()=>{
     let v = S(document.getElementById('activePrefix').value);
