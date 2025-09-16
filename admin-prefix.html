@@ -22,7 +22,7 @@
   .card{background:var(--card);border:1px solid var(--b);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
   .hint{color:var(--muted);font-size:12px;margin-top:8px}
   .list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
-  .row{display:grid;grid-template-columns: 260px 1fr 110px 110px auto;gap:8px;align-items:center;border:1px solid var(--b);border-radius:12px;padding:8px;background:#fff}
+  .row{display:grid;grid-template-columns: 240px 1fr 95px 95px auto;gap:8px;align-items:center;border:1px solid var(--b);border-radius:12px;padding:8px;background:#fff}
   .row .prefix{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f8fafc;padding:8px;border-radius:10px;border:1px solid var(--b)}
   .row input[type="text"], .row input[type="number"]{width:100%;padding:8px;border-radius:10px;border:1px solid var(--b)}
   .row .btns{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
@@ -47,7 +47,8 @@
   .menu a{text-decoration:none}
   .menu a:hover, .menu button:hover{ background:#f1f5f9 }
   .sep{ height:1px; background:var(--b); margin:6px }
-  @media (max-width: 900px){ .row{grid-template-columns: 1fr 1fr 110px 110px auto} .row .prefix{font-size:12px}}
+  .admin-only{display:none}
+  @media (max-width: 900px){ .row{grid-template-columns: 1fr 1fr 95px 95px auto} .row .prefix{font-size:12px}}
 </style>
 </head>
 <body>
@@ -57,17 +58,19 @@
       <img src="./tsh.png" alt="TSH" style="height:28px">
       <b>Admin Serial (GAS)</b>
       <span id="ping" class="pill ghost">checking…</span>
+      <span id="admState" class="pill warn">管理: OFF</span>
     </div>
     <div class="toolbar">
-      <button id="btnAdd" class="btn">＋ Tambah Prefix</button>
-      <button id="btnSample" class="btn">＋ Contoh</button>
-      <button id="btnSync" class="btn">Sync Server</button>
-      <button id="btnRefresh" class="btn">Refresh Semua</button>
-      <button id="btnExport" class="btn">Export</button>
-      <button id="btnImport" class="btn">Import</button>
+      <button id="btnAdd" class="btn admin-only">＋ Tambah Prefix</button>
+      <button id="btnSample" class="btn admin-only">＋ Contoh</button>
+      <button id="btnSync" class="btn admin-only">Sync Server</button>
+      <button id="btnRefresh" class="btn admin-only">Refresh Semua</button>
+      <button id="btnExport" class="btn admin-only">Export</button>
+      <button id="btnImport" class="btn admin-only">Import</button>
+      <button id="btnAdmin" class="btn" title="Admin login/logout">管理</button>
 
       <div class="menubar">
-        <button id="menuBtn" class="menu-btn" type="button">管理 ▾</button>
+        <button id="menuBtn" class="menu-btn" type="button">ナビ ▾</button>
         <div id="menu" class="menu" role="menu" aria-hidden="true">
           <div class="sec">ナビ</div>
           <a href="./" role="menuitem">🏠 トップ</a>
@@ -80,7 +83,17 @@
 </header>
 
 <main>
-  <section class="card">
+  <!-- ACTIVE PREFIX (dipakai oleh forms) -->
+  <section class="card" id="activeBox">
+    <h2 style="margin:4px 0">Prefix aktif untuk フォーム（図番 先頭桁）</h2>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+      <input id="activePrefix" type="text" placeholder="contoh: 2825-" style="flex:1; min-width:220px; padding:10px; border:1px solid var(--b); border-radius:10px">
+      <button id="btnSaveActive" class="btn">Simpan Prefix Aktif</button>
+      <span class="hint">Disimpan ke <code>localStorage.kensa_prefix</code>. Halaman forms akan membacanya.</span>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
       <h2 style="margin:4px 0">Prefix list</h2>
       <span id="count" class="pill"></span>
@@ -99,37 +112,47 @@
 /* ================== KONFIG ================== */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxWxAa_dWQNoUPhWnkw3P22jgeW4vb44Z5ISuUyUWsAAroFzzE6iIVWMIpqqio6E5OgqA/exec';
 const STORE   = 'ADMIN_PREFIX_LIST_V2';
+// Kunci sinkron dengan index/forms
+const ADMIN_FLAG_KEY = 'kensa_admin';
+const PREFIX_KEY     = 'kensa_prefix';
+const LEGACY_PREFIX_KEYS = ['prefix','okuma_prefix','kensa_prefix_okuma'];
+
+/* ===== Admin gate (UI only, sinkron) ===== */
+function setAdmin(on){
+  document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
+  if(on){ localStorage.setItem(ADMIN_FLAG_KEY,'1'); } else { localStorage.removeItem(ADMIN_FLAG_KEY); }
+  const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
+  const s=document.getElementById('admState'); if(s){ s.textContent = on? '管理: ON' : '管理: OFF'; s.className = 'pill ' + (on?'ok':'warn'); }
+}
+function isAdmin(){ return localStorage.getItem(ADMIN_FLAG_KEY)==='1'; }
+
+// Tombol 管理
+window.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
+    if(isAdmin()){
+      if(confirm('Admin akan dimatikan. Lanjut?')) setAdmin(false);
+    }else{
+      const code = prompt('Admin code:');
+      const ADMIN_CODE = 'admin2025';
+      if(code===ADMIN_CODE) setAdmin(true); else alert('Kode tidak sesuai');
+    }
+  });
+});
 
 /* ================ UTIL & API ================ */
 const S = v => String(v ?? '').trim();
 
 async function api(payload){
-  const r = await fetch(GAS_URL, {
-    method:'POST',
-    headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload),
-    redirect:'follow'
-  });
-  if(!r.ok){
-    const t = await r.text().catch(()=> '');
-    throw new Error(`HTTP ${r.status} ${r.statusText} :: ${t.slice(0,200)}`);
-  }
-  const text = await r.text();
-  try{ return JSON.parse(text); }
-  catch{ throw new Error('Bad JSON: '+text.slice(0,200)); }
+  const r = await fetch(GAS_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify(payload), redirect:'follow' });
+  if(!r.ok){ const t = await r.text().catch(()=> ''); throw new Error(`HTTP ${r.status} ${r.statusText} :: ${t.slice(0,200)}`); }
+  const text = await r.text(); try{ return JSON.parse(text); } catch{ throw new Error('Bad JSON: '+text.slice(0,200)); }
 }
 
-function loadStore(){
-  try{
-    const arr = JSON.parse(localStorage.getItem(STORE)||'[]');
-    if(Array.isArray(arr)) return arr;
-  }catch(e){}
-  return [];
-}
+function loadStore(){ try{ const arr = JSON.parse(localStorage.getItem(STORE)||'[]'); if(Array.isArray(arr)) return arr; }catch(e){} return []; }
 function saveStore(arr){ localStorage.setItem(STORE, JSON.stringify(arr)); }
 function toast(msg){ try{ console.log(msg); }catch(e){} alert(msg); }
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
-function escapeAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;'); }
+function escapeAttr(s){ return escapeHtml(s).replace(/\"/g,'&quot;'); }
 
 /* ================ SAMPLE / SYNC ================ */
 function defaultSamples(){
@@ -139,39 +162,33 @@ function defaultSamples(){
     { prefix:'359670X3156V::Y355571-',label:'Tomei WY-150VX3（図番→Y+digits-）' },
     { prefix:'3555-7tomei::355571-',  label:'Tomei NTY3-100V', digits:4 },
     { prefix:'330580V::XR3305-',      label:'Okuma MB-80V（XR3305-*）' },
-    { prefix:'mb46v::2825-',          label:'2825-20 MB46V', digits:4 }  /* match dengan form */
+    { prefix:'mb46v::2825-',          label:'2825-20 MB46V', digits:4 }
   ];
 }
 
-function seedIfEmpty(){
-  const data = loadStore();
-  if(data.length===0){
-    const samples = defaultSamples();
-    saveStore(samples);
-  }
-}
+function seedIfEmpty(){ const data = loadStore(); if(data.length===0){ const samples = defaultSamples(); saveStore(samples); } }
 
 async function syncFromServer(){
   try{
     const res = await api({ action:'listPrefixes' }); // {items:[{prefix,last,next,digits}]}
     if(!res || !Array.isArray(res.items)){ toast('Tidak ada data dari server'); return; }
     const local = loadStore();
-    // merge unik berdasarkan prefix
     res.items.forEach(it=>{
-      if(!local.some(x=>x.prefix===it.prefix)){
-        local.push({ prefix: it.prefix, label:'(server)', digits: it.digits||'' });
-      }else{
-        const idx = local.findIndex(x=>x.prefix===it.prefix);
-        if(!local[idx].digits && it.digits) local[idx].digits = it.digits;
-      }
+      if(!local.some(x=>x.prefix===it.prefix)) local.push({ prefix: it.prefix, label:'(server)', digits: it.digits||'' });
+      else { const idx = local.findIndex(x=>x.prefix===it.prefix); if(!local[idx].digits && it.digits) local[idx].digits = it.digits; }
     });
-    saveStore(local);
-    render();
-    toast(`Sync OK: ${res.items.length} item`);
-  }catch(e){
-    toast('Gagal sync: '+e.message);
+    saveStore(local); render(); toast(`Sync OK: ${res.items.length} item`);
+  }catch(e){ toast('Gagal sync: '+e.message); }
+}
+
+/* ================ ACTIVE PREFIX box ================ */
+function migrateActivePrefix(){
+  if(!localStorage.getItem(PREFIX_KEY)){
+    for(const k of LEGACY_PREFIX_KEYS){ const v = localStorage.getItem(k); if(v && v.trim()){ localStorage.setItem(PREFIX_KEY, v.trim()); break; } }
   }
 }
+function loadActive(){ return S(localStorage.getItem(PREFIX_KEY)||''); }
+function saveActive(v){ if(v) localStorage.setItem(PREFIX_KEY,S(v)); else localStorage.removeItem(PREFIX_KEY); }
 
 /* ================ RENDER LIST ================ */
 function render(){
@@ -180,10 +197,7 @@ function render(){
   document.getElementById('count').textContent = `${data.length} prefix`;
   list.innerHTML = '';
 
-  if(!data.length){
-    list.innerHTML = '<div class="row" style="justify-content:center;color:#64748b">Belum ada data. Klik “＋ Contoh” atau “Sync Server”.</div>';
-    return;
-  }
+  if(!data.length){ list.innerHTML = '<div class="row" style="justify-content:center;color:#64748b">Belum ada data. Klik “＋ Contoh” atau “Sync Server”.</div>'; return; }
 
   data.forEach((it, idx)=>{
     const row = document.createElement('div');
@@ -194,11 +208,12 @@ function render(){
       <input type="number" class="inpNext" placeholder="Set 次番号" min="1" step="1" value="${escapeAttr(it.next||'')}">
       <input type="number" class="inpDigits" placeholder="桁数" min="1" max="12" step="1" value="${escapeAttr(it.digits||'')}">
       <div class="btns">
-        <button class="btn btnInfo">Info</button>
-        <button class="btn btnDigits">Set桁</button>
-        <button class="btn btnNext">Set次</button>
-        <button class="btn btnIssue" style="border-color:#fecaca;background:#fff5f5">Issue</button>
-        <button class="btn btnDel">Hapus</button>
+        <button class="btn btnUse">Gunakan ▶</button>
+        <button class="btn btnInfo admin-only">Info</button>
+        <button class="btn btnDigits admin-only">Set桁</button>
+        <button class="btn btnNext admin-only">Set次</button>
+        <button class="btn btnIssue admin-only" style="border-color:#fecaca;background:#fff5f5">Issue</button>
+        <button class="btn btnDel admin-only">Hapus</button>
       </div>
     `;
     list.appendChild(row);
@@ -207,100 +222,81 @@ function render(){
     const inpNext   = row.querySelector('.inpNext');
     const inpDigits = row.querySelector('.inpDigits');
 
-    inpLabel.addEventListener('change', ()=>{ data[idx].label = S(inpLabel.value); saveStore(data); });
-    inpNext.addEventListener('change',  ()=>{ data[idx].next  = S(inpNext.value);  saveStore(data); });
-    inpDigits.addEventListener('change',()=>{ data[idx].digits= S(inpDigits.value);saveStore(data); });
+    inpLabel.addEventListener('change', ()=>{ const d=loadStore(); d[idx].label=S(inpLabel.value); saveStore(d); });
+    inpNext.addEventListener('change',  ()=>{ const d=loadStore(); d[idx].next =S(inpNext.value);  saveStore(d); });
+    inpDigits.addEventListener('change',()=>{ const d=loadStore(); d[idx].digits=S(inpDigits.value);saveStore(d); });
 
+    // Set aktif untuk forms
+    row.querySelector('.btnUse').addEventListener('click', ()=>{
+      const parts = String(it.prefix).split('::');
+      const serialPrefix = parts[1] || parts[0] || '';
+      if(!serialPrefix){ return alert('Format prefix tidak valid.'); }
+      saveActive(serialPrefix);
+      document.getElementById('activePrefix').value = serialPrefix;
+      alert('Prefix aktif disimpan: '+serialPrefix+"\n(Form akan memakainya sebagai 図番 先頭桁)");
+    });
+
+    // ==== Operasi server (khusus admin) ====
     row.querySelector('.btnInfo').addEventListener('click', async ()=>{
-      try{
-        const res = await api({ action:'getInfo', prefix: it.prefix });
+      try{ const res = await api({ action:'getInfo', prefix: it.prefix });
         alert(`Prefix: ${it.prefix}\nLast: ${res.last}\nNext: ${res.next}\nDigits: ${res.digits ?? '(belum disetel)'}`);
-        if(res.digits && !inpDigits.value){ inpDigits.value = res.digits; data[idx].digits = res.digits; saveStore(data); }
+        if(res.digits && !inpDigits.value){ inpDigits.value = res.digits; const d=loadStore(); d[idx].digits=res.digits; saveStore(d); }
       }catch(e){ toast('Gagal getInfo: '+e.message); }
     });
 
     row.querySelector('.btnDigits').addEventListener('click', async ()=>{
-      const d = parseInt(inpDigits.value,10);
-      if(!(d>=1 && d<=12)){ toast('Masukkan桁数 1..12'); return; }
-      try{
-        const res = await api({ action:'setDigits', prefix: it.prefix, digits: d });
-        if(res && (res.ok || res.digits || res.result)){ toast('Set桁 OK'); } else { toast('Set桁 selesai'); }
-      }catch(e){ toast('Gagal setDigits: '+e.message); }
+      const d = parseInt(inpDigits.value,10); if(!(d>=1 && d<=12)){ toast('Masukkan桁数 1..12'); return; }
+      try{ const res = await api({ action:'setDigits', prefix: it.prefix, digits: d }); if(res && (res.ok||res.digits||res.result)){ toast('Set桁 OK'); } else { toast('Set桁 selesai'); } }
+      catch(e){ toast('Gagal setDigits: '+e.message); }
     });
 
     row.querySelector('.btnNext').addEventListener('click', async ()=>{
-      const n = parseInt(inpNext.value,10);
-      if(!(n>=1)){ toast('Masukkan 次番号 minimal 1'); return; }
-      try{
-        const res = await api({ action:'setNext', prefix: it.prefix, next: n });
-        if(res && res.ok){ toast('Set次 OK'); } else { toast('Set次 selesai'); }
-      }catch(e){ toast('Gagal setNext: '+e.message); }
+      const n = parseInt(inpNext.value,10); if(!(n>=1)){ toast('Masukkan 次番号 minimal 1'); return; }
+      try{ const res = await api({ action:'setNext', prefix: it.prefix, next: n }); if(res && res.ok){ toast('Set次 OK'); } else { toast('Set次 selesai'); } }
+      catch(e){ toast('Gagal setNext: '+e.message); }
     });
 
     row.querySelector('.btnIssue').addEventListener('click', async ()=>{
-      try{
-        const res = await api({ action:'nextSuffix', prefix: it.prefix });
+      try{ const res = await api({ action:'nextSuffix', prefix: it.prefix });
         let pad = parseInt(inpDigits.value||'0',10)||0;
-        if(!pad){
-          const info = await api({ action:'getInfo', prefix: it.prefix });
-          pad = parseInt(info.digits||'0',10)||0;
-          if(pad){ inpDigits.value = pad; data[idx].digits = pad; saveStore(data); }
-        }
+        if(!pad){ const info = await api({ action:'getInfo', prefix: it.prefix }); pad = parseInt(info.digits||'0',10)||0; if(pad){ inpDigits.value = pad; const d=loadStore(); d[idx].digits=pad; saveStore(d); } }
         alert(`Issued: ${String(res.suffix).padStart(pad,'0')}`);
       }catch(e){ toast('Gagal issue: '+e.message); }
     });
 
-    // HAPUS = server + lokal (permanent)
     row.querySelector('.btnDel').addEventListener('click', async ()=>{
       if(!confirm(`Hapus prefix ini di SERVER dan daftar lokal?\n${it.prefix}\n(counter & digits akan dihapus di server)`)) return;
-      try{
-        await api({ action:'deletePrefix', prefix: it.prefix }); // server
-      }catch(e){
-        if(!confirm('Gagal hapus di server ('+(e.message||e)+').\nTetap hapus dari daftar lokal?')) return;
-      }
-      data.splice(idx,1); saveStore(data); render(); // lokal
-      toast('Dihapus.');
+      try{ await api({ action:'deletePrefix', prefix: it.prefix }); }
+      catch(e){ if(!confirm('Gagal hapus di server ('+(e.message||e)+').\nTetap hapus dari daftar lokal?')) return; }
+      const d=loadStore(); d.splice(idx,1); saveStore(d); render(); toast('Dihapus.');
     });
   });
+
+  // Terapkan visibilitas admin-only
+  document.querySelectorAll('.admin-only').forEach(el=> el.style.display = isAdmin()? '' : 'none');
 }
 
 /* ================ AKSI TOOLBAR ================ */
 document.getElementById('btnAdd').addEventListener('click', ()=>{
-  const full = prompt('Masukkan FULL prefix (format: APP_NS::SERIAL_PREFIX)\ncontoh: mb46v::2825-');
-  if(!full) return;
-  const label = prompt('Label/Note (opsional):','');
-  const data = loadStore();
+  const full = prompt('Masukkan FULL prefix (format: APP_NS::SERIAL_PREFIX)\ncontoh: mb46v::2825-'); if(!full) return;
+  const label = prompt('Label/Note (opsional):',''); const data = loadStore();
   if(data.some(x=>x.prefix===full)){ toast('Prefix sudah ada di daftar'); return; }
-  data.push({ prefix: full, label: S(label) });
-  saveStore(data); render();
+  data.push({ prefix: full, label: S(label) }); saveStore(data); render();
 });
 
 document.getElementById('btnSample').addEventListener('click', ()=>{
-  const local = loadStore();
-  const merged = [...local];
-  defaultSamples().forEach(s=>{
-    if(!merged.some(x=>x.prefix===s.prefix)) merged.push(s);
-  });
-  saveStore(merged);
-  render();
-  toast('Contoh prefix ditambahkan.');
+  const local = loadStore(); const merged = [...local];
+  defaultSamples().forEach(s=>{ if(!merged.some(x=>x.prefix===s.prefix)) merged.push(s); });
+  saveStore(merged); render(); toast('Contoh prefix ditambahkan.');
 });
 
 document.getElementById('btnSync').addEventListener('click', ()=>{ syncFromServer(); });
 
 document.getElementById('btnRefresh').addEventListener('click', async ()=>{
   const data = loadStore(); if(!data.length) return;
-  try{
-    for(const it of data){
-      try{
-        const res = await api({ action:'getInfo', prefix: it.prefix });
-        if(res.digits && !it.digits){ it.digits = res.digits; }
-      }catch(e){ console.warn('getInfo error', it.prefix, e); }
-    }
-    saveStore(data);
-    render();
-    toast('Refresh selesai.');
-  }catch(e){ toast('Gagal refresh: '+e.message); }
+  try{ for(const it of data){ try{ const res = await api({ action:'getInfo', prefix: it.prefix }); if(res.digits && !it.digits){ it.digits = res.digits; } }catch(e){ console.warn('getInfo error', it.prefix, e); } }
+    saveStore(data); render(); toast('Refresh selesai.'); }
+  catch(e){ toast('Gagal refresh: '+e.message); }
 });
 
 document.getElementById('btnExport').addEventListener('click', ()=>{
@@ -310,17 +306,11 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
 
-document.getElementById('btnImport').addEventListener('click', ()=>{
-  document.getElementById('fileImport').click();
-});
+document.getElementById('btnImport').addEventListener('click', ()=>{ document.getElementById('fileImport').click(); });
 document.getElementById('fileImport').addEventListener('change', async (ev)=>{
   const f = ev.target.files[0]; if(!f) return;
-  try{
-    const text = await f.text();
-    const arr = JSON.parse(text);
-    if(!Array.isArray(arr)) throw new Error('Format tidak valid');
-    saveStore(arr); render(); toast('Import OK');
-  }catch(e){ toast('Gagal import: '+e.message); }
+  try{ const text = await f.text(); const arr = JSON.parse(text); if(!Array.isArray(arr)) throw new Error('Format tidak valid'); saveStore(arr); render(); toast('Import OK'); }
+  catch(e){ toast('Gagal import: '+e.message); }
   ev.target.value='';
 });
 
@@ -335,21 +325,23 @@ document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); })
 /* ================ BOOT ================= */
 async function pingServer(){
   document.getElementById('gasUrlShow').textContent = GAS_URL;
-  try{
-    const r = await fetch(GAS_URL, { method:'GET', redirect:'follow' });
-    const txt = await r.text();
-    const ok = /"ok"\s*:\s*true/.test(txt);
-    const pill = document.getElementById('ping');
-    pill.textContent = ok ? 'backend: OK' : 'backend: ?';
-    pill.className = 'pill ' + (ok ? 'ok' : 'warn');
-  }catch(e){
-    const pill = document.getElementById('ping');
-    pill.textContent = 'backend: NG';
-    pill.className = 'pill bad';
-  }
+  try{ const r = await fetch(GAS_URL, { method:'GET', redirect:'follow' }); const txt = await r.text(); const ok = /"ok"\s*:\s*true/.test(txt);
+    const pill = document.getElementById('ping'); pill.textContent = ok ? 'backend: OK' : 'backend: ?'; pill.className = 'pill ' + (ok ? 'ok' : 'warn'); }
+  catch(e){ const pill = document.getElementById('ping'); pill.textContent = 'backend: NG'; pill.className = 'pill bad'; }
 }
 
 window.addEventListener('DOMContentLoaded', ()=>{
+  // Admin sinkron & visibilitas
+  setAdmin(isAdmin());
+  // Active prefix migrate + load
+  migrateActivePrefix();
+  document.getElementById('activePrefix').value = loadActive();
+  document.getElementById('btnSaveActive').addEventListener('click', ()=>{
+    const v = S(document.getElementById('activePrefix').value);
+    if(!v) { alert('Isi prefix aktif, contoh: 2825-'); return; }
+    saveActive(v); alert('Disimpan: '+v+' \n(Form akan memakainya sebagai 図番 先頭桁)');
+  });
+
   seedIfEmpty();
   render();
   pingServer();
