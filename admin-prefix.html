@@ -87,7 +87,8 @@
   <section class="card" id="activeBox">
     <h2 style="margin:4px 0">Prefix aktif untuk フォーム（6桁 + "-"）</h2>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
-      <input id="activePrefix" type="text" placeholder="例: 282520-" style="flex:1; min-width:220px; padding:10px; border:1px solid var(--b); border-radius:10px">
+      <input id="activePrefix" type="text" placeholder="例: 282520-" inputmode="numeric" pattern="\d{6}-"
+             style="flex:1; min-width:220px; padding:10px; border:1px solid var(--b); border-radius:10px">
       <button id="btnSaveActive" class="btn">Simpan Prefix Aktif</button>
       <span class="hint">Disimpan ke <code>localStorage.kensa_prefix</code>. Form mewajibkan 6桁+ハイフン（例: 282520-）。</span>
     </div>
@@ -143,7 +144,7 @@ function isValid6(v){ return /^\d{6}-$/.test(S(v)); }
 function normalizeTo6(v){
   const d = S(v).replace(/\D/g,''); // ambil semua digit
   if(d.length >= 6) return d.slice(0,6) + '-';
-  return ''; // tak cukup 6 digit → gagal
+  return ''; // tak cukup 6 digit → gagal normalisasi
 }
 
 async function api(payload){
@@ -198,14 +199,18 @@ function render(){
     row.className = 'row';
 
     const serialPref = String(it.prefix).split('::')[1] || '';
-    const valid = isValid6(serialPref) || isValid6(normalizeTo6(serialPref));
+    const normalized = normalizeTo6(serialPref);         // "" jika tak bisa
+    const valid = isValid6(serialPref) || !!normalized;
 
     row.innerHTML = `
       <div class="prefix" title="APP_NS::SERIAL_PREFIX">${escapeHtml(it.prefix)}</div>
       <input type="text" class="inpLabel" placeholder="Label / catatan" value="${escapeAttr(it.label||'')}">
       <input type="number" class="inpNext" placeholder="Set 次番号" min="1" step="1" value="${escapeAttr(it.next||'')}">
       <input type="number" class="inpDigits" placeholder="桁数" min="1" max="12" step="1" value="${escapeAttr(it.digits||'')}">
-      <span class="pill ${valid?'ok':'bad'}" title="Validasi 6桁+ハイフン">${valid?'OK':'NG'}</span>
+      <span class="pill ${valid?'ok':'bad'}"
+            title="${normalized && !isValid6(serialPref) ? 'Auto → '+normalized : 'Validasi 6桁+ハイフン'}">
+        ${valid ? (normalized && !isValid6(serialPref) ? 'OK→'+normalized : 'OK') : 'NG'}
+      </span>
       <div class="btns">
         <button class="btn btnUse">Gunakan ▶</button>
         <button class="btn btnInfo admin-only">Info</button>
@@ -228,20 +233,26 @@ function render(){
     // Set aktif untuk forms (tulis ke kensa_prefix), dengan validasi/normalisasi 6桁
     row.querySelector('.btnUse').addEventListener('click', ()=>{
       const parts = String(it.prefix).split('::');
+      const appNs = parts[0] || '';
       let serialPrefix = parts[1] || parts[0] || '';
+
       if(!isValid6(serialPrefix)){
         const fixed = normalizeTo6(serialPrefix);
         if(fixed){
-          if(confirm(`Prefix "${serialPrefix}" akan dinormalisasi menjadi "${fixed}". Gunakan ini?`)){
-            serialPrefix = fixed;
-          }else{
-            return;
-          }
+          if(!confirm(`Prefix "${serialPrefix}" akan dinormalisasi menjadi "${fixed}". Gunakan ini?`)) return;
+          serialPrefix = fixed;
+
+          // update daftar lokal supaya konsisten (APP_NS::SERIAL_PREFIX)
+          const d=loadStore();
+          d[idx].prefix = `${appNs}::${serialPrefix}`;
+          saveStore(d);
+          render(); // perbarui badge/hint
         }else{
           alert('Format prefix tidak valid.\nForm mewajibkan 6桁+ハイフン（例: 282520-）');
           return;
         }
       }
+
       saveActive(serialPrefix);
       document.getElementById('activePrefix').value = serialPrefix;
       alert('Prefix aktif disimpan: '+serialPrefix+'\n(Form akan memakainya sebagai 図番 先頭桁)');
@@ -272,7 +283,11 @@ function render(){
       try{
         const res = await api({ action:'nextSuffix', prefix: it.prefix });
         let pad = parseInt(inpDigits.value||'0',10)||0;
-        if(!pad){ const info = await api({ action:'getInfo', prefix: it.prefix }); pad = parseInt(info.digits||'0',10)||0; if(pad){ inpDigits.value = pad; const d=loadStore(); d[idx].digits=pad; saveStore(d); } }
+        if(!pad){
+          const info = await api({ action:'getInfo', prefix: it.prefix });
+          pad = parseInt(info.digits||'0',10)||0;
+          if(pad){ inpDigits.value = pad; const d=loadStore(); d[idx].digits=pad; saveStore(d); }
+        }
         alert(`Issued: ${String(res.suffix).padStart(pad,'0')}`);
       }catch(e){ toast('Gagal issue: '+e.message); }
     });
@@ -375,7 +390,15 @@ async function pingServer(){
 window.addEventListener('DOMContentLoaded', ()=>{
   setAdmin(isAdmin());
   migrateActivePrefix();
-  document.getElementById('activePrefix').value = loadActive();
+
+  // Auto-fix prefix aktif lama jika tidak sesuai 6桁
+  let current = loadActive();
+  if(current && !isValid6(current)){
+    const fx = normalizeTo6(current);
+    if(fx){ saveActive(fx); current = fx; }
+  }
+  document.getElementById('activePrefix').value = current;
+
   document.getElementById('btnSaveActive').addEventListener('click', ()=>{
     let v = S(document.getElementById('activePrefix').value);
     if(!isValid6(v)){
