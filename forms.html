@@ -71,7 +71,6 @@
 
   .searchbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .searchbar .search{flex:1;min-width:220px;height:40px;padding:0 14px;border:2px solid #0b12221a;border-radius:9999px;outline:none;background:#fff}
-  .badge{height:28px;padding:0 10px;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink);background:#f1f5f9;border:1px solid var(--border);border-radius:999px}
 
   .folder{background:#fff;border:1px solid var(--border);border-radius:16px;margin-bottom:12px;overflow:hidden}
   .folder-head{padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:#f9fafb;font-weight:800;border:0;width:100%;text-align:left}
@@ -87,8 +86,6 @@
   .marquee span{display:inline-block;padding:8px 0 8px 100%;animation:marquee 18s linear infinite}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
   .footer{position:fixed;bottom:0;left:0;right:0;z-index:31;text-align:center;font-size:12px;color:var(--muted);background:#f1f5f9;padding:4px 0;border-top:1px solid var(--border)}
-
-  .admin-only{display:none}
 
   @media (max-width:900px){
     .top-actions{display:none}
@@ -115,8 +112,7 @@
         <a class="btn" href="./sagyoutejunsho.html">📝 作業手順書</a>
         <a class="btn" href="./charts.html">📈 チャート</a>
         <a class="btn" href="./quality.html">🔎 品質情報</a>
-        <a class="btn" href="./admin-prefix.html">🔧 Admin Prefix</a>
-        <button id="btnAdmin" class="btn" type="button" title="Admin login/logout">管理</button>
+        <!-- Admin button REMOVED -->
       </nav>
     </div>
   </header>
@@ -128,7 +124,7 @@
       <span class="small">必要に応じて検索／フィルタしてください</span>
     </div>
 
-    <!-- Password Gate -->
+    <!-- Password Gate (content only; keep) -->
     <section id="lock" class="panel" aria-labelledby="lock-title">
       <h2 id="lock-title" class="small" style="margin:0 0 10px">アクセス保護</h2>
       <div class="lock">
@@ -139,16 +135,13 @@
       </div>
     </section>
 
-    <!-- Search + Read-only prefix badge -->
+    <!-- Search (prefix badge REMOVED) -->
     <section id="searchWrap" class="panel hidden" aria-label="検索パネル">
       <div class="searchbar">
         <input id="q" class="search" type="search" placeholder="検索（顧客名／サブフォルダ／フォーム名／説明）" aria-label="検索語">
         <button id="btnSearch" class="btn" type="button">検索</button>
         <button id="btnReset"  class="btn" type="button">リセット</button>
         <span id="hit" class="small" aria-live="polite"></span>
-
-        <!-- badge read-only -->
-        <span id="prefixBadge" class="badge" style="margin-left:auto;display:none"></span>
       </div>
     </section>
 
@@ -169,17 +162,7 @@
     <a class="link" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
     <a class="link" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
     <a class="link" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-    <a class="link admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
-  </div>
-
-  <div class="admin-only" style="margin-top:12px">
-    <h3>Admin</h3>
-    <div class="navlist">
-      <a class="link" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-      <a class="link" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
-      <a class="link" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
-      <a class="link" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
-    </div>
+    <!-- admin-only links REMOVED -->
   </div>
 </aside>
 
@@ -196,17 +179,7 @@
         <a class="link" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
         <a class="link" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
         <a class="link" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-        <a class="link admin-only" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
-      </div>
-
-      <div class="admin-only">
-        <h3>Admin</h3>
-        <div class="navlist">
-          <a class="link" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-          <a class="link" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix</strong></a>
-          <a class="link" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
-          <a class="link" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
-        </div>
+        <!-- admin-only links REMOVED -->
       </div>
     </div>
   </aside>
@@ -222,71 +195,19 @@
   btnBurger?.addEventListener('click', ()=>{ drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); });
   drawer?.addEventListener('click', (e)=>{ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); } });
 
-  /* ================= Admin gate (UI only) ================= */
-  const ADMIN_CODE = "admin2025";
-  function setAdmin(on){
-    document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
-    localStorage.setItem('kensa_admin', on ? '1' : '0');
-    const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
-  }
-  function readAdmin(){ return localStorage.getItem('kensa_admin')==='1'; }
-  document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
-    if(readAdmin()){
-      if(confirm('AdminをOFFにしますか？')) setAdmin(false);
-    }else{
-      const c = prompt('Admin code:');
-      if(c===ADMIN_CODE) setAdmin(true); else alert('コードが違います');
-    }
-  });
-
-  /* ================= Active Prefix (read-only badge) ================= */
-  const PREFIX_KEY = 'kensa_prefix';
-  const LEGACY_PREFIX_KEYS = ['prefix','okuma_prefix','kensa_prefix_okuma'];
-  function getActivePrefix(){
-    let v = (localStorage.getItem(PREFIX_KEY)||'').trim();
-    if(!v){
-      for(const k of LEGACY_PREFIX_KEYS){
-        const t = (localStorage.getItem(k)||'').trim();
-        if(t){ v=t; localStorage.setItem(PREFIX_KEY,v); break; }
-      }
-    }
-    return v;
-  }
-  function showPrefixBadge(){
-    const el = document.getElementById('prefixBadge');
-    const v = getActivePrefix();
-    if(v){ el.textContent = '図番 先頭桁: '+v; el.style.display='inline-flex'; }
-    else{ el.textContent=''; el.style.display='none'; }
-  }
-  // realtime update bila diset dari halaman Admin
-  window.addEventListener('storage', ev=>{ if(ev.key===PREFIX_KEY) showPrefixBadge(); });
-
-  /* ================= EDGE-HOVER sidebar (desktop) ================= */
-  const hot = document.getElementById('edgeHotspot');
-  const fly = document.getElementById('hoverSide');
-  let hideTimer = null;
-  const HIDE_DELAY = 280;
-  function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
-  function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
-  hot?.addEventListener('mouseenter', openFly);
-  hot?.addEventListener('mouseleave', scheduleClose);
-  fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer));
-  fly?.addEventListener('mouseleave', scheduleClose);
-
-  /* ================= Password lock & content ================= */
-  const PASSWORD = "kensa2025";
+  /* ================= Password lock (content only) ================= */
+  const PASSWORD = "kensa2025"; // ganti jika perlu
 
   function getJSON(key, fallback){
     try{
       const val = localStorage.getItem(key);
       if (val === null || val === '') return fallback;
       return JSON.parse(val);
-    }catch(e){
-      localStorage.removeItem(key); return fallback;
-    }
+    }catch(e){ localStorage.removeItem(key); return fallback; }
   }
   const S = s=>String(s??'').trim();
 
+  /* ====== DATA ====== */
   const DATA = [
     {customer:"オークマ株式会社",folders:[
       {name:"Y軸",links:[
@@ -311,6 +232,7 @@
     ]}
   ];
 
+  /* ====== Elements ====== */
   const elLock = document.getElementById('lock');
   const elFoldersPanel = document.getElementById('foldersPanel');
   const elFolders = document.getElementById('folders');
@@ -324,12 +246,12 @@
   const btnToggle = document.getElementById('btnToggle');
   const btnUnlock = document.getElementById('btnUnlock');
 
+  /* ====== State ====== */
   let lastQuery = "";
   let openCustomers = new Set();
 
+  /* ====== Init ====== */
   (function init(){
-    setAdmin(readAdmin());
-
     // Enter handlers
     elPwd.addEventListener('keydown', e => { if (e.key === "Enter") unlock(); });
     elQ.addEventListener('keydown',  e => { if (e.key === "Enter") search(); });
@@ -370,11 +292,9 @@
       openCustomers = new Set(savedOpen);
       render(DATA);
     }
-
-    // tampilkan badge prefix
-    showPrefixBadge();
   })();
 
+  /* ====== Actions ====== */
   function unlock(){
     if (elPwd.value !== PASSWORD) { elMsg.textContent = '× 違います'; elMsg.style.color = 'var(--ng)'; return; }
     elMsg.textContent = '✓ 正しい'; elMsg.style.color = 'var(--ok)';
@@ -383,7 +303,6 @@
     elSearchWrap.classList.remove('hidden');
     localStorage.setItem('kensa_unlocked','1');
     render(DATA);
-    showPrefixBadge();
   }
 
   function search(){
@@ -482,9 +401,6 @@
       [...elFolders.querySelectorAll('.caret')].forEach(c => c.style.transform='rotate(0deg)');
     }
   }
-
-  // Init admin UI on reload
-  window.addEventListener('DOMContentLoaded', ()=> setAdmin(readAdmin()));
 </script>
 </body>
 </html>
