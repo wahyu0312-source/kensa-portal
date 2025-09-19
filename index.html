@@ -4,149 +4,52 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>品質管理生産技術システム</title>
-
 <style>
   :root{
-    --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb; --ring:#c7d2fe;
+    --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
     --accent:#2563eb; --danger:#dc2626; --success:#10b981; --warning:#f59e0b; --purple:#8b5cf6;
-    --radius-xl:22px; --radius:12px; --shadow-1:0 12px 30px rgba(15,23,42,.08); --shadow-2:0 30px 60px rgba(15,23,42,.10);
+    --radius-xl:22px; --shadow-2:0 30px 60px rgba(15,23,42,.10);
   }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0; color:var(--ink);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
-    background:
-      radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
-      radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
-      linear-gradient(120deg,#f8fafc,var(--bg));
-  }
-  a{color:inherit; text-decoration:none}
-
-  .app{display:grid;grid-template-rows:64px 1fr;grid-template-areas:"header" "main";min-height:100vh}
-  header{grid-area:header;position:sticky;top:0;z-index:60;backdrop-filter:blur(12px);background:#ffffffc7;border-bottom:1px solid var(--border)}
-  .header-wrap{height:64px;max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px}
-  .brand{display:flex;align-items:center;gap:10px}.brand img{height:36px}.ttl{font-weight:800}
-  .top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .btn{display:inline-flex;align-items:center;gap:8px;line-height:1;height:34px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
-  .btn:hover{border-color:var(--ring)}
-  .badge{height:28px;padding:0 10px;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink);background:#f1f5f9;border:1px solid var(--border);border-radius:999px}
-  .burger{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
-  .burger:active{transform:scale(.98)}
-
-  .edge-hotspot{position:fixed;left:0;top:64px;width:12px;height:calc(100vh - 64px);z-index:70}
-  .hover-side{position:fixed;left:0;top:64px;height:calc(100vh - 64px);width:260px;padding:14px 12px;overflow:auto;background:var(--panel);border-right:1px solid var(--border);box-shadow:var(--shadow-1);transform:translateX(-100%);transition:transform .22s ease;z-index:71}
-  .hover-side.open{transform:translateX(0)}
-  .hover-side h3{margin:4px 8px 10px;font-size:12px;letter-spacing:.08em;color:#6b7280;text-transform:uppercase}
-  .navlist{display:grid;gap:4px}
-  .slink{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;color:var(--ink)}
-  .slink:hover{background:#f1f5ff}
-  .ico{width:22px;text-align:center}
-
-  .drawer{position:fixed;inset:0;z-index:80;display:none}
-  .drawer.open{display:block}
-  .drawer .backdrop{position:absolute;inset:0;background:#0006}
-  .drawer .panel{position:absolute;top:0;left:0;height:100%;width:min(86%,320px);background:#fff;border-right:1px solid var(--border);box-shadow:var(--shadow-2);padding:14px 12px;overflow:auto;transform:translateX(-100%);transition:transform .25s ease}
-  .drawer.open .panel{transform:translateX(0)}
-  .drawer .close{position:absolute;right:10px;top:10px;border:0;background:#f1f5f9;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer}
-
-  main{grid-area:main;max-width:1400px;margin:0 auto;padding:22px 20px 96px}
-  .page-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:14px}
-  .h1{font-size:22px;margin:0}
-  .small{font-size:12px;color:var(--muted)}
-  .panel{background:#fff;border:1px solid var(--border);border-radius:var(--radius-xl);box-shadow:var(--shadow-2);padding:18px;overflow:auto}
-  .panel + .panel{margin-top:18px}
-  .panel-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px}
-
+  *{box-sizing:border-box} body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;background:linear-gradient(120deg,#f8fafc,var(--bg))}
+  .panel{background:#fff;border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow-2);padding:18px;overflow:auto}
+  .btn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
   table{width:100%;border-collapse:separate;border-spacing:0;min-width:900px}
-  thead th{position:sticky;top:0;z-index:1;background:#f8fafc;color:#475569;text-align:left;font-weight:800;padding:12px 14px;border-bottom:1px solid var(--border)}
+  thead th{position:sticky;top:0;background:#f8fafc;color:#475569;text-align:left;font-weight:800;padding:12px 14px;border-bottom:1px solid var(--border)}
   tbody td{padding:12px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
-  tbody tr:hover{background:#f6f9ff}
-  tbody tr.row-urgent td{background:#fee2e2 !important;color:#b91c1c;font-weight:600}
-  .flag-urgent{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;margin-right:8px;border-radius:999px;background:var(--danger);color:#fff;font-weight:800;font-size:12px}
-  .urgent-banner{background:var(--danger);color:#fff;padding:10px 16px;border-radius:12px;text-align:center;font-weight:800;animation:blink 1s infinite}
-  @keyframes blink{0%,50%,100%{opacity:1}25%,75%{opacity:.75}}
   .tag{display:inline-flex;align-items:center;padding:2px 10px;border-radius:999px;font-weight:800;font-size:12px;color:#fff;margin-right:8px}
   .tag-done{background:#0ea5e9}.tag-assem{background:var(--warning)}.tag-assem-done{background:var(--success)}.tag-inspect{background:#8b5cf6}.tag-not{background:#94a3b8}
-
-  .marquee{position:fixed;left:20px;right:20px;bottom:20px;z-index:30;background:var(--accent);color:#fff;font-weight:800;border-radius:12px;box-shadow:var(--shadow-1);white-space:nowrap;overflow:hidden}
-  .marquee span{display:inline-block;padding:8px 0 8px 100%;animation:marquee 25s linear infinite}
-  @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
-  .footer{position:fixed;bottom:0;left:0;right:0;z-index:31;text-align:center;font-size:12px;color:var(--muted);background:#f1f5f9;padding:4px 0;border-top:1px solid var(--border)}
-  .admin-only{display:none}
-  @media (max-width:900px){.burger{display:inline-flex}.edge-hotspot,.hover-side{display:none}}
 </style>
 </head>
-
 <body>
-<div class="app">
-  <header>
-    <div class="header-wrap">
-      <button id="btnBurger" class="burger" aria-label="メニュー"><span>☰</span></button>
-      <div class="brand">
-        <img src="tsh.png" alt="TSH" onerror="this.style.display='none'">
-        <div class="ttl"><strong>品質管理生産技術</strong></div>
+<main style="max-width:1400px;margin:24px auto;padding:0 20px">
+  <h1 style="margin:0 0 12px">出荷状況一覧</h1>
+  <div class="panel">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      <label>出荷日：</label>
+      <input type="date" id="filterDate" style="height:36px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:#0f172a">
+      <button class="btn" id="btnToday" type="button">本日出荷のみ</button>
+      <button class="btn" id="btnClear" type="button">Clear</button>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn" id="btnExcel" type="button">⬇ Excel</button>
+        <button class="btn" id="btnPDF" type="button">⬇ PDF</button>
+        <button class="btn" id="btnRefresh" type="button">⟳ Refresh</button>
       </div>
-      <nav class="top-actions">
-        <button id="btnRefresh" class="btn" type="button">⟳ Refresh</button>
-        <button id="btnLive" class="btn" type="button" aria-pressed="false">● Live</button>
-        <span id="intervalInfo" class="badge">60s</span>
-        <button id="btnAdmin" class="btn" type="button" title="Admin login/logout">管理</button>
-      </nav>
     </div>
-  </header>
+    <table id="shipTable">
+      <thead><tr id="shipHead"></tr></thead>
+      <tbody id="shipBody"></tbody>
+    </table>
+    <div id="shipHint" style="margin-top:8px;font-size:12px;color:#64748b"></div>
+  </div>
+</main>
 
-  <main>
-    <div class="page-head">
-      <h1 class="h1">出荷状況一覧</h1>
-      <span id="lastUpdated" class="small"></span>
-    </div>
-
-    <div id="urgent-banner" class="urgent-banner" style="display:none"></div>
-
-    <section id="todaySection" class="panel" style="display:none">
-      <div class="panel-title">
-        <h2 style="margin:0">本日出荷</h2>
-        <span class="badge"><strong>件数</strong>&nbsp;<span id="todayCount" style="font-weight:800">0</span></span>
-      </div>
-      <table id="todayTable">
-        <thead><tr id="todayHead"></tr></thead>
-        <tbody id="todayBody"></tbody>
-      </table>
-    </section>
-
-    <section class="panel">
-      <div class="panel-title">
-        <h2 style="margin:0">全件一覧</h2>
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
-          <label class="small">出荷日：</label>
-          <input type="date" id="filterDate" style="height:36px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:#0f172a">
-          <button class="btn" id="btnToday" type="button">本日出荷のみ</button>
-          <button class="btn" id="btnClear" type="button">Clear</button>
-          <div style="margin-left:auto; display:flex; gap:8px">
-            <button class="btn" id="btnExcel" type="button">⬇ Excel</button>
-            <button class="btn" id="btnPDF" type="button">⬇ PDF</button>
-          </div>
-        </div>
-      </div>
-      <table id="shipTable">
-        <thead><tr id="shipHead"></tr></thead>
-        <tbody id="shipBody"></tbody>
-      </table>
-      <div class="small" id="shipHint" style="margin-top:8px"></div>
-    </section>
-  </main>
-</div>
-
-<!-- Hover sidebar (desktop) & Drawer (mobile) dibiarkan sama seperti sebelumnya, boleh dihapus jika tidak perlu -->
-
-<!-- LIBS -->
+<!-- libs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-  /* ========= CSV & render ========= */
+  // ==== config CSV ====
   const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
   const TAB_NAME ="最新情報";
   const CSV_URL  =`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
@@ -157,8 +60,7 @@
     let m,row=[]; t=t.replace(/\r\n?/g,"\n");
     for(let i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break;
       let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-      row.push(cell); i=re.lastIndex;
-      if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
+      row.push(cell); i=re.lastIndex; if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
     }
     return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
   }
@@ -176,16 +78,9 @@
       qty:find(["数量","Qty"]),
       to:find(["送り先","納品先","送付先"]),
       note:find(["注番","注文番号","備考","注文","Order","注釈"]),
-
-      // status utama (dropdown di sheet)
       status_done:find(["製品状況","製品状態","納品状況"]) ?? findFz(/(製品|納品).*(状況|状態)/),
-
-      // audit trail
       status_ts:   find(["製品状況更新日時","更新日時","StatusUpdatedAt"]) ?? findFz(/(更新).*(日時|日付)|updated/i),
       status_user: find(["更新者","記入者","担当者","UpdatedBy"])        ?? findFz(/(更新者|担当|by)/i),
-
-      // opsional kolom flag urgent kalau ada
-      status_flag:find(["Status","ステータス","状態","至急"]) ?? findFz(/status|至急/i),
     };
   }
   const valAt=(row,idx)=>(idx==null?"":(row[idx]??""));
@@ -199,61 +94,55 @@
   }
   function sameYMD(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
   function toInputDate(d){const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`}
-  function isUrgent(v){const t=S(v).toLowerCase(); return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true"}
 
-  /* ====== Mapping status BARU ====== */
+  /* ====== Mapping status terbaru ====== */
   function getStatusFromValue(val){
     const raw = S(val);
     const t = raw.replace(/\s/g,'');
 
-    if (!t) return { label:'未設定', cls:'tag-not' }; // kosong → belum diset
+    if (!t) return { label:'未設定', cls:'tag-not' };
 
-    if (t==='レーザ加工') return { label:'レーザ加工', cls:'tag-assem' };
-    if (t==='曲げ加工')   return { label:'曲げ加工',   cls:'tag-assem' };
-    if (t==='外注')       return { label:'外注',       cls:'tag-assem' };
+    // 加工系（進行中）
+    if (t==='レーザ加工')          return { label:'レーザ加工', cls:'tag-assem' };
+    if (t==='板金加工' || t==='曲げ加工') return { label:'板金加工', cls:'tag-assem' };
+    if (t==='外注')                return { label:'外注',     cls:'tag-assem' };
 
-    if (t==='加工完了')   return { label:'加工完了',   cls:'tag-assem-done' };
+    // 加工完了
+    if (t==='加工済' || t==='加工完了') return { label:'加工済', cls:'tag-assem-done' };
 
-    if (t==='組立中')     return { label:'組立中',     cls:'tag-assem' };
-    if (t==='組立完了')   return { label:'組立完了',   cls:'tag-assem-done' };
+    // 組立
+    if (t==='組立中')   return { label:'組立中',   cls:'tag-assem' };
+    if (t==='組立完了') return { label:'組立完了', cls:'tag-assem-done' };
 
-    if (t==='検査中')     return { label:'検査中',     cls:'tag-inspect' };
-    if (t==='検査完了')   return { label:'検査完了',   cls:'tag-done' };
+    // 検査
+    if (t==='検査中')   return { label:'検査中',   cls:'tag-inspect' };
+    if (t==='検査済' || t==='検査完了') return { label:'検査済', cls:'tag-done' };
 
-    if (t==='出荷待ち')   return { label:'出荷待ち',   cls:'tag-inspect' };
+    // 出荷
+    if (t==='出荷準備済' || t==='出荷待ち') return { label:'出荷準備済', cls:'tag-inspect' };
 
-    // fallback (data historis lama)
-    if (/(済|完了)/.test(t)) return { label:'検査完了', cls:'tag-done' };
     return { label: raw, cls:'tag-not' };
   }
 
   function makeComparator(idx){
-    // prioritas kecil → tampil lebih atas
+    // angka kecil = prioritas lebih tinggi
     const rankMap = {
       '検査中': 1,
       '組立中': 2,
       'レーザ加工': 3,
-      '曲げ加工': 3,
+      '板金加工': 3,
       '外注': 3,
-      '出荷待ち': 4,
-      '加工完了': 5,
+      '出荷準備済': 4,
+      '加工済': 5,
       '組立完了': 6,
-      '検査完了': 7,
+      '検査済': 7,
       '未設定': 98
     };
     const rank = s => (s in rankMap ? rankMap[s] : 99);
-
     return (a,b)=>{
-      // (opsional) urgent lebih dulu jika punya kolom '至急'
-      const au=idx.status_flag!=null&&isUrgent(valAt(a,idx.status_flag));
-      const bu=idx.status_flag!=null&&isUrgent(valAt(b,idx.status_flag));
-      if(au!==bu) return au?-1:1;
-
       const sa=idx.status_done!=null?(getStatusFromValue(valAt(a,idx.status_done))?.label):null;
       const sb=idx.status_done!=null?(getStatusFromValue(valAt(b,idx.status_done))?.label):null;
       if(rank(sa)!==rank(sb)) return rank(sa)-rank(sb);
-
-      // lalu terbaru (tanggal) lebih atas
       const da=idx.date!=null?parseJPDate(valAt(a,idx.date)):null;
       const db=idx.date!=null?parseJPDate(valAt(b,idx.date)):null;
       const ta=da?da.getTime():-Infinity, tb=db?db.getTime():-Infinity;
@@ -270,7 +159,6 @@
       const d=idx.date!=null?parseJPDate(valAt(r,idx.date)):null;
       const dateText=d?toInputDate(d):S(r[dateCol]??'');
 
-      // badge status + metadata
       const st=idx.status_done!=null?getStatusFromValue(valAt(r,idx.status_done)):null;
       let badge='';
       if(st){
@@ -283,54 +171,27 @@
         badge=`<span class="tag ${st.cls}">${st.label}</span>${meta}`;
       }
 
-      // (default) tampilkan badge di kolom 出荷日 seperti mockup
+      // DEFAULT: tampilkan badge di kolom 出荷日 (seperti mockup)
       tds[dateCol]=`<td>${badge}${dateText}</td>`;
 
-      // === Jika ingin badge di kolom 製品状況, pakai ini (ganti baris di atas):
+      // JIKA ingin badge di kolom 製品状況, pakai baris di bawah ini dan hapus baris di atas:
       // tds[idx.status_done] = `<td>${badge}</td>`;
 
       tbodyEl.insertAdjacentHTML('beforeend', `<tr>${tds.join('')}</tr>`);
     });
   }
 
-  let aborter=null,isLoading=false; let cached={header:[],rows:[],idx:null,cmp:null};
+  let cached={header:[],rows:[],idx:null,cmp:null};
 
   async function load(){
-    try{
-      if(isLoading){aborter?.abort()} isLoading=true;
-      const res=await fetch(CSV_URL+"&_ts="+Date.now(),{cache:'no-store'});
-      if(!res.ok) throw new Error("HTTP "+res.status);
-      const text=await res.text(); const data=parseCSV(text); if(!data.length) throw new Error("CSV empty");
-      const header=data[0], rowsRaw=data.slice(1); const idx=indexByName(header); const cmp=makeComparator(idx);
-      const rows=[...rowsRaw].sort(cmp); cached={header,rows,idx,cmp};
-
-      renderTodaySection(); applyFilter(null);
-
-      const cols=[]; if(idx.qty!=null) cols.push('数量:'+header[idx.qty]);
-      if(idx.cust!=null) cols.push('顧客:'+header[idx.cust]);
-      if(idx.date!=null) cols.push('出荷日:'+header[idx.date]);
-      document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）｜${cols.join(' ｜ ')}`;
-      document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
-      document.getElementById('filterDate').value=toInputDate(new Date());
-
-      // Banner urgent (opsional)
-      const banner=document.getElementById('urgent-banner');
-      banner.style.display='none';
-    }catch(e){
-      console.error(e);
-      document.getElementById('shipHint').textContent='読み込みに失敗しました。シート名/公開設定/列名をご確認ください。';
-    }finally{
-      isLoading=false;
-    }
-  }
-
-  function renderTodaySection(){
-    const {header,rows,idx,cmp}=cached; if(!idx || idx.date==null){document.getElementById('todaySection').style.display='none'; return;}
-    const today=new Date();
-    const todayRows=rows.filter(r=>{const d=parseJPDate(valAt(r,idx.date)); return d&&sameYMD(d,today)}).sort(cmp);
-    const vis=todayRows.length>0; document.getElementById('todaySection').style.display=vis?'':'none'; if(!vis) return;
-    document.getElementById('todayCount').textContent=todayRows.length;
-    renderTable(header,idx,todayRows,document.getElementById('todayBody'),document.getElementById('todayHead'));
+    const res=await fetch(CSV_URL+"&_ts="+Date.now(),{cache:'no-store'});
+    const text=await res.text(); const data=parseCSV(text); if(!data.length) throw new Error("CSV empty");
+    const header=data[0], rowsRaw=data.slice(1); const idx=indexByName(header); const cmp=makeComparator(idx);
+    const rows=[...rowsRaw].sort(cmp); cached={header,rows,idx,cmp};
+    applyFilter(null);
+    const cols=[]; if(idx.qty!=null) cols.push('数量:'+header[idx.qty]); if(idx.cust!=null) cols.push('顧客:'+header[idx.cust]); if(idx.date!=null) cols.push('出荷日:'+header[idx.date]);
+    document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）｜${cols.join(' ｜ ')}`;
+    document.getElementById('filterDate').value=toInputDate(new Date());
   }
 
   function applyFilter(dateStr){
@@ -343,21 +204,16 @@
   }
 
   function exportExcel(){const table=document.getElementById("shipTable"); const wb=XLSX.utils.table_to_book(table,{sheet:"出荷状況"}); XLSX.writeFile(wb,"出荷状況.xlsx");}
-  function exportPDF(){const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"});
-    doc.setFontSize(14); doc.text("出荷状況一覧",40,40);
-    doc.autoTable({html:"#shipTable", startY:60, styles:{fontSize:9, cellPadding:4, halign:"center", valign:"middle"}, headStyles:{fillColor:[238,242,247]}});
-    doc.save("出荷状況.pdf");
-  }
+  function exportPDF(){const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"}); doc.setFontSize(14); doc.text("出荷状況一覧",40,40); doc.autoTable({html:"#shipTable", startY:60, styles:{fontSize:9, cellPadding:4, halign:"center", valign:"middle"}, headStyles:{fillColor:[238,242,247]}}); doc.save("出荷状況.pdf");}
 
-  document.getElementById("btnExcel")?.addEventListener("click", exportExcel);
-  document.getElementById("btnPDF")?.addEventListener("click", exportPDF);
-  document.getElementById('btnRefresh')?.addEventListener('click', load);
-  document.getElementById('btnToday')?.addEventListener('click', ()=>applyFilter(toInputDate(new Date())));
-  document.getElementById('btnClear')?.addEventListener('click', ()=>{document.getElementById('filterDate').value=""; applyFilter(null);});
-  document.getElementById('filterDate')?.addEventListener('change', e=>applyFilter(e.target.value||null));
+  document.getElementById("btnExcel").addEventListener("click", exportExcel);
+  document.getElementById("btnPDF").addEventListener("click", exportPDF);
+  document.getElementById('btnRefresh').addEventListener('click', load);
+  document.getElementById('btnToday').addEventListener('click', ()=>applyFilter(toInputDate(new Date())));
+  document.getElementById('btnClear').addEventListener('click', ()=>{document.getElementById('filterDate').value=""; applyFilter(null);});
+  document.getElementById('filterDate').addEventListener('change', e=>applyFilter(e.target.value||null));
 
-  // Init
-  window.addEventListener('DOMContentLoaded', ()=>{ load(); });
+  window.addEventListener('DOMContentLoaded', load);
 </script>
 </body>
 </html>
