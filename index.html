@@ -10,7 +10,7 @@
     --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb; --ring:#c7d2fe;
     --accent:#2563eb; --danger:#dc2626; --success:#10b981; --warning:#f59e0b; --purple:#8b5cf6;
     --radius-xl:22px; --radius:12px; --shadow-1:0 12px 30px rgba(15,23,42,.08); --shadow-2:0 30px 60px rgba(15,23,42,.10);
-    --gutter-w: 88px;
+    --gutter-w: 120px;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -42,8 +42,7 @@
   .edge-hotspot{ position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:70; }
   .hover-side{
     position:fixed; left:0; top:64px; height:calc(100vh - 64px);
-    width:260px; padding:14px 12px; overflow:auto;
-    background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
+    width:260px; padding:14px 12px; overflow:auto; background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
     transform:translateX(-100%); transition:transform .22s ease; z-index:71;
   }
   .hover-side.open{ transform:translateX(0) }
@@ -53,7 +52,7 @@
   .slink:hover{ background:#f1f5ff }
   .ico{ width:22px; text-align:center }
 
-  /* ===== Drawer (mobile) ===== */
+  /* ===== Drawer ===== */
   .drawer{ position:fixed; inset:0; z-index:80; display:none }
   .drawer.open{ display:block }
   .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
@@ -71,30 +70,36 @@
   .panel-title{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px }
 
   /* ===== Table ===== */
-  table{width:100%; border-collapse:separate; border-spacing:0; min-width:1000px}
+  table{width:100%; border-collapse:separate; border-spacing:0; min-width:1100px}
   thead th{position:sticky; top:0; z-index:2; background:#f8fafc; color:#475569; text-align:left; font-weight:800; padding:12px 14px; border-bottom:1px solid var(--border)}
-  tbody td{padding:12px 14px; border-bottom:1px solid var(--border); white-space:nowrap; background:#fff}
+  tbody td{padding:16px 14px; border-bottom:1px solid var(--border); white-space:nowrap; background:#fff}
   tbody tr:hover td{background:#f6f9ff}
   tbody tr.row-urgent td{background:#fee2e2 !important; color:#b91c1c; font-weight:600}
   .flag-urgent{display:inline-flex; align-items:center; gap:6px; padding:2px 10px; margin-right:8px; border-radius:999px; background:var(--danger); color:#fff; font-weight:800; font-size:12px}
 
-  /* ===== LEFT GUTTER (sticky), looks like in screenshot ===== */
+  /* ===== LEFT GUTTER (sticky) ===== */
   .gutter-th, .gutter-td{
     position:sticky; left:0; z-index:3; width:var(--gutter-w); min-width:var(--gutter-w); max-width:var(--gutter-w);
     background:linear-gradient(180deg,#f8fafc,#eef2ff);
     border-right:1px solid var(--border);
   }
   .gutter-td{ z-index:1; background:linear-gradient(180deg,#ffffff,#f8fafc)}
-  .gutter-box{
-    display:flex; flex-direction:column; align-items:flex-start; gap:6px;
-    padding:8px 8px; min-height:60px;
+  .status-card{
+    width:calc(var(--gutter-w) - 20px);
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px 10px;
+    box-shadow:0 6px 16px rgba(15,23,42,.06);
+    display:flex; flex-direction:column; gap:8px;
   }
-  .status-badge{ display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:800; font-size:12px; color:#fff }
+  .status-badge{ display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:800; font-size:12px; color:#fff; }
   .tag-done{background:#0ea5e9}.tag-assem{background:var(--warning)}.tag-assem-done{background:var(--success)}.tag-inspect{background:#8b5cf6}.tag-not{background:#94a3b8}
-  .status-meta{font-size:11px; line-height:1.25; color:#475569; white-space:normal}
+  .status-line{ font-size:11px; color:#475569; line-height:1.35; }
+  .status-line b{ color:#0f172a; }
 
   /* 出荷日 chip */
-  .chip{display:inline-block; padding:6px 12px; border-radius:999px; font-size:12px; font-weight:800; border:1px solid #cfe8ff; background:#e0f2fe; color:#0f172a}
+  .chip{display:inline-block; padding:8px 14px; border-radius:999px; font-size:12px; font-weight:800; border:1px solid #cfe8ff; background:#e0f2fe; color:#0f172a}
   .chip-date{ background:#e0f2fe; border-color:#bae6fd}
 
   /* Ticker + footer */
@@ -273,7 +278,6 @@
     const find=nms=>{ for(const n of nms){ if(n in map) return map[n]; } return null; };
     const findFz=re=>{ for(let i=0;i<header.length;i++){ if(re.test(S(header[i]))) return i; } return null; };
     return {
-      gutter:true, // kolom pertama sintetis (gutter)
       date:find(["出荷日","日付","Date"]),
       cust:find(["顧客名","客先","Customer"]),
       draw:find(["図番","Drawing","図面"]),
@@ -296,7 +300,6 @@
     const s=String(str??"").trim();
     const mJP=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
     if(mJP) return new Date(mJP[1],mJP[2]-1,mJP[3]);
-    const p=s.replaceAll('-','/').split('/'); if(p.length===3) return new Date(p[0],p[1]-1,p[2]);
     const d=new Date(s); return isNaN(d)?null:d;
   }
   function sameYMD(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
@@ -304,7 +307,7 @@
 
   function isUrgent(v){const t=S(v).toLowerCase(); return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true"}
 
-  /* ====== Mapping status baru ====== */
+  /* ====== Mapping status ====== */
   function getStatusFromValue(val){
     const raw = S(val); const t = raw.replace(/\s/g,'');
     if (!t) return { label:'未設定', cls:'tag-not' };
@@ -339,8 +342,16 @@
   }
 
   /* ====== RENDER ====== */
+  function fmtTs(tsRaw){
+    if(!tsRaw) return '';
+    const d = new Date(tsRaw);
+    if(isNaN(d)) return '';
+    const z=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`;
+  }
+
   function renderTable(header, idx, rows, tbodyEl, headEl){
-    // sisipkan kolom gutter pada header
+    // tambah kolom gutter di header
     const headCells = [''].concat(header);
     headEl.innerHTML = headCells.map((h,i)=> i===0 ? `<th class="gutter-th"></th>` : `<th>${h}</th>`).join('');
 
@@ -356,21 +367,19 @@
       const urgent=rowUrg?`<span class="flag-urgent">⚠ 至急</span>`:'';
       tds[dateCol]=`<td>${urgent}${dateText?`<span class="chip chip-date">${dateText}</span>`:''}</td>`;
 
-      // status + meta
+      // status + meta (更新日・更新者) di gutter card
       const st = idx.status_done!=null ? getStatusFromValue(valAt(r, idx.status_done)) : null;
-      const tsRaw = idx.status_ts!=null ? valAt(r, idx.status_ts) : '';
-      const ts = tsRaw ? new Date(tsRaw) : null;
-      const tsView = (ts && !isNaN(ts))
-        ? `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')}`
-        : '';
-      const user = idx.status_user!=null ? S(valAt(r, idx.status_user)) : '';
+      const tsView = fmtTs(idx.status_ts!=null ? valAt(r, idx.status_ts) : '');
+      const user = S(idx.status_user!=null ? valAt(r, idx.status_user) : '');
+      const tsSafe = tsView || '—';
+      const userSafe = user || '—';
+
       const gutterHtml = `
         <td class="gutter-td">
-          <div class="gutter-box">
-            ${st?`<span class="status-badge ${st.cls}">${st.label}</span>`:''}
-            <div class="status-meta">
-              ${tsView?tsView:''}${(tsView&&user)?'<br>':''}${user?user:''}
-            </div>
+          <div class="status-card">
+            ${st?`<span class="status-badge ${st.cls}">${st.label}</span>`:`<span class="status-badge tag-not">未設定</span>`}
+            <div class="status-line"><b>更新日：</b>${tsSafe}</div>
+            <div class="status-line"><b>更新者：</b>${userSafe}</div>
           </div>
         </td>`;
 
