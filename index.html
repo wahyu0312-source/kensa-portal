@@ -7,9 +7,15 @@
 
 <style>
   :root{
-    --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb; --ring:#c7d2fe;
-    --accent:#2563eb; --danger:#dc2626; --success:#10b981; --warning:#f59e0b; --purple:#8b5cf6;
-    --radius-xl:22px; --radius:12px; --shadow-1:0 12px 30px rgba(15,23,42,.08); --shadow-2:0 30px 60px rgba(15,23,42,.10);
+    /* ===== Blue brand palette ===== */
+    --blue-50:#eff6ff; --blue-100:#dbeafe; --blue-200:#bfdbfe; --blue-300:#93c5fd;
+    --blue-400:#60a5fa; --blue-500:#3b82f6; --blue-600:#2563eb; --blue-700:#1d4ed8;
+    --blue-800:#1e40af; --blue-900:#1e3a8a;
+
+    --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
+    --ring:#c7d2fe; --accent:var(--blue-600);
+    --radius-xl:22px; --radius:12px;
+    --shadow-1:0 12px 30px rgba(15,23,42,.08); --shadow-2:0 30px 60px rgba(15,23,42,.10);
     --gutter-w: 120px;
   }
   *{box-sizing:border-box}
@@ -18,8 +24,8 @@
     margin:0; color:var(--ink);
     font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
     background:
-      radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
-      radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
+      radial-gradient(1200px 600px at -10% -10%, var(--blue-100) 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 0%, var(--blue-50) 0%, transparent 55%),
       linear-gradient(120deg,#f8fafc,var(--bg));
   }
   a{color:inherit; text-decoration:none}
@@ -42,14 +48,15 @@
   .edge-hotspot{ position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:70; }
   .hover-side{
     position:fixed; left:0; top:64px; height:calc(100vh - 64px);
-    width:260px; padding:14px 12px; overflow:auto; background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
+    width:260px; padding:14px 12px; overflow:auto;
+    background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
     transform:translateX(-100%); transition:transform .22s ease; z-index:71;
   }
   .hover-side.open{ transform:translateX(0) }
   .hover-side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
   .navlist{ display:grid; gap:4px }
   .slink{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink) }
-  .slink:hover{ background:#f1f5ff }
+  .slink:hover{ background:var(--blue-50) }
   .ico{ width:22px; text-align:center }
 
   /* ===== Drawer ===== */
@@ -73,34 +80,47 @@
   table{width:100%; border-collapse:separate; border-spacing:0; min-width:1100px}
   thead th{position:sticky; top:0; z-index:2; background:#f8fafc; color:#475569; text-align:left; font-weight:800; padding:12px 14px; border-bottom:1px solid var(--border)}
   tbody td{padding:16px 14px; border-bottom:1px solid var(--border); white-space:nowrap; background:#fff}
-  tbody tr:hover td{background:#f6f9ff}
+  tbody tr:hover td{background:#f6faff}
   tbody tr.row-urgent td{background:#fee2e2 !important; color:#b91c1c; font-weight:600}
-  .flag-urgent{display:inline-flex; align-items:center; gap:6px; padding:2px 10px; margin-right:8px; border-radius:999px; background:var(--danger); color:#fff; font-weight:800; font-size:12px}
+  .flag-urgent{display:inline-flex; align-items:center; gap:6px; padding:2px 10px; margin-right:8px; border-radius:999px; background:#ef4444; color:#fff; font-weight:800; font-size:12px}
 
   /* ===== LEFT GUTTER (sticky) ===== */
   .gutter-th, .gutter-td{
     position:sticky; left:0; z-index:3; width:var(--gutter-w); min-width:var(--gutter-w); max-width:var(--gutter-w);
-    background:linear-gradient(180deg,#f8fafc,#eef2ff);
+    background:linear-gradient(180deg,#f8fafc,var(--blue-50));
     border-right:1px solid var(--border);
   }
   .gutter-td{ z-index:1; background:linear-gradient(180deg,#ffffff,#f8fafc)}
   .status-card{
     width:calc(var(--gutter-w) - 20px);
     background:#fff;
-    border:1px solid var(--border);
-    border-radius:14px;
+    border:1px solid var(--blue-100);
+    border-radius:16px;
     padding:10px 10px;
-    box-shadow:0 6px 16px rgba(15,23,42,.06);
+    box-shadow:0 6px 16px rgba(37,99,235,.08);
     display:flex; flex-direction:column; gap:8px;
   }
-  .status-badge{ display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:800; font-size:12px; color:#fff; }
-  .tag-done{background:#0ea5e9}.tag-assem{background:var(--warning)}.tag-assem-done{background:var(--success)}.tag-inspect{background:#8b5cf6}.tag-not{background:#94a3b8}
-  .status-line{ font-size:11px; color:#475569; line-height:1.35; }
-  .status-line b{ color:#0f172a; }
 
-  /* 出荷日 chip */
-  .chip{display:inline-block; padding:8px 14px; border-radius:999px; font-size:12px; font-weight:800; border:1px solid #cfe8ff; background:#e0f2fe; color:#0f172a}
-  .chip-date{ background:#e0f2fe; border-color:#bae6fd}
+  /* ===== Blue badges (variasi biru) ===== */
+  .status-badge{
+    font-size:13px; padding:4px 12px; border-radius:999px; color:#fff; font-weight:800;
+  }
+  .tag-done{background:var(--blue-600)}        /* 検査済/検査完了 */
+  .tag-assem{background:var(--blue-500)}       /* レーザ/板金/外注/組立中 */
+  .tag-assem-done{background:var(--blue-700)}  /* 加工済/組立完了 */
+  .tag-inspect{background:var(--blue-400)}     /* 検査中/出荷準備 */
+  .tag-not{background:#94a3b8}
+
+  .status-line{ font-size:12px; color:#475569; line-height:1.35; }
+  .status-line b{ color:#0f172a; font-weight:800; }
+
+  /* 出荷日 chip (biru) */
+  .chip{
+    display:inline-block; padding:9px 16px; border-radius:999px;
+    font-size:13px; font-weight:800;
+    border:1px solid var(--blue-200); background:var(--blue-50); color:#0f172a;
+  }
+  .chip-date{ background:var(--blue-100); border-color:var(--blue-200) }
 
   /* Ticker + footer */
   .marquee{position:fixed; left:20px; right:20px; bottom:20px; z-index:30; background:var(--accent); color:#fff; font-weight:800; border-radius:12px; box-shadow:var(--shadow-1); white-space:nowrap; overflow:hidden}
@@ -296,12 +316,7 @@
   }
   const valAt=(row,idx)=>(idx==null?"":(row[idx]??""));
 
-  function parseJPDate(str){
-    const s=String(str??"").trim();
-    const mJP=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
-    if(mJP) return new Date(mJP[1],mJP[2]-1,mJP[3]);
-    const d=new Date(s); return isNaN(d)?null:d;
-  }
+  function parseJPDate(str){ const s=String(str??"").trim(); const d=new Date(s.replace(/-/g,'/')); return isNaN(d)?null:d; }
   function sameYMD(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
   function toInputDate(d){const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`}
 
@@ -351,7 +366,6 @@
   }
 
   function renderTable(header, idx, rows, tbodyEl, headEl){
-    // tambah kolom gutter di header
     const headCells = [''].concat(header);
     headEl.innerHTML = headCells.map((h,i)=> i===0 ? `<th class="gutter-th"></th>` : `<th>${h}</th>`).join('');
 
@@ -360,14 +374,12 @@
       const rowUrg=idx.status_flag!=null?isUrgent(valAt(r,idx.status_flag)):false;
       const tds=header.map((_,i)=>`<td>${S(r[i])}</td>`);
 
-      // 出荷日 sebagai chip biru
       const dateCol=(idx.date!=null?idx.date:0);
       const d=idx.date!=null?parseJPDate(valAt(r,idx.date)):null;
       const dateText=d?toInputDate(d):S(r[dateCol]??'');
       const urgent=rowUrg?`<span class="flag-urgent">⚠ 至急</span>`:'';
       tds[dateCol]=`<td>${urgent}${dateText?`<span class="chip chip-date">${dateText}</span>`:''}</td>`;
 
-      // status + meta (更新日・更新者) di gutter card
       const st = idx.status_done!=null ? getStatusFromValue(valAt(r, idx.status_done)) : null;
       const tsView = fmtTs(idx.status_ts!=null ? valAt(r, idx.status_ts) : '');
       const user = S(idx.status_user!=null ? valAt(r, idx.status_user) : '');
@@ -471,7 +483,6 @@
 
   // Init
   window.addEventListener('DOMContentLoaded', ()=>{
-    setAdmin(isAdmin());
     load(); startAutoRefresh(60000);
   });
 </script>
