@@ -10,6 +10,7 @@
     --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb; --ring:#c7d2fe;
     --accent:#2563eb; --danger:#dc2626; --success:#10b981; --warning:#f59e0b; --purple:#8b5cf6;
     --radius-xl:22px; --radius:12px; --shadow-1:0 12px 30px rgba(15,23,42,.08); --shadow-2:0 30px 60px rgba(15,23,42,.10);
+    --gutter-w: 88px;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -24,36 +25,17 @@
   a{color:inherit; text-decoration:none}
 
   /* ===== Shell ===== */
-  .app{
-    display:grid;
-    grid-template-rows:64px 1fr;
-    grid-template-areas:"header""main";
-    min-height:100vh;
-  }
-  header{
-    grid-area:header; position:sticky; top:0; z-index:60;
-    backdrop-filter:blur(12px); background:#ffffffc7; border-bottom:1px solid var(--border);
-  }
-  .header-wrap{
-    height:64px; max-width:1400px; margin:0 auto;
-    display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 14px;
-  }
+  .app{display:grid; grid-template-rows:64px 1fr; grid-template-areas:"header" "main"; min-height:100vh}
+  header{grid-area:header; position:sticky; top:0; z-index:60; backdrop-filter:blur(12px); background:#ffffffc7; border-bottom:1px solid var(--border)}
+  .header-wrap{height:64px; max-width:1400px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 14px}
   .brand{display:flex; align-items:center; gap:10px}
   .brand img{height:36px}
   .ttl{font-weight:800}
   .top-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-  .btn{
-    display:inline-flex; align-items:center; gap:8px; line-height:1;
-    height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--border); background:#fff; cursor:pointer;
-  }
+  .btn{display:inline-flex; align-items:center; gap:8px; line-height:1; height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--border); background:#fff; cursor:pointer}
   .btn:hover{border-color:var(--ring)}
-  .badge{
-    height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px;
-    font-size:12px; font-weight:700; color:var(--ink);
-    background:#f1f5f9; border:1px solid var(--border); border-radius:999px
-  }
-  .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px;
-          border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
+  .badge{height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--ink); background:#f1f5f9; border:1px solid var(--border); border-radius:999px}
+  .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
   .burger:active{transform:scale(.98)}
 
   /* ===== Hover Sidebar (desktop) ===== */
@@ -75,11 +57,7 @@
   .drawer{ position:fixed; inset:0; z-index:80; display:none }
   .drawer.open{ display:block }
   .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
-  .drawer .panel{
-    position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
-    background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto;
-    transform:translateX(-100%); transition:transform .25s ease
-  }
+  .drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px); background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto; transform:translateX(-100%); transition:transform .25s ease }
   .drawer.open .panel{ transform:translateX(0) }
   .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
 
@@ -92,23 +70,32 @@
   .panel + .panel{ margin-top:18px }
   .panel-title{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px }
 
-  /* Table */
-  table{width:100%; border-collapse:separate; border-spacing:0; min-width:900px}
-  thead th{position:sticky; top:0; z-index:1; background:#f8fafc; color:#475569; text-align:left; font-weight:800; padding:12px 14px; border-bottom:1px solid var(--border)}
-  tbody td{padding:12px 14px; border-bottom:1px solid var(--border); white-space:nowrap}
-  tbody tr:hover{background:#f6f9ff}
+  /* ===== Table ===== */
+  table{width:100%; border-collapse:separate; border-spacing:0; min-width:1000px}
+  thead th{position:sticky; top:0; z-index:2; background:#f8fafc; color:#475569; text-align:left; font-weight:800; padding:12px 14px; border-bottom:1px solid var(--border)}
+  tbody td{padding:12px 14px; border-bottom:1px solid var(--border); white-space:nowrap; background:#fff}
+  tbody tr:hover td{background:#f6f9ff}
   tbody tr.row-urgent td{background:#fee2e2 !important; color:#b91c1c; font-weight:600}
   .flag-urgent{display:inline-flex; align-items:center; gap:6px; padding:2px 10px; margin-right:8px; border-radius:999px; background:var(--danger); color:#fff; font-weight:800; font-size:12px}
-  .urgent-banner{background:var(--danger); color:#fff; padding:10px 16px; border-radius:12px; text-align:center; font-weight:800; animation:blink 1s infinite}
-  @keyframes blink{0%,50%,100%{opacity:1}25%,75%{opacity:.75}}
-  .tag{display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:800; font-size:12px; color:#fff; margin-right:8px}
-  .tag-done{background:#0ea5e9}.tag-assem{background:var(--warning)}.tag-assem-done{background:var(--success)}.tag-inspect{background:#8b5cf6}.tag-not{background:#94a3b8}
 
-  /* === chip untuk tanggal (出荷日) === */
-  .chip{display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; line-height:1; border:1px solid var(--border); background:#f1f5f9; color:#0f172a}
-  .chip-date{background:#e0f2fe; border-color:#bae6fd;}
-  .status-meta{display:block; margin-top:4px; font-size:11px; color:#64748b;}
-  .status-cell{display:flex; flex-direction:column; align-items:flex-start; gap:2px;}
+  /* ===== LEFT GUTTER (sticky), looks like in screenshot ===== */
+  .gutter-th, .gutter-td{
+    position:sticky; left:0; z-index:3; width:var(--gutter-w); min-width:var(--gutter-w); max-width:var(--gutter-w);
+    background:linear-gradient(180deg,#f8fafc,#eef2ff);
+    border-right:1px solid var(--border);
+  }
+  .gutter-td{ z-index:1; background:linear-gradient(180deg,#ffffff,#f8fafc)}
+  .gutter-box{
+    display:flex; flex-direction:column; align-items:flex-start; gap:6px;
+    padding:8px 8px; min-height:60px;
+  }
+  .status-badge{ display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:800; font-size:12px; color:#fff }
+  .tag-done{background:#0ea5e9}.tag-assem{background:var(--warning)}.tag-assem-done{background:var(--success)}.tag-inspect{background:#8b5cf6}.tag-not{background:#94a3b8}
+  .status-meta{font-size:11px; line-height:1.25; color:#475569; white-space:normal}
+
+  /* 出荷日 chip */
+  .chip{display:inline-block; padding:6px 12px; border-radius:999px; font-size:12px; font-weight:800; border:1px solid #cfe8ff; background:#e0f2fe; color:#0f172a}
+  .chip-date{ background:#e0f2fe; border-color:#bae6fd}
 
   /* Ticker + footer */
   .marquee{position:fixed; left:20px; right:20px; bottom:20px; z-index:30; background:var(--accent); color:#fff; font-weight:800; border-radius:12px; box-shadow:var(--shadow-1); white-space:nowrap; overflow:hidden}
@@ -117,11 +104,7 @@
   .footer{position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:#64748b; background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border)}
 
   .admin-only{ display:none }
-
-  @media (max-width:900px){
-    .burger{ display:inline-flex }
-    .edge-hotspot, .hover-side{ display:none }
-  }
+  @media (max-width:900px){ .burger{ display:inline-flex } .edge-hotspot, .hover-side{ display:none } }
 </style>
 </head>
 
@@ -131,12 +114,10 @@
   <header>
     <div class="header-wrap">
       <button id="btnBurger" class="burger" aria-label="メニュー"><span>☰</span></button>
-
       <div class="brand">
         <img src="tsh.png" alt="TSH" onerror="this.style.display='none'">
         <div class="ttl"><strong>品質管理生産技術</strong></div>
       </div>
-
       <nav class="top-actions">
         <button id="btnRefresh" class="btn" type="button">⟳ Refresh</button>
         <button id="btnLive" class="btn" type="button" aria-pressed="false">● Live</button>
@@ -203,7 +184,6 @@
     <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
     <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
   </div>
-
   <div class="admin-only" style="margin-top:12px">
     <h3>Admin</h3>
     <div class="navlist">
@@ -228,7 +208,6 @@
       <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
       <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
     </div>
-
     <div class="admin-only" style="margin-top:12px">
       <h3>Admin</h3>
       <div class="navlist">
@@ -250,77 +229,32 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-  /* ========= Drawer (mobile) ========= */
+  /* ========= Drawer ========= */
   const drawer = document.getElementById('drawer');
-  document.getElementById('btnBurger')?.addEventListener('click', ()=>{
-    drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');
-  });
-  drawer?.addEventListener('click', (e)=>{
-    if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
-  });
+  document.getElementById('btnBurger')?.addEventListener('click', ()=>{ drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); });
+  drawer?.addEventListener('click', (e)=>{ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); } });
 
-  /* ========= Admin & Prefix (standardisasi + reset per sesi) ========= */
-  const ADMIN_FLAG_KEY = 'kensa_admin';
-  const PREFIX_KEY     = 'kensa_prefix';
-  const LEGACY_ADMIN_KEYS  = ['admin_okuma','kensa_admin_okuma','admin_flag'];
-  const LEGACY_PREFIX_KEYS = ['prefix','okuma_prefix','kensa_prefix_okuma'];
-
-  (function resetAdminOncePerSession(){
-    if (!sessionStorage.getItem('kensa_boot_done')) {
-      localStorage.removeItem(ADMIN_FLAG_KEY);
-      LEGACY_ADMIN_KEYS.forEach(k => localStorage.removeItem(k));
-      sessionStorage.setItem('kensa_boot_done','1');
-    }
-  })();
-
-  (function migratePrefix(){
-    if (!localStorage.getItem(PREFIX_KEY)) {
-      for (const k of LEGACY_PREFIX_KEYS) {
-        const v = localStorage.getItem(k);
-        if (v && v.trim()) { localStorage.setItem(PREFIX_KEY, v.trim()); break; }
-      }
-    }
-  })();
-
-  function setAdmin(on){
-    document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
-    if (on){
-      localStorage.setItem(ADMIN_FLAG_KEY,'1');
-      LEGACY_ADMIN_KEYS.forEach(k=>localStorage.setItem(k,'1'));
-    } else {
-      localStorage.removeItem(ADMIN_FLAG_KEY);
-      LEGACY_ADMIN_KEYS.forEach(k=>localStorage.removeItem(k));
-    }
-    const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
-  }
+  /* ========= Admin ========= */
+  const ADMIN_FLAG_KEY='kensa_admin', PREFIX_KEY='kensa_prefix';
+  const LEGACY_ADMIN_KEYS=['admin_okuma','kensa_admin_okuma','admin_flag'];
+  const LEGACY_PREFIX_KEYS=['prefix','okuma_prefix','kensa_prefix_okuma'];
+  (function resetAdminOncePerSession(){ if(!sessionStorage.getItem('kensa_boot_done')){ localStorage.removeItem(ADMIN_FLAG_KEY); LEGACY_ADMIN_KEYS.forEach(k=>localStorage.removeItem(k)); sessionStorage.setItem('kensa_boot_done','1'); }})();
+  (function migratePrefix(){ if(!localStorage.getItem(PREFIX_KEY)){ for(const k of LEGACY_PREFIX_KEYS){ const v=localStorage.getItem(k); if(v&&v.trim()){ localStorage.setItem(PREFIX_KEY,v.trim()); break; }}}})();
+  function setAdmin(on){ document.querySelectorAll('.admin-only').forEach(el=> el.style.display=on?'':'none'); if(on){ localStorage.setItem(ADMIN_FLAG_KEY,'1'); LEGACY_ADMIN_KEYS.forEach(k=>localStorage.setItem(k,'1')); }else{ localStorage.removeItem(ADMIN_FLAG_KEY); LEGACY_ADMIN_KEYS.forEach(k=>localStorage.removeItem(k)); } const b=document.getElementById('btnAdmin'); if(b) b.textContent=on?'管理（ON）':'管理';}
   function isAdmin(){ return localStorage.getItem(ADMIN_FLAG_KEY)==='1'; }
+  document.getElementById('btnAdmin')?.addEventListener('click', ()=>{ if(isAdmin()){ if(confirm('Admin akan dimatikan. Lanjut?')) setAdmin(false); }else{ const code=prompt('Admin code:'); const ADMIN_CODE='admin2025'; if(code===ADMIN_CODE) setAdmin(true); else alert('Kode tidak sesuai'); }});
 
-  document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
-    if(isAdmin()){
-      if(confirm('Admin akan dimatikan. Lanjut?')) setAdmin(false);
-    }else{
-      const code = prompt('Admin code:');
-      const ADMIN_CODE = 'admin2025';
-      if(code===ADMIN_CODE) setAdmin(true); else alert('Kode tidak sesuai');
-    }
-  });
+  /* ========= Sidebar hover ========= */
+  const hot=document.getElementById('edgeHotspot'); const fly=document.getElementById('hoverSide');
+  let hideTimer=null; const HIDE_DELAY=280;
+  function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); } function scheduleClose(){ clearTimeout(hideTimer); hideTimer=setTimeout(()=>fly.classList.remove('open'),HIDE_DELAY); }
+  hot?.addEventListener('mouseenter', openFly); hot?.addEventListener('mouseleave', scheduleClose);
+  fly?.addEventListener('mouseenter', ()=>clearTimeout(hideTimer)); fly?.addEventListener('mouseleave', scheduleClose);
 
-  /* ========= EDGE-HOVER sidebar (desktop) ========= */
-  const hot = document.getElementById('edgeHotspot');
-  const fly = document.getElementById('hoverSide');
-  let hideTimer = null;
-  const HIDE_DELAY = 280;
-  function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
-  function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
-  hot?.addEventListener('mouseenter', openFly);
-  hot?.addEventListener('mouseleave', scheduleClose);
-  fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer));
-  fly?.addEventListener('mouseleave', scheduleClose);
-
-  /* ========= CSV & render ========= */
-  const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
-  const TAB_NAME ="最新情報";
-  const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
+  /* ========= Data load ========= */
+  const SHEET_ID="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
+  const TAB_NAME="最新情報";
+  const CSV_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
   const S = s => String(s ?? '').trim();
 
   function parseCSV(t){
@@ -339,28 +273,21 @@
     const find=nms=>{ for(const n of nms){ if(n in map) return map[n]; } return null; };
     const findFz=re=>{ for(let i=0;i<header.length;i++){ if(re.test(S(header[i]))) return i; } return null; };
     return {
+      gutter:true, // kolom pertama sintetis (gutter)
       date:find(["出荷日","日付","Date"]),
       cust:find(["顧客名","客先","Customer"]),
       draw:find(["図番","Drawing","図面"]),
-      item:find(["商品名","品名","Item"]),
       machine:find(["機種","機種名","Machine"]),
+      item:find(["商品名","品名","Item"]),
       qty:find(["数量","Qty"]),
       to:find(["送り先","納品先","送付先"]),
       note:find(["注番","注文番号","備考","注文","Order","注釈"]),
 
-      // status utama + audit
       status_done:find(["製品状況","製品状態","納品状況"]) ?? findFz(/(製品|納品).*(状況|状態)/),
       status_ts:   find(["製品状況更新日時","更新日時","StatusUpdatedAt"]) ?? findFz(/(更新).*(日時|日付)|updated/i),
       status_user: find(["更新者","記入者","担当者","UpdatedBy"])        ?? findFz(/(更新者|担当|by)/i),
 
-      // optional flags
       status_flag:find(["Status","ステータス","状態","至急"]) ?? findFz(/status|至急/i),
-
-      // optional QC (biarkan kalau ada)
-      qc_check:find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFz(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
-      qc_label:find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"]) ?? findFz(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
-      qc_result:find(["検査成績表","成績表","InspectionReport"]) ?? findFz(/(検査|inspection).*(成績|report)/i),
-      qc_pack:find(["梱包","Packing","包装"]) ?? findFz(/(梱包|packing|包装)/i),
     };
   }
   const valAt=(row,idx)=>(idx==null?"":(row[idx]??""));
@@ -377,62 +304,33 @@
 
   function isUrgent(v){const t=S(v).toLowerCase(); return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true"}
 
-  /* ====== Mapping status BARU ====== */
+  /* ====== Mapping status baru ====== */
   function getStatusFromValue(val){
-    const raw = S(val);
-    const t = raw.replace(/\s/g,'');
-
+    const raw = S(val); const t = raw.replace(/\s/g,'');
     if (!t) return { label:'未設定', cls:'tag-not' };
-
-    // 加工系（進行中）
     if (t==='レーザ加工')                       return { label:'レーザ加工', cls:'tag-assem' };
     if (t==='板金加工' || t==='曲げ加工')        return { label:'板金加工', cls:'tag-assem' };
     if (t==='外注')                               return { label:'外注',     cls:'tag-assem' };
-
-    // 加工完了
     if (t==='加工済' || t==='加工完了')          return { label:'加工済', cls:'tag-assem-done' };
-
-    // 組立
     if (t==='組立中')                            return { label:'組立中',   cls:'tag-assem' };
     if (t==='組立完了')                          return { label:'組立完了', cls:'tag-assem-done' };
-
-    // 検査
     if (t==='検査中')                            return { label:'検査中',   cls:'tag-inspect' };
     if (t==='検査済' || t==='検査完了')          return { label:'検査済', cls:'tag-done' };
-
-    // 出荷
     if (t==='出荷準備済' || t==='出荷待ち')       return { label:'出荷準備済', cls:'tag-inspect' };
-
-    // fallback lama
     if (/(済|完了)/.test(t)) return { label:'検査済', cls:'tag-done' };
     return { label: raw, cls:'tag-not' };
   }
 
   function makeComparator(idx){
-    // Angka kecil = prioritas lebih tinggi
-    const rankMap = {
-      '検査中': 1,
-      '組立中': 2,
-      'レーザ加工': 3,
-      '板金加工': 3,
-      '外注': 3,
-      '出荷準備済': 4,
-      '加工済': 5,
-      '組立完了': 6,
-      '検査済': 7,
-      '未設定': 98
-    };
+    const rankMap = {'検査中':1,'組立中':2,'レーザ加工':3,'板金加工':3,'外注':3,'出荷準備済':4,'加工済':5,'組立完了':6,'検査済':7,'未設定':98};
     const rank = s => (s in rankMap ? rankMap[s] : 99);
-
     return (a,b)=>{
       const au=idx.status_flag!=null&&isUrgent(valAt(a,idx.status_flag));
       const bu=idx.status_flag!=null&&isUrgent(valAt(b,idx.status_flag));
       if(au!==bu) return au?-1:1;
-
       const sa=idx.status_done!=null?(getStatusFromValue(valAt(a,idx.status_done))?.label):null;
       const sb=idx.status_done!=null?(getStatusFromValue(valAt(b,idx.status_done))?.label):null;
       if(rank(sa)!==rank(sb)) return rank(sa)-rank(sb);
-
       const da=idx.date!=null?parseJPDate(valAt(a,idx.date)):null;
       const db=idx.date!=null?parseJPDate(valAt(b,idx.date)):null;
       const ta=da?da.getTime():-Infinity, tb=db?db.getTime():-Infinity;
@@ -440,36 +338,46 @@
     };
   }
 
+  /* ====== RENDER ====== */
   function renderTable(header, idx, rows, tbodyEl, headEl){
-    headEl.innerHTML=header.map(h=>`<th>${h}</th>`).join('');
+    // sisipkan kolom gutter pada header
+    const headCells = [''].concat(header);
+    headEl.innerHTML = headCells.map((h,i)=> i===0 ? `<th class="gutter-th"></th>` : `<th>${h}</th>`).join('');
+
     tbodyEl.innerHTML='';
     rows.forEach(r=>{
       const rowUrg=idx.status_flag!=null?isUrgent(valAt(r,idx.status_flag)):false;
       const tds=header.map((_,i)=>`<td>${S(r[i])}</td>`);
 
-      // --- 出荷日 sebagai CHIP biru ---
+      // 出荷日 sebagai chip biru
       const dateCol=(idx.date!=null?idx.date:0);
       const d=idx.date!=null?parseJPDate(valAt(r,idx.date)):null;
       const dateText=d?toInputDate(d):S(r[dateCol]??'');
       const urgent=rowUrg?`<span class="flag-urgent">⚠ 至急</span>`:'';
       tds[dateCol]=`<td>${urgent}${dateText?`<span class="chip chip-date">${dateText}</span>`:''}</td>`;
 
-      // --- badge status + meta (更新日時｜更新者) di kolom 製品状況 ---
-      if (idx.status_done!=null) {
-        const st = getStatusFromValue(valAt(r, idx.status_done));
-        const tsRaw = idx.status_ts!=null ? valAt(r, idx.status_ts) : '';
-        const ts = tsRaw ? new Date(tsRaw) : null;
-        const tsView = (ts && !isNaN(ts))
-          ? `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')} ${String(ts.getHours()).padStart(2,'0')}:${String(ts.getMinutes()).padStart(2,'0')}`
-          : '';
-        const user = idx.status_user!=null ? S(valAt(r, idx.status_user)) : '';
+      // status + meta
+      const st = idx.status_done!=null ? getStatusFromValue(valAt(r, idx.status_done)) : null;
+      const tsRaw = idx.status_ts!=null ? valAt(r, idx.status_ts) : '';
+      const ts = tsRaw ? new Date(tsRaw) : null;
+      const tsView = (ts && !isNaN(ts))
+        ? `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')}`
+        : '';
+      const user = idx.status_user!=null ? S(valAt(r, idx.status_user)) : '';
+      const gutterHtml = `
+        <td class="gutter-td">
+          <div class="gutter-box">
+            ${st?`<span class="status-badge ${st.cls}">${st.label}</span>`:''}
+            <div class="status-meta">
+              ${tsView?tsView:''}${(tsView&&user)?'<br>':''}${user?user:''}
+            </div>
+          </div>
+        </td>`;
 
-        const badge = st ? `<span class="tag ${st.cls}">${st.label}</span>` : '';
-        const meta  = (tsView || user) ? `<span class="status-meta">${tsView}${(tsView&&user)?' ｜ ':''}${user}</span>` : '';
-        tds[idx.status_done] = `<td><div class="status-cell">${badge}${meta}</div></td>`;
-      }
-
-      tbodyEl.insertAdjacentHTML('beforeend', `<tr class="${rowUrg?'row-urgent':''}">${tds.join('')}</tr>`);
+      const tr = document.createElement('tr');
+      if(rowUrg) tr.classList.add('row-urgent');
+      tr.innerHTML = gutterHtml + tds.join('');
+      tbodyEl.appendChild(tr);
     });
   }
 
@@ -514,7 +422,7 @@
     const todayRows=rows.filter(r=>{const d=parseJPDate(valAt(r,idx.date)); return d&&sameYMD(d,today)}).sort(cmp);
     const vis=todayRows.length>0; document.getElementById('todaySection').style.display=vis?'':'none'; if(!vis) return;
     document.getElementById('todayCount').textContent=todayRows.length;
-    renderTable(header,idx,todayRows,document.getElementById('todayBody'),document.getElementById('todayHead'));
+    renderTable(['',...header],idx,todayRows,document.getElementById('todayBody'),document.getElementById('todayHead'));
   }
 
   function applyFilter(dateStr){
@@ -523,7 +431,7 @@
       const target=new Date(dateStr+"T00:00:00");
       view=rows.filter(r=>{const d=parseJPDate(valAt(r,idx.date)); return d&&sameYMD(d,target)}).sort(cmp);
     }
-    renderTable(header,idx,view,document.getElementById('shipBody'),document.getElementById('shipHead'));
+    renderTable(['',...header],idx,view,document.getElementById('shipBody'),document.getElementById('shipHead'));
   }
 
   function exportExcel(){const table=document.getElementById("shipTable"); const wb=XLSX.utils.table_to_book(table,{sheet:"出荷状況"}); XLSX.writeFile(wb,"出荷状況.xlsx");}
