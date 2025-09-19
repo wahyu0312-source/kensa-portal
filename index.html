@@ -23,16 +23,13 @@
   }
   a{color:inherit; text-decoration:none}
 
-  /* ===== Shell (header + main) ===== */
+  /* ===== Shell ===== */
   .app{
     display:grid;
     grid-template-rows:64px 1fr;
-    grid-template-areas:
-      "header"
-      "main";
+    grid-template-areas:"header""main";
     min-height:100vh;
   }
-
   header{
     grid-area:header; position:sticky; top:0; z-index:60;
     backdrop-filter:blur(12px); background:#ffffffc7; border-bottom:1px solid var(--border);
@@ -44,7 +41,6 @@
   .brand{display:flex; align-items:center; gap:10px}
   .brand img{height:36px}
   .ttl{font-weight:800}
-
   .top-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
   .btn{
     display:inline-flex; align-items:center; gap:8px; line-height:1;
@@ -56,17 +52,12 @@
     font-size:12px; font-weight:700; color:var(--ink);
     background:#f1f5f9; border:1px solid var(--border); border-radius:999px
   }
-
-  /* Burger (mobile) */
   .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px;
           border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
   .burger:active{transform:scale(.98)}
 
   /* ===== Hover Sidebar (desktop) ===== */
-  .edge-hotspot{
-    position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px);
-    z-index:70;
-  }
+  .edge-hotspot{ position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:70; }
   .hover-side{
     position:fixed; left:0; top:64px; height:calc(100vh - 64px);
     width:260px; padding:14px 12px; overflow:auto;
@@ -84,9 +75,11 @@
   .drawer{ position:fixed; inset:0; z-index:80; display:none }
   .drawer.open{ display:block }
   .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
-  .drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
-                  background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto;
-                  transform:translateX(-100%); transition:transform .25s ease }
+  .drawer .panel{
+    position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
+    background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto;
+    transform:translateX(-100%); transition:transform .25s ease
+  }
   .drawer.open .panel{ transform:translateX(0) }
   .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
 
@@ -111,13 +104,18 @@
   .tag{display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:800; font-size:12px; color:#fff; margin-right:8px}
   .tag-done{background:#0ea5e9}.tag-assem{background:var(--warning)}.tag-assem-done{background:var(--success)}.tag-inspect{background:#8b5cf6}.tag-not{background:#94a3b8}
 
+  /* === chip untuk tanggal (出荷日) === */
+  .chip{display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; line-height:1; border:1px solid var(--border); background:#f1f5f9; color:#0f172a}
+  .chip-date{background:#e0f2fe; border-color:#bae6fd;}
+  .status-meta{display:block; margin-top:4px; font-size:11px; color:#64748b;}
+  .status-cell{display:flex; flex-direction:column; align-items:flex-start; gap:2px;}
+
   /* Ticker + footer */
   .marquee{position:fixed; left:20px; right:20px; bottom:20px; z-index:30; background:var(--accent); color:#fff; font-weight:800; border-radius:12px; box-shadow:var(--shadow-1); white-space:nowrap; overflow:hidden}
   .marquee span{display:inline-block; padding:8px 0 8px 100%; animation:marquee 25s linear infinite}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
-  .footer{position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:var(--muted); background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border)}
+  .footer{position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:#64748b; background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border)}
 
-  /* Admin hide by default */
   .admin-only{ display:none }
 
   @media (max-width:900px){
@@ -203,7 +201,6 @@
     <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
     <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
     <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-    <!-- Trial Page -->
     <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
   </div>
 
@@ -262,7 +259,7 @@
     if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
   });
 
-  /* ========= Admin & Prefix (reset per sesi) ========= */
+  /* ========= Admin & Prefix (standardisasi + reset per sesi) ========= */
   const ADMIN_FLAG_KEY = 'kensa_admin';
   const PREFIX_KEY     = 'kensa_prefix';
   const LEGACY_ADMIN_KEYS  = ['admin_okuma','kensa_admin_okuma','admin_flag'];
@@ -351,15 +348,15 @@
       to:find(["送り先","納品先","送付先"]),
       note:find(["注番","注文番号","備考","注文","Order","注釈"]),
 
-      // status utama & audit
+      // status utama + audit
       status_done:find(["製品状況","製品状態","納品状況"]) ?? findFz(/(製品|納品).*(状況|状態)/),
       status_ts:   find(["製品状況更新日時","更新日時","StatusUpdatedAt"]) ?? findFz(/(更新).*(日時|日付)|updated/i),
       status_user: find(["更新者","記入者","担当者","UpdatedBy"])        ?? findFz(/(更新者|担当|by)/i),
 
-      // opsional urgent
+      // optional flags
       status_flag:find(["Status","ステータス","状態","至急"]) ?? findFz(/status|至急/i),
 
-      // opsional QC
+      // optional QC (biarkan kalau ada)
       qc_check:find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFz(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
       qc_label:find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"]) ?? findFz(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
       qc_result:find(["検査成績表","成績表","InspectionReport"]) ?? findFz(/(検査|inspection).*(成績|report)/i),
@@ -412,7 +409,7 @@
   }
 
   function makeComparator(idx){
-    // angka kecil = prioritas lebih tinggi
+    // Angka kecil = prioritas lebih tinggi
     const rankMap = {
       '検査中': 1,
       '組立中': 2,
@@ -450,29 +447,27 @@
       const rowUrg=idx.status_flag!=null?isUrgent(valAt(r,idx.status_flag)):false;
       const tds=header.map((_,i)=>`<td>${S(r[i])}</td>`);
 
+      // --- 出荷日 sebagai CHIP biru ---
       const dateCol=(idx.date!=null?idx.date:0);
       const d=idx.date!=null?parseJPDate(valAt(r,idx.date)):null;
       const dateText=d?toInputDate(d):S(r[dateCol]??'');
-
       const urgent=rowUrg?`<span class="flag-urgent">⚠ 至急</span>`:'';
+      tds[dateCol]=`<td>${urgent}${dateText?`<span class="chip chip-date">${dateText}</span>`:''}</td>`;
 
-      const st=idx.status_done!=null?getStatusFromValue(valAt(r,idx.status_done)):null;
-      let badge='';
-      if(st){
-        const tsRaw=idx.status_ts!=null ? valAt(r, idx.status_ts) : '';
-        const ts=tsRaw ? new Date(tsRaw) : null;
-        const tsView=(ts && !isNaN(ts)) ?
-          `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')} ${String(ts.getHours()).padStart(2,'0')}:${String(ts.getMinutes()).padStart(2,'0')}` : '';
-        const user=idx.status_user!=null ? S(valAt(r, idx.status_user)) : '';
-        const meta=(tsView||user)?`<small style="display:block;color:#64748b;margin-top:2px">${tsView}${(tsView&&user)?' ｜ ':''}${user}</small>`:'';
-        badge=`<span class="tag ${st.cls}">${st.label}</span>${meta}`;
+      // --- badge status + meta (更新日時｜更新者) di kolom 製品状況 ---
+      if (idx.status_done!=null) {
+        const st = getStatusFromValue(valAt(r, idx.status_done));
+        const tsRaw = idx.status_ts!=null ? valAt(r, idx.status_ts) : '';
+        const ts = tsRaw ? new Date(tsRaw) : null;
+        const tsView = (ts && !isNaN(ts))
+          ? `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')} ${String(ts.getHours()).padStart(2,'0')}:${String(ts.getMinutes()).padStart(2,'0')}`
+          : '';
+        const user = idx.status_user!=null ? S(valAt(r, idx.status_user)) : '';
+
+        const badge = st ? `<span class="tag ${st.cls}">${st.label}</span>` : '';
+        const meta  = (tsView || user) ? `<span class="status-meta">${tsView}${(tsView&&user)?' ｜ ':''}${user}</span>` : '';
+        tds[idx.status_done] = `<td><div class="status-cell">${badge}${meta}</div></td>`;
       }
-
-      // DEFAULT: badge + meta ditampilkan di kolom 出荷日
-      tds[dateCol]=`<td>${urgent}${badge}${dateText}</td>`;
-
-      // JIKA ingin badge muncul di kolom 製品状況, ganti baris di atas menjadi:
-      // tds[idx.status_done] = `<td>${badge}</td>`;
 
       tbodyEl.insertAdjacentHTML('beforeend', `<tr class="${rowUrg?'row-urgent':''}">${tds.join('')}</tr>`);
     });
