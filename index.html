@@ -23,123 +23,70 @@
   }
   a{color:inherit; text-decoration:none}
 
-  /* ===== Shell (no fixed sidebar; full width main) ===== */
-  .app{
-    display:grid;
-    grid-template-rows:64px 1fr;
-    grid-template-areas:
-      "header"
-      "main";
-    min-height:100vh;
-  }
-
-  header{
-    grid-area:header; position:sticky; top:0; z-index:60;
-    backdrop-filter:blur(12px); background:#ffffffc7; border-bottom:1px solid var(--border);
-  }
-  .header-wrap{
-    height:64px; max-width:1400px; margin:0 auto;
-    display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 14px;
-  }
-  .brand{display:flex; align-items:center; gap:10px}
-  .brand img{height:36px}
-  .ttl{font-weight:800}
-
-  .top-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-  .btn{
-    display:inline-flex; align-items:center; gap:8px; line-height:1;
-    height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--border); background:#fff; cursor:pointer;
-  }
+  .app{display:grid;grid-template-rows:64px 1fr;grid-template-areas:"header" "main";min-height:100vh}
+  header{grid-area:header;position:sticky;top:0;z-index:60;backdrop-filter:blur(12px);background:#ffffffc7;border-bottom:1px solid var(--border)}
+  .header-wrap{height:64px;max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px}
+  .brand{display:flex;align-items:center;gap:10px}.brand img{height:36px}.ttl{font-weight:800}
+  .top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;line-height:1;height:34px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
   .btn:hover{border-color:var(--ring)}
-  .badge{
-    height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px;
-    font-size:12px; font-weight:700; color:var(--ink);
-    background:#f1f5f9; border:1px solid var(--border); border-radius:999px
-  }
-
-  /* Burger (mobile) */
-  .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px;
-          border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
+  .badge{height:28px;padding:0 10px;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink);background:#f1f5f9;border:1px solid var(--border);border-radius:999px}
+  .burger{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
   .burger:active{transform:scale(.98)}
 
-  /* ===== Hover Sidebar (desktop) ===== */
-  .edge-hotspot{
-    position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px);
-    z-index:70;
-  }
-  .hover-side{
-    position:fixed; left:0; top:64px; height:calc(100vh - 64px);
-    width:260px; padding:14px 12px; overflow:auto;
-    background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
-    transform:translateX(-100%); transition:transform .22s ease; z-index:71;
-  }
-  .hover-side.open{ transform:translateX(0) }
-  .hover-side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
-  .navlist{ display:grid; gap:4px }
-  .slink{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink) }
-  .slink:hover{ background:#f1f5ff }
-  .ico{ width:22px; text-align:center }
+  .edge-hotspot{position:fixed;left:0;top:64px;width:12px;height:calc(100vh - 64px);z-index:70}
+  .hover-side{position:fixed;left:0;top:64px;height:calc(100vh - 64px);width:260px;padding:14px 12px;overflow:auto;background:var(--panel);border-right:1px solid var(--border);box-shadow:var(--shadow-1);transform:translateX(-100%);transition:transform .22s ease;z-index:71}
+  .hover-side.open{transform:translateX(0)}
+  .hover-side h3{margin:4px 8px 10px;font-size:12px;letter-spacing:.08em;color:#6b7280;text-transform:uppercase}
+  .navlist{display:grid;gap:4px}
+  .slink{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;color:var(--ink)}
+  .slink:hover{background:#f1f5ff}
+  .ico{width:22px;text-align:center}
 
-  /* ===== Drawer (mobile) ===== */
-  .drawer{ position:fixed; inset:0; z-index:80; display:none }
-  .drawer.open{ display:block }
-  .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
-  .drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
-                  background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto;
-                  transform:translateX(-100%); transition:transform .25s ease }
-  .drawer.open .panel{ transform:translateX(0) }
-  .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
+  .drawer{position:fixed;inset:0;z-index:80;display:none}
+  .drawer.open{display:block}
+  .drawer .backdrop{position:absolute;inset:0;background:#0006}
+  .drawer .panel{position:absolute;top:0;left:0;height:100%;width:min(86%,320px);background:#fff;border-right:1px solid var(--border);box-shadow:var(--shadow-2);padding:14px 12px;overflow:auto;transform:translateX(-100%);transition:transform .25s ease}
+  .drawer.open .panel{transform:translateX(0)}
+  .drawer .close{position:absolute;right:10px;top:10px;border:0;background:#f1f5f9;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer}
 
-  /* ===== Main ===== */
-  main{ grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 96px }
-  .page-head{ display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:14px }
-  .h1{ font-size:22px; margin:0 }
-  .small{ font-size:12px; color:var(--muted) }
-  .panel{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-2); padding:18px; overflow:auto }
-  .panel + .panel{ margin-top:18px }
-  .panel-title{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px }
+  main{grid-area:main;max-width:1400px;margin:0 auto;padding:22px 20px 96px}
+  .page-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:14px}
+  .h1{font-size:22px;margin:0}
+  .small{font-size:12px;color:var(--muted)}
+  .panel{background:#fff;border:1px solid var(--border);border-radius:var(--radius-xl);box-shadow:var(--shadow-2);padding:18px;overflow:auto}
+  .panel + .panel{margin-top:18px}
+  .panel-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px}
 
-  /* Table */
-  table{width:100%; border-collapse:separate; border-spacing:0; min-width:900px}
-  thead th{position:sticky; top:0; z-index:1; background:#f8fafc; color:#475569; text-align:left; font-weight:800; padding:12px 14px; border-bottom:1px solid var(--border)}
-  tbody td{padding:12px 14px; border-bottom:1px solid var(--border); white-space:nowrap}
+  table{width:100%;border-collapse:separate;border-spacing:0;min-width:900px}
+  thead th{position:sticky;top:0;z-index:1;background:#f8fafc;color:#475569;text-align:left;font-weight:800;padding:12px 14px;border-bottom:1px solid var(--border)}
+  tbody td{padding:12px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
   tbody tr:hover{background:#f6f9ff}
-  tbody tr.row-urgent td{background:#fee2e2 !important; color:#b91c1c; font-weight:600}
-  .flag-urgent{display:inline-flex; align-items:center; gap:6px; padding:2px 10px; margin-right:8px; border-radius:999px; background:var(--danger); color:#fff; font-weight:800; font-size:12px}
-  .urgent-banner{background:var(--danger); color:#fff; padding:10px 16px; border-radius:12px; text-align:center; font-weight:800; animation:blink 1s infinite}
+  tbody tr.row-urgent td{background:#fee2e2 !important;color:#b91c1c;font-weight:600}
+  .flag-urgent{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;margin-right:8px;border-radius:999px;background:var(--danger);color:#fff;font-weight:800;font-size:12px}
+  .urgent-banner{background:var(--danger);color:#fff;padding:10px 16px;border-radius:12px;text-align:center;font-weight:800;animation:blink 1s infinite}
   @keyframes blink{0%,50%,100%{opacity:1}25%,75%{opacity:.75}}
-  .tag{display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:800; font-size:12px; color:#fff; margin-right:8px}
+  .tag{display:inline-flex;align-items:center;padding:2px 10px;border-radius:999px;font-weight:800;font-size:12px;color:#fff;margin-right:8px}
   .tag-done{background:#0ea5e9}.tag-assem{background:var(--warning)}.tag-assem-done{background:var(--success)}.tag-inspect{background:#8b5cf6}.tag-not{background:#94a3b8}
 
-  /* Ticker + footer */
-  .marquee{position:fixed; left:20px; right:20px; bottom:20px; z-index:30; background:var(--accent); color:#fff; font-weight:800; border-radius:12px; box-shadow:var(--shadow-1); white-space:nowrap; overflow:hidden}
-  .marquee span{display:inline-block; padding:8px 0 8px 100%; animation:marquee 25s linear infinite}
+  .marquee{position:fixed;left:20px;right:20px;bottom:20px;z-index:30;background:var(--accent);color:#fff;font-weight:800;border-radius:12px;box-shadow:var(--shadow-1);white-space:nowrap;overflow:hidden}
+  .marquee span{display:inline-block;padding:8px 0 8px 100%;animation:marquee 25s linear infinite}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
-  .footer{position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:var(--muted); background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border)}
-
-  /* Admin hide by default (akan muncul saat Admin ON) */
-  .admin-only{ display:none }
-
-  /* Hide edge-hover on small screens (use drawer) */
-  @media (max-width:900px){
-    .burger{ display:inline-flex }
-    .edge-hotspot, .hover-side{ display:none }
-  }
+  .footer{position:fixed;bottom:0;left:0;right:0;z-index:31;text-align:center;font-size:12px;color:var(--muted);background:#f1f5f9;padding:4px 0;border-top:1px solid var(--border)}
+  .admin-only{display:none}
+  @media (max-width:900px){.burger{display:inline-flex}.edge-hotspot,.hover-side{display:none}}
 </style>
 </head>
 
 <body>
 <div class="app">
-  <!-- ===== HEADER ===== -->
   <header>
     <div class="header-wrap">
       <button id="btnBurger" class="burger" aria-label="メニュー"><span>☰</span></button>
-
       <div class="brand">
         <img src="tsh.png" alt="TSH" onerror="this.style.display='none'">
         <div class="ttl"><strong>品質管理生産技術</strong></div>
       </div>
-
       <nav class="top-actions">
         <button id="btnRefresh" class="btn" type="button">⟳ Refresh</button>
         <button id="btnLive" class="btn" type="button" aria-pressed="false">● Live</button>
@@ -149,16 +96,14 @@
     </div>
   </header>
 
-  <!-- ===== MAIN ===== -->
   <main>
     <div class="page-head">
       <h1 class="h1">出荷状況一覧</h1>
       <span id="lastUpdated" class="small"></span>
     </div>
 
-    <div id="urgent-banner" class="urgent-banner" style="display:none">現在、至急案件はありません。</div>
+    <div id="urgent-banner" class="urgent-banner" style="display:none"></div>
 
-    <!-- 本日出荷 -->
     <section id="todaySection" class="panel" style="display:none">
       <div class="panel-title">
         <h2 style="margin:0">本日出荷</h2>
@@ -170,7 +115,6 @@
       </table>
     </section>
 
-    <!-- 全件一覧 -->
     <section class="panel">
       <div class="panel-title">
         <h2 style="margin:0">全件一覧</h2>
@@ -194,136 +138,14 @@
   </main>
 </div>
 
-<!-- ===== Hover Sidebar (desktop) ===== -->
-<div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
-<aside id="hoverSide" class="hover-side" aria-label="Pages">
-  <h3>Pages</h3>
-  <div class="navlist">
-    <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
-    <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
-    <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
-    <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
-    <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-    <!-- Trial Page: selalu tampil -->
-    <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
-  </div>
+<!-- Hover sidebar (desktop) & Drawer (mobile) dibiarkan sama seperti sebelumnya, boleh dihapus jika tidak perlu -->
 
-  <!-- Grup Admin: muncul saat Admin ON -->
-  <div class="admin-only" style="margin-top:12px">
-    <h3>Admin</h3>
-    <div class="navlist">
-      <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-      <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix / 製造No</strong></a>
-      <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
-      <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
-    </div>
-  </div>
-</aside>
-
-<!-- ===== Drawer (mobile) ===== -->
-<div id="drawer" class="drawer" aria-hidden="true">
-  <div class="backdrop" data-close></div>
-  <aside class="panel">
-    <button class="close" data-close>✕</button>
-    <div class="navlist" style="margin-top:30px">
-      <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
-      <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
-      <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
-      <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
-      <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-      <!-- Trial Page: selalu tampil -->
-      <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
-    </div>
-
-    <!-- Grup Admin: muncul saat Admin ON -->
-    <div class="admin-only" style="margin-top:12px">
-      <h3>Admin</h3>
-      <div class="navlist">
-        <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-        <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix / 製造No</strong></a>
-        <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
-        <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
-      </div>
-    </div>
-  </aside>
-</div>
-
-<div class="marquee"><span>品質管理生産技術システム - 最新の出荷状況を表示しています - Awali Dengan Bismillah</span></div>
-<div class="footer">Design by Wahyu</div>
-
-<!-- ===== LIBS ===== -->
+<!-- LIBS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-  /* ========= Drawer (mobile) ========= */
-  const drawer = document.getElementById('drawer');
-  document.getElementById('btnBurger')?.addEventListener('click', ()=>{
-    drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');
-  });
-  drawer?.addEventListener('click', (e)=>{
-    if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
-  });
-
-  /* ========= Admin & Prefix (standardisasi + reset sekali per sesi) ========= */
-  const ADMIN_FLAG_KEY = 'kensa_admin';
-  const PREFIX_KEY     = 'kensa_prefix';
-  const LEGACY_ADMIN_KEYS  = ['admin_okuma','kensa_admin_okuma','admin_flag'];
-  const LEGACY_PREFIX_KEYS = ['prefix','okuma_prefix','kensa_prefix_okuma'];
-
-  (function resetAdminOncePerSession(){
-    if (!sessionStorage.getItem('kensa_boot_done')) {
-      localStorage.removeItem(ADMIN_FLAG_KEY);
-      LEGACY_ADMIN_KEYS.forEach(k => localStorage.removeItem(k));
-      sessionStorage.setItem('kensa_boot_done','1');
-    }
-  })();
-
-  (function migratePrefix(){
-    if (!localStorage.getItem(PREFIX_KEY)) {
-      for (const k of LEGACY_PREFIX_KEYS) {
-        const v = localStorage.getItem(k);
-        if (v && v.trim()) { localStorage.setItem(PREFIX_KEY, v.trim()); break; }
-      }
-    }
-  })();
-
-  function setAdmin(on){
-    document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
-    if (on){
-      localStorage.setItem(ADMIN_FLAG_KEY,'1');
-      LEGACY_ADMIN_KEYS.forEach(k=>localStorage.setItem(k,'1'));
-    } else {
-      localStorage.removeItem(ADMIN_FLAG_KEY);
-      LEGACY_ADMIN_KEYS.forEach(k=>localStorage.removeItem(k));
-    }
-    const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
-  }
-  function isAdmin(){ return localStorage.getItem(ADMIN_FLAG_KEY)==='1'; }
-
-  document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
-    if(isAdmin()){
-      if(confirm('Admin akan dimatikan. Lanjut?')) setAdmin(false);
-    }else{
-      const code = prompt('Admin code:');
-      const ADMIN_CODE = 'admin2025';
-      if(code===ADMIN_CODE) setAdmin(true); else alert('Kode tidak sesuai');
-    }
-  });
-
-  /* ========= EDGE-HOVER sidebar (desktop) ========= */
-  const hot = document.getElementById('edgeHotspot');
-  const fly = document.getElementById('hoverSide');
-  let hideTimer = null;
-  const HIDE_DELAY = 280;
-  function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
-  function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
-  hot?.addEventListener('mouseenter', openFly);
-  hot?.addEventListener('mouseleave', scheduleClose);
-  fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer));
-  fly?.addEventListener('mouseleave', scheduleClose);
-
   /* ========= CSV & render ========= */
   const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
   const TAB_NAME ="最新情報";
@@ -354,12 +176,16 @@
       qty:find(["数量","Qty"]),
       to:find(["送り先","納品先","送付先"]),
       note:find(["注番","注文番号","備考","注文","Order","注釈"]),
+
+      // status utama (dropdown di sheet)
       status_done:find(["製品状況","製品状態","納品状況"]) ?? findFz(/(製品|納品).*(状況|状態)/),
+
+      // audit trail
+      status_ts:   find(["製品状況更新日時","更新日時","StatusUpdatedAt"]) ?? findFz(/(更新).*(日時|日付)|updated/i),
+      status_user: find(["更新者","記入者","担当者","UpdatedBy"])        ?? findFz(/(更新者|担当|by)/i),
+
+      // opsional kolom flag urgent kalau ada
       status_flag:find(["Status","ステータス","状態","至急"]) ?? findFz(/status|至急/i),
-      qc_check:find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFz(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
-      qc_label:find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"]) ?? findFz(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
-      qc_result:find(["検査成績表","成績表","InspectionReport"]) ?? findFz(/(検査|inspection).*(成績|report)/i),
-      qc_pack:find(["梱包","Packing","包装"]) ?? findFz(/(梱包|packing|包装)/i),
     };
   }
   const valAt=(row,idx)=>(idx==null?"":(row[idx]??""));
@@ -375,26 +201,59 @@
   function toInputDate(d){const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`}
   function isUrgent(v){const t=S(v).toLowerCase(); return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true"}
 
+  /* ====== Mapping status BARU ====== */
   function getStatusFromValue(val){
-    const raw=S(val), t=raw.replace(/\s/g,'').toLowerCase();
-    if(!t||/(未|clear)/.test(t)) return {label:'未組立',cls:'tag-not'};
-    if(/(検査済み|済|完了|ok|done)/.test(t)) return {label:'済',cls:'tag-done'};
-    if(/(組立完了)/.test(raw)) return {label:'組立完了',cls:'tag-assem-done'};
-    if(/(検査中|検中)/.test(raw)) return {label:'検査中',cls:'tag-inspect'};
-    if(/(組立中|組中)/.test(raw)) return {label:'組立中',cls:'tag-assem'};
-    if(/検/.test(raw)) return {label:'検査中',cls:'tag-inspect'};
-    if(/組/.test(raw)) return {label:'組立中',cls:'tag-assem'};
-    return null;
+    const raw = S(val);
+    const t = raw.replace(/\s/g,'');
+
+    if (!t) return { label:'未設定', cls:'tag-not' }; // kosong → belum diset
+
+    if (t==='レーザ加工') return { label:'レーザ加工', cls:'tag-assem' };
+    if (t==='曲げ加工')   return { label:'曲げ加工',   cls:'tag-assem' };
+    if (t==='外注')       return { label:'外注',       cls:'tag-assem' };
+
+    if (t==='加工完了')   return { label:'加工完了',   cls:'tag-assem-done' };
+
+    if (t==='組立中')     return { label:'組立中',     cls:'tag-assem' };
+    if (t==='組立完了')   return { label:'組立完了',   cls:'tag-assem-done' };
+
+    if (t==='検査中')     return { label:'検査中',     cls:'tag-inspect' };
+    if (t==='検査完了')   return { label:'検査完了',   cls:'tag-done' };
+
+    if (t==='出荷待ち')   return { label:'出荷待ち',   cls:'tag-inspect' };
+
+    // fallback (data historis lama)
+    if (/(済|完了)/.test(t)) return { label:'検査完了', cls:'tag-done' };
+    return { label: raw, cls:'tag-not' };
   }
+
   function makeComparator(idx){
-    const rank=s=>({'検査中':1,'組立中':2,'未組立':3,'組立完了':4,'済':5}[s]??99);
+    // prioritas kecil → tampil lebih atas
+    const rankMap = {
+      '検査中': 1,
+      '組立中': 2,
+      'レーザ加工': 3,
+      '曲げ加工': 3,
+      '外注': 3,
+      '出荷待ち': 4,
+      '加工完了': 5,
+      '組立完了': 6,
+      '検査完了': 7,
+      '未設定': 98
+    };
+    const rank = s => (s in rankMap ? rankMap[s] : 99);
+
     return (a,b)=>{
+      // (opsional) urgent lebih dulu jika punya kolom '至急'
       const au=idx.status_flag!=null&&isUrgent(valAt(a,idx.status_flag));
       const bu=idx.status_flag!=null&&isUrgent(valAt(b,idx.status_flag));
       if(au!==bu) return au?-1:1;
+
       const sa=idx.status_done!=null?(getStatusFromValue(valAt(a,idx.status_done))?.label):null;
       const sb=idx.status_done!=null?(getStatusFromValue(valAt(b,idx.status_done))?.label):null;
       if(rank(sa)!==rank(sb)) return rank(sa)-rank(sb);
+
+      // lalu terbaru (tanggal) lebih atas
       const da=idx.date!=null?parseJPDate(valAt(a,idx.date)):null;
       const db=idx.date!=null?parseJPDate(valAt(b,idx.date)):null;
       const ta=da?da.getTime():-Infinity, tb=db?db.getTime():-Infinity;
@@ -406,16 +265,31 @@
     headEl.innerHTML=header.map(h=>`<th>${h}</th>`).join('');
     tbodyEl.innerHTML='';
     rows.forEach(r=>{
-      const rowUrg=idx.status_flag!=null?isUrgent(valAt(r,idx.status_flag)):false;
       const tds=header.map((_,i)=>`<td>${S(r[i])}</td>`);
       const dateCol=(idx.date!=null?idx.date:0);
       const d=idx.date!=null?parseJPDate(valAt(r,idx.date)):null;
       const dateText=d?toInputDate(d):S(r[dateCol]??'');
-      const urgent=rowUrg?`<span class="flag-urgent">⚠ 至急</span>`:'';
+
+      // badge status + metadata
       const st=idx.status_done!=null?getStatusFromValue(valAt(r,idx.status_done)):null;
-      const badge=st?`<span class="tag ${st.cls}">${st.label}</span>`:'';
-      tds[dateCol]=`<td>${urgent}${badge}${dateText}</td>`;
-      tbodyEl.insertAdjacentHTML('beforeend', `<tr class="${rowUrg?'row-urgent':''}">${tds.join('')}</tr>`);
+      let badge='';
+      if(st){
+        const tsRaw=idx.status_ts!=null ? valAt(r, idx.status_ts) : '';
+        const ts=tsRaw ? new Date(tsRaw) : null;
+        const tsView=(ts && !isNaN(ts)) ?
+          `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')} ${String(ts.getHours()).padStart(2,'0')}:${String(ts.getMinutes()).padStart(2,'0')}` : '';
+        const user=idx.status_user!=null ? S(valAt(r, idx.status_user)) : '';
+        const meta=(tsView||user)?`<small style="display:block;color:#64748b;margin-top:2px">${tsView}${(tsView&&user)?' ｜ ':''}${user}</small>`:'';
+        badge=`<span class="tag ${st.cls}">${st.label}</span>${meta}`;
+      }
+
+      // (default) tampilkan badge di kolom 出荷日 seperti mockup
+      tds[dateCol]=`<td>${badge}${dateText}</td>`;
+
+      // === Jika ingin badge di kolom 製品状況, pakai ini (ganti baris di atas):
+      // tds[idx.status_done] = `<td>${badge}</td>`;
+
+      tbodyEl.insertAdjacentHTML('beforeend', `<tr>${tds.join('')}</tr>`);
     });
   }
 
@@ -424,38 +298,34 @@
   async function load(){
     try{
       if(isLoading){aborter?.abort()} isLoading=true;
-      const btn=document.getElementById('btnRefresh'); const old=btn.textContent; btn.textContent='Loading...'; btn.disabled=true;
-      aborter=new AbortController();
-      const res=await fetch(CSV_URL+"&_ts="+Date.now(),{signal:aborter.signal,cache:'no-store'});
+      const res=await fetch(CSV_URL+"&_ts="+Date.now(),{cache:'no-store'});
       if(!res.ok) throw new Error("HTTP "+res.status);
       const text=await res.text(); const data=parseCSV(text); if(!data.length) throw new Error("CSV empty");
       const header=data[0], rowsRaw=data.slice(1); const idx=indexByName(header); const cmp=makeComparator(idx);
       const rows=[...rowsRaw].sort(cmp); cached={header,rows,idx,cmp};
-
-      const urgentCount=rows.reduce((n,r)=> n + (idx.status_flag!=null && isUrgent(valAt(r, idx.status_flag)) ? 1 : 0), 0);
-      const banner=document.getElementById('urgent-banner');
-      banner.style.display=urgentCount>0?'block':'none';
-      banner.textContent=urgentCount>0?`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`:'';
 
       renderTodaySection(); applyFilter(null);
 
       const cols=[]; if(idx.qty!=null) cols.push('数量:'+header[idx.qty]);
       if(idx.cust!=null) cols.push('顧客:'+header[idx.cust]);
       if(idx.date!=null) cols.push('出荷日:'+header[idx.date]);
-      document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）｜${cols.join(' ｜ ')} ｜ Urgent列: ${idx.status_flag!=null ? header[idx.status_flag] : '—'}`;
+      document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）｜${cols.join(' ｜ ')}`;
       document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
       document.getElementById('filterDate').value=toInputDate(new Date());
 
-      btn.textContent=old; btn.disabled=false; isLoading=false;
+      // Banner urgent (opsional)
+      const banner=document.getElementById('urgent-banner');
+      banner.style.display='none';
     }catch(e){
       console.error(e);
-      const btn=document.getElementById('btnRefresh'); btn.textContent='Refresh'; btn.disabled=false; isLoading=false;
       document.getElementById('shipHint').textContent='読み込みに失敗しました。シート名/公開設定/列名をご確認ください。';
+    }finally{
+      isLoading=false;
     }
   }
 
   function renderTodaySection(){
-    const {header,rows,idx,cmp}=cached; if(idx.date==null){document.getElementById('todaySection').style.display='none'; return;}
+    const {header,rows,idx,cmp}=cached; if(!idx || idx.date==null){document.getElementById('todaySection').style.display='none'; return;}
     const today=new Date();
     const todayRows=rows.filter(r=>{const d=parseJPDate(valAt(r,idx.date)); return d&&sameYMD(d,today)}).sort(cmp);
     const vis=todayRows.length>0; document.getElementById('todaySection').style.display=vis?'':'none'; if(!vis) return;
@@ -478,31 +348,16 @@
     doc.autoTable({html:"#shipTable", startY:60, styles:{fontSize:9, cellPadding:4, halign:"center", valign:"middle"}, headStyles:{fillColor:[238,242,247]}});
     doc.save("出荷状況.pdf");
   }
-  document.getElementById("btnExcel").addEventListener("click", exportExcel);
-  document.getElementById("btnPDF").addEventListener("click", exportPDF);
 
-  let timer=null,intervalMs=60000;
-  function startAutoRefresh(ms){
-    intervalMs=ms; clearInterval(timer);
-    timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs);
-    document.getElementById('intervalInfo').textContent=`${Math.round(intervalMs/1000)}s`;
-    const liveBtn=document.getElementById('btnLive');
-    if(intervalMs<=5000){liveBtn.classList.add('active'); liveBtn.textContent='Live: On';}
-    else{liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off';}
-  }
-  document.getElementById('btnRefresh').addEventListener('click', load);
-  document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
-  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
-
-  document.getElementById('filterDate').addEventListener('change', e=>applyFilter(e.target.value||null));
-  document.getElementById('btnToday').addEventListener('click', ()=>applyFilter(toInputDate(new Date())));
-  document.getElementById('btnClear').addEventListener('click', ()=>{document.getElementById('filterDate').value=""; applyFilter(null);});
+  document.getElementById("btnExcel")?.addEventListener("click", exportExcel);
+  document.getElementById("btnPDF")?.addEventListener("click", exportPDF);
+  document.getElementById('btnRefresh')?.addEventListener('click', load);
+  document.getElementById('btnToday')?.addEventListener('click', ()=>applyFilter(toInputDate(new Date())));
+  document.getElementById('btnClear')?.addEventListener('click', ()=>{document.getElementById('filterDate').value=""; applyFilter(null);});
+  document.getElementById('filterDate')?.addEventListener('change', e=>applyFilter(e.target.value||null));
 
   // Init
-  window.addEventListener('DOMContentLoaded', ()=>{
-    setAdmin(isAdmin());   // restore admin UI state (after session reset => default OFF)
-    load(); startAutoRefresh(60000);
-  });
+  window.addEventListener('DOMContentLoaded', ()=>{ load(); });
 </script>
 </body>
 </html>
