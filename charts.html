@@ -24,7 +24,7 @@
   .burger{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
   main{max-width:1400px;margin:0 auto;padding:22px 20px 130px}
 
-  /* Sidebar hover */
+  /* Hover sidebar (kiri) */
   .edge-hotspot{position:fixed;left:0;top:64px;width:12px;height:calc(100vh - 64px);z-index:70}
   .hover-side{position:fixed;left:0;top:64px;height:calc(100vh - 64px);width:260px;padding:14px 12px;overflow:auto;background:#fff;border-right:1px solid var(--border);box-shadow:var(--shadow);transform:translateX(-100%);transition:transform .22s ease;z-index:71}
   .hover-side.open{transform:translateX(0)}
@@ -32,7 +32,7 @@
   .slink{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px}
   .slink:hover{background:#f1f5ff}
 
-  /* Drawer */
+  /* Drawer mobile */
   .drawer{position:fixed;inset:0;z-index:80;display:none}
   .drawer.open{display:block}
   .drawer .backdrop{position:absolute;inset:0;background:#0006}
@@ -42,6 +42,7 @@
 
   /* Banner */
   .urgent-banner{margin:12px 0 6px;background:#fee2e2;border:1px solid #fecaca;color:#991b1b;padding:12px 14px;border-radius:12px;text-align:center;font-weight:800;display:none}
+  .error-banner{margin:10px 0;padding:10px 12px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;display:none}
 
   /* Panel & grid */
   .panel{background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:14px}
@@ -57,11 +58,12 @@
   .toggle button.active{background:#eef2ff;box-shadow:inset 0 0 0 2px #c7d2fe;font-weight:700}
   .badge.muted{opacity:.75}
 
-  /* Canvas */
-  .cwrap{height:320px}
+  /* Canvas area */
+  .cwrap{height:320px;position:relative}
   .cwrap.tall{height:380px}
+  .loading{position:absolute;inset:0;display:grid;place-items:center;color:#64748b;font-weight:700}
 
-  /* Dropdown status (header) */
+  /* Dropdown status */
   .dropdown{position:relative}
   .drop-btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
   .drop-menu{position:absolute;top:42px;left:0;min-width:280px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:10px;display:none;z-index:200}
@@ -83,14 +85,6 @@
     .edge-hotspot,.hover-side{display:none}
   }
 </style>
-
-<!-- Chart.js + datalabels -->
-<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-<!-- Export libs -->
-<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -117,6 +111,7 @@
   <!-- MAIN -->
   <main>
     <div id="urgentBanner" class="urgent-banner"></div>
+    <div id="errorBanner" class="error-banner"></div>
 
     <section class="panel">
       <div class="filterbar">
@@ -143,7 +138,7 @@
             <button id="dailyOrient" class="btn" data-orient="v">縦</button>
             <button id="dailyExport" class="btn">Export</button>
           </div>
-          <div class="cwrap"><canvas id="dailyShip"></canvas></div>
+          <div class="cwrap"><div class="loading">Loading…</div><canvas id="dailyShip"></canvas></div>
         </div>
 
         <!-- Monthly overall -->
@@ -153,7 +148,7 @@
             <button id="monthlyOrient" class="btn" data-orient="v">縦</button>
             <button id="monthlyExport" class="btn">Export</button>
           </div>
-          <div class="cwrap"><canvas id="monthlyQty"></canvas></div>
+          <div class="cwrap"><div class="loading">Loading…</div><canvas id="monthlyQty"></canvas></div>
         </div>
 
         <!-- Customer Top-N -->
@@ -167,7 +162,7 @@
             <button id="custTop" class="btn" data-top="10">Top10</button>
             <button id="custExport" class="btn">Export</button>
           </div>
-          <div class="cwrap tall"><canvas id="custQty"></canvas></div>
+          <div class="cwrap tall"><div class="loading">Loading…</div><canvas id="custQty"></canvas></div>
         </div>
 
         <!-- Customer Monthly: Stacked / Pie / Pareto -->
@@ -182,13 +177,13 @@
             <button id="custMonOrient" class="btn" data-orient="v">縦</button>
             <button id="custMonExport" class="btn">Export</button>
           </div>
-          <div class="cwrap tall"><canvas id="custMonthly"></canvas></div>
+          <div class="cwrap tall"><div class="loading">Loading…</div><canvas id="custMonthly"></canvas></div>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Sidebar hover -->
+  <!-- Sidebar hover kiri -->
   <div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
   <aside id="hoverSide" class="hover-side" aria-label="Pages">
     <h3 style="margin:4px 8px 10px;font-size:12px;letter-spacing:.08em;color:#6b7280;text-transform:uppercase">Pages</h3>
@@ -219,19 +214,16 @@
   </div>
 </div>
 
-<!-- Floating controls -->
-<div class="fab" aria-live="polite">
-  <div class="card">
-    <button id="btnRefresh" class="btn" type="button">⟳ Refresh</button>
-    <button id="btnLive" class="btn" type="button" aria-pressed="false">● Live</button>
-    <button id="btnLabels" class="btn" type="button">123 Labels</button>
-    <span id="intervalInfo" class="badge">—</span>
-  </div>
-  <div class="card hint"><span id="lastup">Last update: —</span></div>
-</div>
+<!-- Libs (tanpa defer agar pasti siap) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function(){
+/* ========= Semua logic dijalankan setelah WINDOW LOAD supaya lib sudah siap ========= */
+window.addEventListener('load', function(){
 
   /* ===== Persist ===== */
   const LSKEY='kensaCharts';
@@ -249,13 +241,17 @@ document.addEventListener('DOMContentLoaded', function(){
   hot && hot.addEventListener('mouseenter', openFly); hot && hot.addEventListener('mouseleave', scheduleClose);
   fly && fly.addEventListener('mouseenter', ()=>clearTimeout(hideTimer)); fly && fly.addEventListener('mouseleave', scheduleClose);
 
-  /* ===== Data source ===== */
+  /* ===== Data source =====
+     NOTE: Pastikan ID & nama sheet ini sama dengan file kamu.
+     Kalau tab di Sheet diganti, ubah konstanta TAB_NAME di sini. */
   const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
   const TAB_NAME ="最新情報";
   const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
 
   /* ===== Utils ===== */
+  const $ = sel => document.querySelector(sel);
   const S = s => String(s==null?'':s).trim();
+  const showErr = (msg)=>{ const b=$('#errorBanner'); b.style.display='block'; b.textContent=msg; };
   function parseCSV(t){
     const out=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g; let row=[], m; t=t.replace(/\r\n?/g,"\n");
     for(let i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break;
@@ -281,10 +277,11 @@ document.addEventListener('DOMContentLoaded', function(){
     if(m) return new Date(m[1],m[2]-1,m[3],m[4]||0,m[5]||0);
     const d=new Date(s); return isNaN(d)?null:d;
   }
-  function fmtDate(d){ if(!d) return ''; const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}` }
-  function fmtMonth(d){ const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}` }
+  const z2=n=>String(n).padStart(2,'0');
+  function fmtDate(d){ if(!d) return ''; return `${d.getFullYear()}-${z2(d.getMonth()+1)}-${z2(d.getDate())}` }
+  function fmtMonth(d){ return `${d.getFullYear()}-${z2(d.getMonth()+1)}` }
 
-  /* ===== Status & helpers ===== */
+  /* ===== Status ===== */
   const STATUS = [
     {key:'shipok',   label:'出荷済',     icon:'📦', cls:'shipok',  rx:/出荷済/},
     {key:'prep',     label:'出荷準備済', icon:'🚚', cls:'prep',    rx:/出荷準備済/},
@@ -361,9 +358,8 @@ document.addEventListener('DOMContentLoaded', function(){
     const custEntries=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,state.custTop);
     const custLabels=custEntries.map(x=>x[0]), custValues=custEntries.map(x=>x[1]);
 
-    // for monthly customers: build YTD top list & datasets
+    // YTD monthly customers
     const months=monthlyLabels;
-    // YTD total per customer for ranking
     const ytdCustTotals = {};
     months.forEach(m=>{
       const o=mapCustMonth[m]||{};
@@ -400,8 +396,8 @@ document.addEventListener('DOMContentLoaded', function(){
       scales
     };
   }
-
   function upsertChart(ctx, cfg, ref){ if(window[ref]){ window[ref].data=cfg.data; window[ref].options=cfg.options; window[ref].update(); } else { window[ref]=new Chart(ctx, cfg); } }
+  function clearLoading(){ document.querySelectorAll('.cwrap .loading').forEach(e=>e.remove()); }
 
   function renderChips(counts){
     const box=document.getElementById('chipsBox');
@@ -483,7 +479,7 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     upsertChart(document.getElementById('custQty'), custCfg, 'custChart');
 
-    /* Customer Monthly panel: mode = stacked | pie | pareto  */
+    /* Customer Monthly panel: stacked | pie | pareto  */
     buildMonthSelect(ag.months);
     let cmCfg;
     if(state.custMonMode==='stacked'){
@@ -526,6 +522,7 @@ document.addEventListener('DOMContentLoaded', function(){
     upsertChart(document.getElementById('custMonthly'), cmCfg, 'custMonChart');
 
     document.getElementById('lastup').textContent = 'Last update: '+new Date().toLocaleString();
+    clearLoading();
   }
 
   /* ===== Fetch & live ===== */
@@ -534,12 +531,19 @@ document.addEventListener('DOMContentLoaded', function(){
     try{
       btn.textContent='Loading…'; btn.disabled=true;
       const res=await fetch(CSV_URL+'&_ts='+Date.now(),{cache:'no-store'});
+      if(!res.ok){ throw new Error('HTTP '+res.status+' – periksa permission Sheet/tab name'); }
       const text=await res.text();
       const data=parseCSV(text);
+      if(!data.length){ throw new Error('CSV kosong – pastikan tab "'+TAB_NAME+'" berisi data'); }
       const header=data[0], rows=data.slice(1);
       const idx=indexByName(header);
+      if(idx.date==null || idx.qty==null){ throw new Error('Kolom wajib (出荷日/数量) tidak ditemukan. Cek header sheet.'); }
       cache={header,rows,idx};
+      $('#errorBanner').style.display='none';
       renderAll();
+    }catch(e){
+      showErr('Gagal memuat data: '+e.message);
+      console.error(e);
     }finally{
       btn.textContent=old; btn.disabled=false;
     }
@@ -592,7 +596,8 @@ document.addEventListener('DOMContentLoaded', function(){
       state.metric=b.getAttribute('data-metric'); setLS({metric:state.metric});
       document.getElementById('metricBadge').textContent='表示: '+(state.metric==='count'?'件数':'数量'); renderAll(); });
   });
-  // Labels
+  // Labels (FAB)
+  const btnLabels=document.createElement('div');
   document.getElementById('btnLabels').addEventListener('click', ()=>{ state.labels=!state.labels; setLS({labels:state.labels}); document.getElementById('btnLabels').textContent=(state.labels?'✓ ':'✗ ')+'Labels'; renderAll(); });
   // Refresh / Live
   document.getElementById('btnRefresh').addEventListener('click', load);
@@ -604,14 +609,14 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('clearFilter').addEventListener('click', ()=>{ state.status=null; setLS({status:null}); renderAll(); dropdown.classList.remove('open'); });
   document.addEventListener('click', (e)=>{ if(!dropdown.contains(e.target)) dropdown.classList.remove('open'); });
 
-  // Customer Top panel mode
+  // Top customers panel
   document.getElementById('custTypeBar').addEventListener('click', ()=>{ state.custType='bar'; setLS({custType:'bar'}); renderAll(); });
   document.getElementById('custTypeBarH').addEventListener('click', ()=>{ state.custType='barH'; setLS({custType:'barH'}); renderAll(); });
   document.getElementById('custTypePie').addEventListener('click', ()=>{ state.custType='pie'; setLS({custType:'pie'}); renderAll(); });
   document.getElementById('custTypePareto').addEventListener('click', ()=>{ state.custType='pareto'; setLS({custType:'pareto'}); renderAll(); });
   document.getElementById('custTop').addEventListener('click', ()=>{ state.custTop = (state.custTop===10?20:10); setLS({custTop:state.custTop}); document.getElementById('custTop').textContent='Top'+state.custTop; renderAll(); });
 
-  // Customer Monthly panel controls
+  // Customer Monthly panel
   document.getElementById('custMonModeStack').addEventListener('click', ()=>{ state.custMonMode='stacked'; setLS({custMonMode:'stacked'}); renderAll(); });
   document.getElementById('custMonModePie').addEventListener('click',   ()=>{ state.custMonMode='pie'; setLS({custMonMode:'pie'}); renderAll(); });
   document.getElementById('custMonModePareto').addEventListener('click',()=>{ state.custMonMode='pareto'; setLS({custMonMode:'pareto'}); renderAll(); });
