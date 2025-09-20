@@ -38,9 +38,7 @@ a{color:inherit; text-decoration:none}
 .badge{height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--ink); background:#f1f5f9; border:1px solid var(--border); border-radius:999px}
 
 /* ===== Sidebar (desktop hover) ===== */
-.edge-hotspot{
-  position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:70;
-}
+.edge-hotspot{ position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:70 }
 .hover-side{
   position:fixed; left:0; top:64px; height:calc(100vh - 64px);
   width:260px; padding:14px 12px; overflow:auto;
@@ -65,7 +63,6 @@ a{color:inherit; text-decoration:none}
 .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
 .burger{ display:none; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer }
 .burger:active{ transform:scale(.98) }
-
 @media (max-width:900px){
   .burger{ display:inline-flex }
   .edge-hotspot, .hover-side{ display:none }
@@ -78,9 +75,16 @@ main{ max-width:1400px; margin:0 auto; padding:22px 20px 96px }
 .panel{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-2); padding:18px; overflow:auto }
 .panel + .panel{ margin-top:18px }
 .panel-title{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px }
-.urgent-banner{ background:#fee2e2; color:#991b1b; padding:10px 16px; border-radius:12px; font-weight:800; border:1px solid #fecaca; }
 
-/* Table-like header */
+/* Urgent banner center + blink */
+.urgent-banner{
+  background:#fee2e2; color:#991b1b; padding:12px 16px; border-radius:12px; font-weight:800; border:1px solid #fecaca;
+  text-align:center;
+}
+@keyframes blinkSoft{ 0%,100%{opacity:1} 50%{opacity:.65} }
+.urgent-banner.blink{ animation: blinkSoft 1.2s infinite }
+
+/* Table head/body */
 .grid-head{ display:grid; grid-template-columns: 260px 160px 1fr 180px 120px 1.2fr; gap:12px; padding:12px 8px; color:#475569; font-weight:800; border-bottom:1px solid var(--border) }
 .grid-row { display:grid; grid-template-columns: 260px 160px 1fr 180px 120px 1.2fr; gap:12px; align-items:center; padding:12px 8px; border-top:1px solid var(--border) }
 .grid-row:hover{ background:#f8fafc }
@@ -103,17 +107,23 @@ main{ max-width:1400px; margin:0 auto; padding:22px 20px 96px }
 .note-chip{ display:inline-flex; align-items:center; padding:8px 10px; background:#f1f5f9; border:1px solid var(--border); border-radius:999px; font-weight:700; color:#0f172a; }
 .note-chip:hover{ background:#e2e8f0 }
 
-/* Section heads */
-.section-head{ display:flex; justify-content:space-between; align-items:end; gap:12px; margin:8px 0 10px }
-.filters{ display:flex; gap:10px; flex-wrap:wrap; align-items:center }
-
-/* Filter chips */
+/* ===== Filter dropdown ===== */
+.tools{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+.filter-dropdown{ position:relative }
+#filterToggle{ display:inline-flex; align-items:center; gap:8px }
+.filter-panel{
+  position:absolute; left:0; top:110%; z-index:40;
+  background:#fff; border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow-2);
+  padding:12px; min-width:520px; display:none;
+}
+.filter-panel.open{ display:block }
+.fbar{ display:flex; gap:10px; flex-wrap:wrap }
 .fchip{ display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--border); background:#fff; border-radius:999px; cursor:pointer; font-weight:800 }
 .fchip.active{ background:#ebf5ff; border-color:#bfdbfe; box-shadow: inset 0 0 0 2px #bfdbfe }
 .fcount{ background:#1e3a8a; color:#fff; font-size:12px; font-weight:800; border-radius:999px; padding:0 8px; line-height:18px; display:inline-flex; align-items:center }
-
-/* Date input row */
-.tools{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+@media (max-width:720px){
+  .filter-panel{ min-width:280px; right:auto; left:0 }
+}
 
 /* Footer ticker */
 .marquee{position:fixed; left:20px; right:20px; bottom:20px; z-index:30; background:var(--brand); color:#fff; font-weight:800; border-radius:12px; box-shadow:var(--shadow-1); white-space:nowrap; overflow:hidden}
@@ -141,12 +151,12 @@ main{ max-width:1400px; margin:0 auto; padding:22px 20px 96px }
 </header>
 
 <main>
-  <!-- urgent -->
+  <!-- Urgent -->
   <div id="urgentBanner" class="urgent-banner" style="display:none"></div>
 
   <!-- 本日出荷 -->
   <section class="panel">
-    <div class="section-head">
+    <div class="panel-title">
       <h2 class="h1">本日出荷</h2>
       <span class="badge">件数 <strong id="todayCount">0</strong></span>
     </div>
@@ -156,21 +166,25 @@ main{ max-width:1400px; margin:0 auto; padding:22px 20px 96px }
     <div id="todayBody"></div>
   </section>
 
-  <!-- 全件一覧 + quick filter -->
+  <!-- 全件一覧 -->
   <section class="panel">
-    <div class="section-head">
+    <div class="panel-title">
       <h2 class="h1">全件一覧</h2>
       <div class="tools">
+        <!-- DROPDOWN FILTER -->
+        <div class="filter-dropdown">
+          <button id="filterToggle" class="btn">🔎 Filter status ▾ <span id="activeFilterLabel" class="small" style="margin-left:6px;color:#0f172a;font-weight:800">すべて</span></button>
+          <div id="filterPanel" class="filter-panel" role="dialog" aria-label="status filters">
+            <div style="margin-bottom:8px; font-size:12px; color:#64748b">Klik status untuk filter. Klik lagi untuk clear.</div>
+            <div class="fbar" id="filterBar"><!-- chips by JS --></div>
+          </div>
+        </div>
+
         <label class="small">出荷日：</label>
         <input type="date" id="filterDate" style="height:36px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff;">
         <button class="btn" id="btnToday">本日出荷のみ</button>
         <button class="btn" id="btnClear">Clear</button>
       </div>
-    </div>
-
-    <!-- quick filters -->
-    <div class="filters" id="filterBar">
-      <!-- chips diisi via JS -->
     </div>
 
     <div class="grid-head">
@@ -224,13 +238,10 @@ main{ max-width:1400px; margin:0 auto; padding:22px 20px 96px }
 <div class="marquee"><span>品質管理生産技術システム - 最新の出荷状況を表示しています - Awali Dengan Bismillah</span></div>
 <div class="footer">Design by Wahyu</div>
 
-<!-- ===== LIBS (optional export) ===== -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
 <script>
-/* ========= Sidebar & Drawer ========= */
-const edge = document.getElementById('edgeHotspot');
-const side = document.getElementById('hoverSide');
+/* ========= Sidebar/Drawer ========= */
+const edge=document.getElementById('edgeHotspot'); const side=document.getElementById('hoverSide');
 let hideTimer=null; const HIDE_DELAY=280;
 function openSide(){ clearTimeout(hideTimer); side.classList.add('open'); }
 function scheduleClose(){ clearTimeout(hideTimer); hideTimer=setTimeout(()=>side.classList.remove('open'), HIDE_DELAY); }
@@ -239,31 +250,24 @@ edge?.addEventListener('mouseleave', scheduleClose);
 side?.addEventListener('mouseenter', ()=>clearTimeout(hideTimer));
 side?.addEventListener('mouseleave', scheduleClose);
 
-const drawer = document.getElementById('drawer');
-document.getElementById('btnBurger')?.addEventListener('click', ()=>{
-  drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');
-});
-drawer?.addEventListener('click', (e)=>{
-  if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
-});
+const drawer=document.getElementById('drawer');
+document.getElementById('btnBurger')?.addEventListener('click', ()=>{ drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); });
+drawer?.addEventListener('click', (e)=>{ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); } });
 
-/* ========= Data Load ========= */
-const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE"; // ganti jika perlu
-const TAB_NAME ="最新情報";
+/* ========= Data ========= */
+const SHEET_ID="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
+const TAB_NAME="最新情報";
 const CSV_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
-const S = s => String(s ?? '').trim();
+const S=s=>String(s??'').trim();
 
 function parseCSV(t){
-  const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
-  let m,row=[]; t=t.replace(/\r\n?/g,"\n");
+  const rows=[],re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g; let m,row=[]; t=t.replace(/\r\n?/g,"\n");
   for(let i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break;
     let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-    row.push(cell); i=re.lastIndex;
-    if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
+    row.push(cell); i=re.lastIndex; if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
   }
   return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
 }
-
 function indexByName(header){
   const map={}; header.forEach((h,i)=>map[S(h)]=i);
   const find=nms=>{ for(const n of nms){ if(n in map) return map[n]; } return null; };
@@ -285,23 +289,22 @@ function indexByName(header){
 }
 const at=(r,i)=> (i==null?"":(r[i]??""));
 
-/* ========= Status mapping ========= */
-const STATUS_MAP = [
-  {key:'レーザ加工', label:'レーザ加工', color:'tag-blue',    icon:'🔧'},
-  {key:'板金加工',   label:'板金加工',   color:'tag-purple',  icon:'🛠️'},
-  {key:'外注',       label:'外注',       color:'tag-orange',  icon:'🏭'},
-  {key:'加工済',     label:'加工済',     color:'tag-sky',     icon:'✅'},
-  {key:'組立中',     label:'組立中',     color:'tag-orange',  icon:'🧰'},
-  {key:'組立完了',   label:'組立完了',   color:'tag-green',   icon:'🧩'},
-  {key:'検査中',     label:'検査中',     color:'tag-blue',    icon:'🔬'},
-  {key:'検査済',     label:'検査済',     color:'tag-green',   icon:'✅'},
-  {key:'出荷準備済', label:'出荷準備済', color:'tag-sky',     icon:'🚚'}
+/* Status map */
+const STATUS_MAP=[
+  {key:'レーザ加工', label:'レーザ加工', color:'tag-blue',   icon:'🛠️'},
+  {key:'板金加工',   label:'板金加工',   color:'tag-purple', icon:'🔩'},
+  {key:'外注',       label:'外注',       color:'tag-orange', icon:'🏭'},
+  {key:'加工済',     label:'加工済',     color:'tag-sky',    icon:'✅'},
+  {key:'組立中',     label:'組立中',     color:'tag-orange', icon:'🧰'},
+  {key:'組立完了',   label:'組立完了',   color:'tag-green',  icon:'🧩'},
+  {key:'検査中',     label:'検査中',     color:'tag-blue',   icon:'🔬'},
+  {key:'検査済',     label:'検査済',     color:'tag-green',  icon:'✅'},
+  {key:'出荷準備済', label:'出荷準備済', color:'tag-sky',    icon:'🚚'}
 ];
-const STATUS_KEYS = STATUS_MAP.map(s=>s.key);
+const STATUS_KEYS=STATUS_MAP.map(s=>s.key);
 function normalizeStatus(raw){
   const t=S(raw);
   for(const s of STATUS_MAP){ if(t.includes(s.key)) return s.key; }
-  // fallback heuristik lama:
   if(/検査中|検/.test(t)) return '検査中';
   if(/検査済|済|完了|OK|Done/i.test(t)) return '検査済';
   if(/組立中|組/.test(t)) return '組立中';
@@ -309,54 +312,45 @@ function normalizeStatus(raw){
   return t||'';
 }
 
-/* ========= Rendering ========= */
 function fmtDate(d){ const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;}
 function parseJPDate(str){
   const s=String(str??"").trim();
-  const mJP=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
-  if(mJP) return new Date(mJP[1],mJP[2]-1,mJP[3]);
+  const mJP=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/); if(mJP) return new Date(mJP[1],mJP[2]-1,mJP[3]);
   const p=s.replaceAll('-','/').split('/'); if(p.length===3) return new Date(p[0],p[1]-1,p[2]);
   const d=new Date(s); return isNaN(d)?null:d;
 }
 function sameYMD(a,b){ return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
 
 function statusTag(key){
-  const def = STATUS_MAP.find(s=>s.key===key);
+  const def=STATUS_MAP.find(s=>s.key===key);
   if(!def) return `<span class="tag tag-purple">状態不明</span>`;
   return `<span class="tag ${def.color}">${def.icon} ${def.label}</span>`;
 }
 function urgentTag(){ return `<span class="tag tag-red">⚠ 至急</span>`; }
-
 function chipDate(d){ return `<span class="chip">📅 ${fmtDate(d)}</span>`; }
-
 function noteChips(text){
-  const s=S(text);
-  if(!s) return '';
-  // pecah di spasi / koma
-  const parts = s.split(/[\s,、]+/).filter(Boolean);
+  const s=S(text); if(!s) return '';
+  const parts=s.split(/[\s,、]+/).filter(Boolean);
   return parts.map(p=>`<span class="note-chip">${p}</span>`).join('');
 }
 
-function rowHTML(idx, r){
-  const d = idx.date!=null?parseJPDate(at(r,idx.date)):null;
-  const cust = S(at(r,idx.cust));
-  const draw = S(at(r,idx.draw));
-  const machine = S(at(r,idx.machine));
-  const qty = S(at(r,idx.qty));
-  const to = S(at(r,idx.to));
-  const note = S(at(r,idx.note));
-  const stRaw = idx.status_done!=null?normalizeStatus(at(r,idx.status_done)):'';
-  const urgent = idx.status_flag!=null && /至急|urgent|緊急|true|1/i.test(S(at(r,idx.status_flag)));
-  const ts = S(at(r,idx.ts));
-  const user=S(at(r,idx.user));
+function rowHTML(idx,r){
+  const d=idx.date!=null?parseJPDate(at(r,idx.date)):null;
+  const cust=S(at(r,idx.cust));
+  const draw=S(at(r,idx.draw));
+  const machine=S(at(r,idx.machine));
+  const qty=S(at(r,idx.qty));
+  const to=S(at(r,idx.to)); const note=S(at(r,idx.note));
+  const stRaw=idx.status_done!=null?normalizeStatus(at(r,idx.status_done)):'';
+  const urgent=idx.status_flag!=null && /至急|urgent|緊急|true|1/i.test(S(at(r,idx.status_flag)));
+  const ts=S(at(r,idx.ts)); const user=S(at(r,idx.user));
 
-  return `
-  <div class="grid-row">
+  return `<div class="grid-row">
     <div class="leftcard">
       <div class="meta">
         <div class="line">${urgent?urgentTag():statusTag(stRaw)}</div>
-        <div class="line"><strong>更新日：</strong>${ts?ts:'—'}</div>
-        <div class="line"><strong>更新者：</strong>${user?user:'—'}</div>
+        <div class="line"><strong>更新日：</strong>${ts||'—'}</div>
+        <div class="line"><strong>更新者：</strong>${user||'—'}</div>
       </div>
     </div>
     <div>${d?chipDate(d):''}</div>
@@ -367,57 +361,50 @@ function rowHTML(idx, r){
   </div>`;
 }
 
-/* ========= Build sections ========= */
-let cached = {header:[], rows:[], idx:null};
+/* Rendering */
+let cached={header:[],rows:[],idx:null};
 
 function buildFilters(rows, idx){
   const bar=document.getElementById('filterBar');
-  const counts={};
-  for(const key of STATUS_KEYS){counts[key]=0;}
-  rows.forEach(r=>{
-    const st = idx.status_done!=null?normalizeStatus(at(r,idx.status_done)):'';
-    if(counts[st]!=null) counts[st]++
-  });
-  const allCount = rows.length;
-  let html = `<div class="fchip active" data-key="*">🌐 すべて <span class="fcount">${allCount}</span></div>`;
-  for(const def of STATUS_MAP){
-    html += `<div class="fchip" data-key="${def.key}">${def.icon}&nbsp;${def.label} <span class="fcount">${counts[def.key]||0}</span></div>`;
+  const counts={}; for(const k of STATUS_KEYS) counts[k]=0;
+  rows.forEach(r=>{ const st=idx.status_done!=null?normalizeStatus(at(r,idx.status_done)):''; if(counts[st]!=null) counts[st]++; });
+  const all=rows.length;
+
+  let html=`<div class="fchip active" data-key="*">🌐 すべて <span class="fcount">${all}</span></div>`;
+  for(const s of STATUS_MAP){
+    html+=`<div class="fchip" data-key="${s.key}">${s.icon}&nbsp;${s.label} <span class="fcount">${counts[s.key]||0}</span></div>`;
   }
   bar.innerHTML=html;
   bar.querySelectorAll('.fchip').forEach(el=>{
     el.addEventListener('click', ()=>{
       bar.querySelectorAll('.fchip').forEach(e=>e.classList.remove('active'));
       el.classList.add('active');
+      document.getElementById('activeFilterLabel').textContent = el.dataset.key==='*' ? 'すべて' : el.textContent.replace(/\s*\d+$/, '').trim();
       applyAllFilter();
     });
   });
 }
 
 function renderToday(rows, idx){
-  const box=document.getElementById('todayBody');
-  box.innerHTML = rows.map(r=>rowHTML(idx,r)).join('') || `<div style="padding:12px;color:#64748b">本日出荷はありません。</div>`;
+  document.getElementById('todayBody').innerHTML = rows.map(r=>rowHTML(idx,r)).join('') || `<div style="padding:12px;color:#64748b">本日出荷はありません。</div>`;
   document.getElementById('todayCount').textContent=rows.length;
 }
-
 function renderAll(rows, idx){
-  const box=document.getElementById('allBody');
-  box.innerHTML = rows.map(r=>rowHTML(idx,r)).join('') || `<div style="padding:12px;color:#64748b">データがありません。</div>`;
+  document.getElementById('allBody').innerHTML = rows.map(r=>rowHTML(idx,r)).join('') || `<div style="padding:12px;color:#64748b">データがありません。</div>`;
 }
 
 function applyAllFilter(){
-  const bar=document.getElementById('filterBar');
-  const active = bar.querySelector('.fchip.active')?.dataset.key || '*';
+  const active = document.querySelector('#filterBar .fchip.active')?.dataset.key || '*';
   const dateStr = document.getElementById('filterDate').value || null;
-
-  const {rows, idx} = cached;
-  let view = rows.slice();
+  const {rows, idx}=cached;
+  let view=rows.slice();
 
   if(dateStr && idx.date!=null){
     const target=new Date(dateStr+"T00:00:00");
-    view = view.filter(r=>{const d=parseJPDate(at(r,idx.date)); return d&&sameYMD(d,target)});
+    view=view.filter(r=>{const d=parseJPDate(at(r,idx.date)); return d&&sameYMD(d,target)});
   }
   if(active!=='*' && idx.status_done!=null){
-    view = view.filter(r=> normalizeStatus(at(r,idx.status_done))===active );
+    view=view.filter(r=> normalizeStatus(at(r,idx.status_done))===active );
   }
   renderAll(view, idx);
 }
@@ -429,12 +416,11 @@ function load(){
       const data=parseCSV(text); if(!data.length) throw new Error('CSV empty');
       const header=data[0], body=data.slice(1);
       const idx=indexByName(header);
-      // Urgent banner
+
       const urgentCount=body.reduce((n,r)=> n + (idx.status_flag!=null && /至急|urgent|緊急|true|1/i.test(S(at(r,idx.status_flag))) ? 1 : 0), 0);
       const ub=document.getElementById('urgentBanner');
-      if(urgentCount>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; } else { ub.style.display='none'; }
+      if(urgentCount>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; ub.classList.add('blink'); } else { ub.style.display='none'; ub.classList.remove('blink'); }
 
-      // sort by urgent -> status -> date desc
       const cmp=(a,b)=>{
         const ua=idx.status_flag!=null && /至急|urgent|緊急|true|1/i.test(S(at(a,idx.status_flag)));
         const ub=idx.status_flag!=null && /至急|urgent|緊急|true|1/i.test(S(at(b,idx.status_flag)));
@@ -446,19 +432,16 @@ function load(){
       };
       const rows=body.filter(r=>r.some(c=>S(c)!=="")).sort(cmp);
 
-      cached={header, rows, idx};
+      cached={header,rows,idx};
 
-      // 今日
-      const todayRows = (idx.date==null)?[]:rows.filter(r=>{
-        const d=parseJPDate(at(r,idx.date)); return d && sameYMD(d,new Date());
-      });
+      // today
+      const todayRows=(idx.date==null)?[]:rows.filter(r=>{const d=parseJPDate(at(r,idx.date)); return d&&sameYMD(d,new Date());});
       renderToday(todayRows, idx);
 
-      // 全件 + filter chips
+      // filters
       buildFilters(rows, idx);
       applyAllFilter();
 
-      // hints + timestamp
       const cols=[]; if(idx.qty!=null) cols.push('数量:'+header[idx.qty]); if(idx.cust!=null) cols.push('顧客:'+header[idx.cust]); if(idx.date!=null) cols.push('出荷日:'+header[idx.date]);
       document.getElementById('sourceHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）｜${cols.join(' ｜ ')} ｜ Urgent列: ${idx.status_flag!=null ? header[idx.status_flag] : '—'}`;
       document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
@@ -471,22 +454,30 @@ function load(){
     });
 }
 
-/* ========= Controls ========= */
-document.getElementById('btnRefresh').addEventListener('click', load);
-document.getElementById('btnLive').addEventListener('click', ()=>{
-  startAutoRefresh(intervalMs<=5000?60000:5000); load();
+/* ========= Filter dropdown behavior ========= */
+const toggleBtn=document.getElementById('filterToggle');
+const panel=document.getElementById('filterPanel');
+toggleBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  panel.classList.toggle('open');
+  const open=panel.classList.contains('open');
+  toggleBtn.innerHTML = (open? '🔎 Filter status ▲ ' : '🔎 Filter status ▾ ') + `<span id="activeFilterLabel" class="small" style="margin-left:6px;color:#0f172a;font-weight:800">${document.getElementById('activeFilterLabel')?.textContent||'すべて'}</span>`;
 });
-document.getElementById('filterDate').addEventListener('change', ()=>applyAllFilter());
-document.getElementById('btnToday').addEventListener('click', ()=>{
-  document.getElementById('filterDate').value = fmtDate(new Date());
-  applyAllFilter();
-});
-document.getElementById('btnClear').addEventListener('click', ()=>{
-  document.getElementById('filterDate').value=""; // keep filter chips state
-  applyAllFilter();
+document.addEventListener('click', (e)=>{
+  if(panel.classList.contains('open') && !panel.contains(e.target) && e.target!==toggleBtn){
+    panel.classList.remove('open');
+    toggleBtn.innerHTML = '🔎 Filter status ▾ <span id="activeFilterLabel" class="small" style="margin-left:6px;color:#0f172a;font-weight:800">'+(document.getElementById('activeFilterLabel')?.textContent||'すべて')+'</span>';
+  }
 });
 
-/* ========= Auto Refresh ========= */
+/* ========= Top controls ========= */
+document.getElementById('btnRefresh').addEventListener('click', load);
+document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
+document.getElementById('filterDate').addEventListener('change', ()=>applyAllFilter());
+document.getElementById('btnToday').addEventListener('click', ()=>{ document.getElementById('filterDate').value = fmtDate(new Date()); applyAllFilter(); });
+document.getElementById('btnClear').addEventListener('click', ()=>{ document.getElementById('filterDate').value=""; applyAllFilter(); });
+
+/* ========= Auto refresh ========= */
 let timer=null, intervalMs=60000;
 function startAutoRefresh(ms){
   intervalMs=ms; clearInterval(timer);
@@ -497,8 +488,6 @@ function startAutoRefresh(ms){
   else{liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off';}
 }
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
-
-/* Init */
 window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
 </script>
 </body>
