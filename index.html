@@ -4,25 +4,27 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>品質管理生産技術システム</title>
+
 <style>
   :root{
-    /* brand blues */
-    --blue-50:#eff6ff; --blue-100:#dbeafe; --blue-150:#e8f0ff; --blue-200:#bfdbfe;
-    --blue-300:#93c5fd; --blue-400:#60a5fa; --blue-500:#3b82f6; --blue-600:#2563eb;
-    --blue-700:#1d4ed8; --blue-800:#1e40af; --blue-900:#1e3a8a;
-
-    --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb; --ring:#c7d2fe;
-    --accent:var(--blue-600); --danger:#dc2626; --success:#10b981; --warning:#f59e0b; --purple:#8b5cf6;
-    --radius-xl:22px; --radius:12px; --shadow-1:0 12px 30px rgba(15,23,42,.08); --shadow-2:0 30px 60px rgba(15,23,42,.10);
+    /* ——— Brand (blue) ——— */
+    --ink:#0f172a; --muted:#64748b; --muted-2:#94a3b8;
+    --bg:#f6f7fb; --panel:#fff; --border:#e5e7eb; --ring:#c7d2fe;
+    --accent:#2563eb; --accent-50:#eff6ff; --accent-100:#dbeafe; --accent-200:#bfdbfe; --accent-600:#2563eb; --accent-700:#1d4ed8;
+    --purple:#8b5cf6; --warning:#f59e0b; --danger:#ef4444; --success:#10b981; --pink:#ec4899;
+    --radius-xl:22px; --radius:14px; --radius-sm:10px;
+    --shadow-1:0 12px 30px rgba(15,23,42,.08);
+    --shadow-2:0 30px 60px rgba(15,23,42,.10);
   }
+
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
     margin:0; color:var(--ink);
     font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
     background:
+      radial-gradient(900px 500px at 110% 0%, #dbeafe 0%, transparent 55%),
       radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
-      radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
       linear-gradient(120deg,#f8fafc,var(--bg));
   }
   a{color:inherit; text-decoration:none}
@@ -31,179 +33,165 @@
   .app{
     display:grid; grid-template-rows:64px 1fr; grid-template-areas:"header" "main"; min-height:100vh;
   }
-  header{grid-area:header; position:sticky; top:0; z-index:60;
-    backdrop-filter:blur(12px); background:#ffffffc7; border-bottom:1px solid var(--border);}
-  .header-wrap{height:64px; max-width:1400px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 14px;}
-  .brand{display:flex; align-items:center; gap:10px}
-  .brand img{height:32px}
+  header{
+    grid-area:header; position:sticky; top:0; z-index:50;
+    backdrop-filter:blur(12px); background:#ffffffd6; border-bottom:1px solid var(--border);
+  }
+  .header-wrap{
+    height:64px; max-width:1400px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 14px;
+  }
+  .brand{display:flex; align-items:center; gap:12px}
+  .brand img{height:36px}
   .ttl{font-weight:800}
   .top-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-  .btn{display:inline-flex; align-items:center; gap:8px; line-height:1; height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--border); background:#fff; cursor:pointer}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    height:36px; padding:0 14px; border-radius:12px; border:1px solid var(--border); background:#fff; cursor:pointer;
+  }
   .btn:hover{border-color:var(--ring)}
-  .badge{height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--ink); background:#f1f5f9; border:1px solid var(--border); border-radius:999px}
+  .badge{ display:inline-flex; align-items:center; gap:8px; height:28px; padding:0 10px; font-size:12px; font-weight:700; background:#f1f5f9; border:1px solid var(--border); border-radius:999px }
 
-  /* ===== Sidebar hover (desktop) ===== */
-  .edge-hotspot{position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:70;}
-  .hover-side{position:fixed; left:0; top:64px; height:calc(100vh - 64px); width:260px; padding:14px 12px; overflow:auto;
-              background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1); transform:translateX(-100%); transition:transform .22s ease; z-index:71;}
-  .hover-side.open{transform:translateX(0)}
+  /* ===== Hover Sidebar (desktop) ===== */
+  .edge-hotspot{ position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:60; }
+  .hover-side{
+    position:fixed; left:0; top:64px; height:calc(100vh - 64px);
+    width:260px; padding:14px 12px; overflow:auto;
+    background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
+    transform:translateX(-100%); transition:transform .22s ease; z-index:61;
+  }
+  .hover-side.open{ transform:translateX(0) }
   .hover-side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
   .navlist{ display:grid; gap:4px }
   .slink{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink) }
   .slink:hover{ background:#f1f5ff }
   .ico{ width:22px; text-align:center }
-  .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
-  .burger:active{transform:scale(.98)}
 
-  /* Drawer (mobile) */
+  /* ===== Drawer (mobile) ===== */
   .drawer{ position:fixed; inset:0; z-index:80; display:none }
   .drawer.open{ display:block }
   .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
-  .drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px); background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto; transform:translateX(-100%); transition:transform .25s ease }
+  .drawer .panel{
+    position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
+    background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto;
+    transform:translateX(-100%); transition:transform .25s ease
+  }
   .drawer.open .panel{ transform:translateX(0) }
   .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
 
   /* ===== Main ===== */
-  main{ grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 96px }
-  .page-head{ display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:14px }
+  main{ grid-area:main; max-width:1400px; margin:0 auto; padding:22px 20px 120px }
+  .page-head{ display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:16px }
   .h1{ font-size:22px; margin:0 }
   .small{ font-size:12px; color:var(--muted) }
-  .panel{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-2); padding:18px; overflow:auto }
+
+  .panel{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-2); padding:18px; overflow:hidden }
   .panel + .panel{ margin-top:18px }
   .panel-title{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px }
 
-  /* Urgent banner (center) */
+  /* ===== Urgent banner ===== */
   .urgent-banner{
     display:none; place-items:center; text-align:center;
-    padding:14px 18px; margin:2px 0 14px; font-weight:800; color:#7f1d1d;
-    background:#fee2e2; border:1px dashed #fecaca; border-radius:12px;
+    width:100%; padding:10px 14px; border-radius:12px;
+    background:#fee2e2; color:#991b1b; font-weight:800; margin-bottom:14px;
   }
-  .urgent-banner b{ font-weight:900 }
+  .urgent-banner span{ display:inline-block }
 
-  /* table */
-  table{width:100%; border-collapse:separate; border-spacing:0; min-width:900px}
-  thead th{position:sticky; top:0; z-index:1; background:#f8fafc; color:#475569; text-align:left; font-weight:800; padding:12px 14px; border-bottom:1px solid var(--border)}
-  tbody td{padding:18px 14px; border-bottom:1px solid var(--border); white-space:nowrap; vertical-align:middle}
-
-  /* left status card */
-  .statusCell{ display:flex; gap:14px; align-items:center }
-  .statCard{
-    min-width:240px; background:#f8fbff; border:1px solid var(--blue-200);
-    border-radius:16px; padding:12px 14px; box-shadow:inset 0 1px 0 #fff;
+  /* ===== Quick status chips ===== */
+  .chips{ display:flex; flex-wrap:wrap; gap:12px; margin:6px 0 14px }
+  .chip{
+    --bg:#f8fafc; --fg:#0f172a; --bd:#e5e7eb;
+    display:inline-flex; align-items:center; gap:10px;
+    padding:8px 14px; border-radius:999px; border:1px solid var(--bd);
+    background:var(--bg); color:var(--fg); font-weight:700; cursor:pointer;
   }
-  .statTop{ display:flex; align-items:center; gap:10px; margin-bottom:8px }
-  .chipStatus{
-    display:inline-flex; align-items:center; gap:8px; padding:6px 10px;
-    border-radius:999px; font-weight:900; color:#fff; background:var(--blue-600); box-shadow:0 2px 6px rgba(37,99,235,.25);
+  .chip .dot{ min-width:22px; height:22px; border-radius:999px; display:grid; place-items:center; font-size:12px; }
+  .chip.on{ background:#eaf2ff; border-color:#c7d2fe; color:#1d4ed8; }
+  .chip .count{ background:#fff; border:1px solid var(--bd); border-radius:999px; padding:0 6px; font-size:12px; height:20px; display:inline-grid; place-items:center; }
+
+  /* ===== Table-like cards ===== */
+  .thead{ display:grid; grid-template-columns: 1.1fr 1.1fr 1.1fr 1.1fr .7fr 1fr 1.2fr; gap:16px; padding:12px 16px; color:#475569; font-weight:800; border-bottom:1px solid var(--border); background:#f8fafc; }
+  .row{ display:grid; grid-template-columns: 1.1fr 1.1fr 1.1fr 1.1fr .7fr 1fr 1.2fr; gap:16px; padding:14px 16px; align-items:center; border-bottom:1px solid var(--border); }
+  .row:hover{ background:#f6f9ff }
+  .left-box{
+    display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; gap:8px 14px; align-items:center;
+    padding:14px; background:#f8fafc; border:1px solid var(--border); border-radius:18px; width:min(100%,340px);
   }
-  .chipUrgent{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-weight:900; color:#fff; background:#ef4444 }
-  .kv{ font-size:12px; color:#0f172a; display:grid; grid-template-columns:64px 1fr; gap:6px 10px }
-  .kv b{font-weight:900}
-  .dateBadge{ display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:999px; background:var(--blue-100); color:#0f172a; font-weight:900; border:1px solid var(--blue-200) }
+  .status-pill{ display:inline-flex; align-items:center; gap:8px; background:var(--accent-600); color:#fff; font-weight:800; padding:8px 14px; border-radius:999px }
+  .status-pill .i{ font-size:14px }
+  .urgent-pill{ display:inline-flex; align-items:center; gap:6px; background:#fee2e2; color:#991b1b; padding:6px 10px; border-radius:999px; font-weight:800 }
+  .date-chip{ display:inline-flex; align-items:center; gap:8px; background:#eaf2ff; color:#1d4ed8; font-weight:800; padding:10px 14px; border-radius:999px }
+  .meta{ font-size:13px; color:#334155; }
+  .meta b{ font-weight:800 }
 
-  /* tag kecil (di table all) */
-  .tag{display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:800; font-size:12px; color:#fff; margin-right:8px}
-  .tag-done{background:#0ea5e9}.tag-assem{background:var(--warning)}.tag-assem-done{background:var(--success)}.tag-inspect{background:#8b5cf6}.tag-not{background:#94a3b8}
+  .footer{ position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:var(--muted); background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border) }
 
-  /* chips bar (status quick filter) */
-  .chipbar{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 6px }
-  .fchip{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; cursor:pointer;
-          border:1px solid var(--blue-200); background:var(--blue-150); color:#0f172a; font-weight:800; font-size:13px;
-          box-shadow:inset 0 1px 0 #fff, 0 1px 2px rgba(2,6,23,.06); user-select:none; transition:all .15s ease }
-  .fchip:hover{ transform:translateY(-1px) }
-  .fchip.active{ background:var(--blue-600); color:#fff; border-color:var(--blue-600); box-shadow:0 6px 16px rgba(37,99,235,.18) }
-  .fchip .cnt{ min-width:20px; height:20px; padding:0 6px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; background:#fff; color:#0f172a; font-size:12px; font-weight:900 }
-  .fchip.active .cnt{ background:#1e40af; color:#fff }
-  .fchip .ic{ font-size:14px; line-height:1 }
-
-  /* footer ticker */
-  .marquee{position:fixed; left:20px; right:20px; bottom:20px; z-index:30; background:var(--accent); color:#fff; font-weight:800; border-radius:12px; box-shadow:var(--shadow-1); white-space:nowrap; overflow:hidden}
-  .marquee span{display:inline-block; padding:8px 0 8px 100%; animation:marquee 25s linear infinite}
-  @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
-  .footer{position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:#94a3b8; background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border)}
-
-  .admin-only{display:none}
-
-  @media(max-width:900px){
-    .burger{display:inline-flex}
-    .edge-hotspot,.hover-side{display:none}
-    .statCard{min-width:200px}
+  @media (max-width:1100px){
+    .thead, .row{ grid-template-columns: 1.2fr .9fr .9fr .9fr .7fr 1fr 1.2fr }
+  }
+  @media (max-width:900px){
+    .edge-hotspot, .hover-side{ display:none }
+    .thead{ display:none }
+    .row{ grid-template-columns: 1fr; gap:10px; border-radius:16px; border:1px solid var(--border); margin:10px 0; }
   }
 </style>
 </head>
-
 <body>
 <div class="app">
   <!-- ===== HEADER ===== -->
   <header>
     <div class="header-wrap">
-      <button id="btnBurger" class="burger" aria-label="メニュー"><span>☰</span></button>
-      <div class="brand"><img src="tsh.png" alt="TSH" onerror="this.style.display='none'"><div class="ttl"><strong>品質管理生産技術</strong></div></div>
+      <button id="btnBurger" class="btn" type="button">☰</button>
+      <div class="brand">
+        <img src="tsh.png" alt="TSH" onerror="this.style.display='none'">
+        <div class="ttl"><strong>品質管理生産技術</strong></div>
+      </div>
       <nav class="top-actions">
         <button id="btnRefresh" class="btn" type="button">⟳ Refresh</button>
         <button id="btnLive" class="btn" type="button" aria-pressed="false">● Live</button>
         <span id="intervalInfo" class="badge">60s</span>
-        <button id="btnAdmin" class="btn" type="button" title="Admin login/logout">管理</button>
-        <span id="lastUpdated" class="badge small">Last update: —</span>
+        <span id="lastUpdated" class="badge">Last update: —</span>
       </nav>
     </div>
   </header>
 
-  <!-- ===== MAIN ===== -->
   <main>
-    <div class="page-head">
-      <h1 class="h1">出荷状況一覧</h1>
-    </div>
+    <div id="urgent-banner" class="urgent-banner"><span>⚠ 至急案件が <b id="urgentCount">0</b> 件あります！早急に確認してください。</span></div>
 
-    <!-- Urgent center banner -->
-    <div id="urgent-banner" class="urgent-banner"></div>
-
-    <!-- ====== 本日出荷 ====== -->
-    <section id="todaySection" class="panel" style="display:none">
-      <div class="panel-title">
-        <h2 style="margin:0">本日出荷</h2>
-        <span class="badge">件数 <b id="todayCount">0</b></span>
-      </div>
-      <table id="todayTable">
-        <thead>
-          <tr id="todayHead">
-            <th style="width:320px">状況</th>
-            <th>出荷日</th><th>顧客名</th><th>図番</th><th>機種</th><th>数量</th><th>送り先</th><th>注番/備考</th>
-          </tr>
-        </thead>
-        <tbody id="todayBody"></tbody>
-      </table>
-    </section>
-
-    <!-- ====== 全件一覧 ====== -->
+    <!-- ===== 今日 ===== -->
     <section class="panel">
       <div class="panel-title">
+        <h2 style="margin:0">本日出荷</h2>
+        <span class="badge">件数&nbsp;<b id="todayCount">0</b></span>
+      </div>
+
+      <div class="thead" id="todayHead"></div>
+      <div id="todayBody"></div>
+    </section>
+
+    <!-- ===== 全件 ===== -->
+    <section class="panel">
+      <div class="panel-title" style="align-items:center">
         <h2 style="margin:0">全件一覧</h2>
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+        <div style="display:flex; gap:8px; align-items:center; margin-left:auto">
           <label class="small">出荷日：</label>
           <input type="date" id="filterDate" style="height:36px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:#0f172a">
           <button class="btn" id="btnToday" type="button">本日出荷のみ</button>
           <button class="btn" id="btnClear" type="button">Clear</button>
-          <div style="margin-left:auto; display:flex; gap:8px">
-            <button class="btn" id="btnExcel" type="button">⬇ Excel</button>
-            <button class="btn" id="btnPDF" type="button">⬇ PDF</button>
-          </div>
         </div>
       </div>
 
-      <!-- Quick filter status (chips) -->
-      <div id="statusChips" class="chipbar"></div>
+      <!-- quick filter chips -->
+      <div id="chips" class="chips"></div>
 
-      <table id="shipTable">
-        <thead><tr id="shipHead"></tr></thead>
-        <tbody id="shipBody"></tbody>
-      </table>
+      <div class="thead" id="shipHead"></div>
+      <div id="shipBody"></div>
+
       <div class="small" id="shipHint" style="margin-top:8px"></div>
     </section>
   </main>
 </div>
 
-<!-- ===== Hover Sidebar ===== -->
+<!-- ===== Hover Sidebar (desktop) ===== -->
 <div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
 <aside id="hoverSide" class="hover-side" aria-label="Pages">
   <h3>Pages</h3>
@@ -214,15 +202,14 @@
     <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
     <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
     <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
-  </div>
-
-  <div class="admin-only" style="margin-top:12px">
-    <h3>Admin</h3>
-    <div class="navlist">
-      <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-      <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix / 製造No</strong></a>
-      <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
-      <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+    <div style="margin-top:12px">
+      <h3>Admin</h3>
+      <div class="navlist">
+        <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+        <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix / 製造No</strong></a>
+        <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+        <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+      </div>
     </div>
   </div>
 </aside>
@@ -233,70 +220,45 @@
   <aside class="panel">
     <button class="close" data-close>✕</button>
     <div class="navlist" style="margin-top:30px">
-      <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
+      <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong></a>
       <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
       <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
       <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
       <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
       <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
     </div>
-
-    <div class="admin-only" style="margin-top:12px">
-      <h3>Admin</h3>
-      <div class="navlist">
-        <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-        <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix / 製造No</strong></a>
-        <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
-        <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
-      </div>
-    </div>
   </aside>
 </div>
 
-<div class="marquee"><span>品質管理生産技術システム - 最新の出荷状況を表示しています - Awali Dengan Bismillah</span></div>
 <div class="footer">Design by Wahyu</div>
 
-<!-- LIBS -->
+<!-- ===== LIBS ===== -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-/* ========= Drawer ========= */
+/* ========= Drawer (mobile) ========= */
 const drawer = document.getElementById('drawer');
 document.getElementById('btnBurger')?.addEventListener('click', ()=>{ drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); });
 drawer?.addEventListener('click', (e)=>{ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }});
 
-/* ========= Admin & Prefix ========= */
-const ADMIN_FLAG_KEY='kensa_admin'; const PREFIX_KEY='kensa_prefix';
-const LEGACY_ADMIN_KEYS=['admin_okuma','kensa_admin_okuma','admin_flag'];
-const LEGACY_PREFIX_KEYS=['prefix','okuma_prefix','kensa_prefix_okuma'];
-(function resetAdminOncePerSession(){ if(!sessionStorage.getItem('kensa_boot_done')){ localStorage.removeItem(ADMIN_FLAG_KEY); LEGACY_ADMIN_KEYS.forEach(k=>localStorage.removeItem(k)); sessionStorage.setItem('kensa_boot_done','1'); }})();
-(function migratePrefix(){ if(!localStorage.getItem(PREFIX_KEY)){ for(const k of LEGACY_PREFIX_KEYS){ const v=localStorage.getItem(k); if(v&&v.trim()){ localStorage.setItem(PREFIX_KEY,v.trim()); break; }}}})();
-function setAdmin(on){
-  document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
-  if(on){ localStorage.setItem(ADMIN_FLAG_KEY,'1'); LEGACY_ADMIN_KEYS.forEach(k=>localStorage.setItem(k,'1')); }
-  else{ localStorage.removeItem(ADMIN_FLAG_KEY); LEGACY_ADMIN_KEYS.forEach(k=>localStorage.removeItem(k)); }
-  const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
-}
-function isAdmin(){ return localStorage.getItem(ADMIN_FLAG_KEY)==='1'; }
-document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
-  if(isAdmin()){ if(confirm('Admin akan dimatikan. Lanjut?')) setAdmin(false); }
-  else{ const code=prompt('Admin code:'); const ADMIN_CODE='admin2025'; if(code===ADMIN_CODE) setAdmin(true); else alert('Kode tidak sesuai'); }
-});
-
-/* ========= Sidebar hover ========= */
-const hot=document.getElementById('edgeHotspot'); const fly=document.getElementById('hoverSide');
-let hideTimer=null; const HIDE_DELAY=280;
+/* ========= EDGE-HOVER sidebar (desktop) ========= */
+const hot = document.getElementById('edgeHotspot');
+const fly = document.getElementById('hoverSide');
+let hideTimer = null;
+const HIDE_DELAY = 280;
 function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
-function scheduleClose(){ clearTimeout(hideTimer); hideTimer=setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
-hot?.addEventListener('mouseenter', openFly); hot?.addEventListener('mouseleave', scheduleClose);
-fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer)); fly?.addEventListener('mouseleave', scheduleClose);
+function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
+hot?.addEventListener('mouseenter', openFly);
+hot?.addEventListener('mouseleave', scheduleClose);
+fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer));
+fly?.addEventListener('mouseleave', scheduleClose);
 
-/* ========= Sheet fetch & render ========= */
+/* ========= Data Source ========= */
 const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
 const TAB_NAME ="最新情報";
 const CSV_URL  =`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
+
+/* ========= Helpers ========= */
 const S = s => String(s ?? '').trim();
 
 function parseCSV(t){
@@ -304,7 +266,8 @@ function parseCSV(t){
   let m,row=[]; t=t.replace(/\r\n?/g,"\n");
   for(let i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break;
     let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-    row.push(cell); i=re.lastIndex; if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
+    row.push(cell); i=re.lastIndex;
+    if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
   }
   return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
 }
@@ -317,275 +280,307 @@ function indexByName(header){
     date:find(["出荷日","日付","Date"]),
     cust:find(["顧客名","客先","Customer"]),
     draw:find(["図番","Drawing","図面"]),
-    item:find(["商品名","品名","Item"]),
     machine:find(["機種","機種名","Machine"]),
+    item:find(["商品名","品名","Item"]),
     qty:find(["数量","Qty"]),
     to:find(["送り先","納品先","送付先"]),
     note:find(["注番","注文番号","備考","注文","Order","注釈"]),
     status_done:find(["製品状況","製品状態","納品状況"]) ?? findFz(/(製品|納品).*(状況|状態)/),
     status_flag:find(["Status","ステータス","状態","至急"]) ?? findFz(/status|至急/i),
-    ts:find(["製品状況更新日時","更新日時","更新日"]),
-    user:find(["更新者","入力者"]),
+    qc_check:find(["検査チェックシート","検査ﾁｪｯｸｼｰﾄ","CheckSheet"]) ?? findFz(/(検査|ﾁｪｯｸ|チェック).*シート|check/i),
+    qc_label:find(["テプラ","ﾃﾌﾟﾗ","ラベル","Label"]) ?? findFz(/(ﾃﾌﾟﾗ|テプラ|ﾗﾍﾞﾙ|ラベル|label)/i),
+    qc_result:find(["検査成績表","成績表","InspectionReport"]) ?? findFz(/(検査|inspection).*(成績|report)/i),
+    qc_pack:find(["梱包","Packing","包装"]) ?? findFz(/(梱包|packing|包装)/i),
+    updatedAt:find(["製品状況更新日時","更新日時","更新日"]),
+    updatedBy:find(["更新者","入力者"]),
   };
 }
-const v=(row,idx)=> (idx==null? "" : (row[idx]??""));
+const valAt=(row,idx)=>(idx==null?"":(row[idx]??""));
 
 function parseJPDate(str){
-  const s=S(str); const mJP=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+  const s=String(str??"").trim();
+  const mJP=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
   if(mJP) return new Date(mJP[1],mJP[2]-1,mJP[3]);
   const p=s.replaceAll('-','/').split('/'); if(p.length===3) return new Date(p[0],p[1]-1,p[2]);
   const d=new Date(s); return isNaN(d)?null:d;
 }
 function sameYMD(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
 function toInputDate(d){const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`}
-function isUrgent(vv){const t=S(vv).toLowerCase(); return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true"}
+function fmtYYMMDD(d){const z=n=>String(n).padStart(2,'0'); return `${String(d.getFullYear()).slice(2)}/${z(d.getMonth()+1)}/${z(d.getDate())}`}
 
+/* ========= Status mapping (ikon + label) ========= */
+const STATUS_META = {
+  "レーザ加工": {icon:"🛠️", color:"#1d4ed8"},
+  "板金加工":   {icon:"🛠️", color:"#1d4ed8"},
+  "外注":       {icon:"🏗️", color:"#0ea5e9"},
+  "加工完了":   {icon:"🧰", color:"#64748b"},
+  "組立中":     {icon:"🧰", color:"#f59e0b"},
+  "組立完了":   {icon:"✅", color:"#10b981"},
+  "検査中":     {icon:"🧪", color:"#3b82f6"},
+  "検査完了":   {icon:"✔️", color:"#10b981"},
+  "検査済":     {icon:"✔️", color:"#10b981"},
+  "出荷準備済": {icon:"🚚", color:"#2563eb"},
+};
+const STATUS_ORDER = ["レーザ加工","板金加工","外注","加工完了","組立中","組立完了","検査中","検査完了","出荷準備済"];
+
+/* ========= Sorter ========= */
+function getStatusFromValue(val){
+  const raw=S(val);
+  if(!raw) return {label:"", cls:""};
+  for(const k of STATUS_ORDER){ if(raw.includes(k)) return {label:k, cls:""}; }
+  // legacy fallback
+  if(/(検査)/.test(raw)) return {label:"検査中", cls:""};
+  if(/(組立中)/.test(raw)) return {label:"組立中", cls:""};
+  return {label:raw, cls:""};
+}
 function makeComparator(idx){
-  const rank=s=>({'検査中':1,'組立中':2,'未設定':3,'組立完了':4,'検査済':5}[s]??99);
+  const rank=s=>({ "検査中":1,"組立中":2,"レーザ加工":3,"板金加工":4,"外注":5,"加工完了":6,"組立完了":7,"検査完了":8,"検査済":8,"出荷準備済":9 }[s]??99);
   return (a,b)=>{
-    const au=idx.status_flag!=null&&isUrgent(v(a,idx.status_flag));
-    const bu=idx.status_flag!=null&&isUrgent(v(b,idx.status_flag));
+    const au=idx.status_flag!=null && /至急|urgent|緊急|1|true/i.test(valAt(a,idx.status_flag));
+    const bu=idx.status_flag!=null && /至急|urgent|緊急|1|true/i.test(valAt(b,idx.status_flag));
     if(au!==bu) return au?-1:1;
-    const sa=mapStatus(v(a,idx.status_done)).label;
-    const sb=mapStatus(v(b,idx.status_done)).label;
+    const sa=getStatusFromValue(valAt(a,idx.status_done)).label;
+    const sb=getStatusFromValue(valAt(b,idx.status_done)).label;
     if(rank(sa)!==rank(sb)) return rank(sa)-rank(sb);
-    const da=idx.date!=null?parseJPDate(v(a,idx.date)):null;
-    const db=idx.date!=null?parseJPDate(v(b,idx.date)):null;
+    const da=idx.date!=null?parseJPDate(valAt(a,idx.date)):null;
+    const db=idx.date!=null?parseJPDate(valAt(b,idx.date)):null;
     const ta=da?da.getTime():-Infinity, tb=db?db.getTime():-Infinity;
     return tb-ta;
   };
 }
 
-/* ====== STATUS defs & mapper (return key,label,cls) ====== */
-const STATUS_DEFS = [
-  { key:'all',        label:'すべて',     icon:'🌐' },
-  { key:'laser',      label:'レーザ加工', icon:'🔦' },
-  { key:'bending',    label:'板金加工',   icon:'🛠' },
-  { key:'vendor',     label:'外注',       icon:'🏭' },
-  { key:'proc-done',  label:'加工済',     icon:'🔧' },
-  { key:'assy',       label:'組立中',     icon:'🧰' },
-  { key:'assy-done',  label:'組立完了',   icon:'🧩' },
-  { key:'insp',       label:'検査中',     icon:'🧪' },
-  { key:'insp-done',  label:'検査済',     icon:'✅' },
-  { key:'ship-ready', label:'出荷準備済', icon:'🚚' },
-];
-
-function mapStatus(val){
-  const raw=S(val), t=raw.replace(/\s/g,'');
-  let key='unknown', label=raw||'未設定', cls='tag-not';
-  if(!t){ key='unknown'; label='未設定'; cls='tag-not'; }
-  else if(t==='レーザ加工'){ key='laser'; label='レーザ加工'; cls='tag-assem'; }
-  else if(t==='板金加工'||t==='曲げ加工'){ key='bending'; label='板金加工'; cls='tag-assem'; }
-  else if(t==='外注'){ key='vendor'; label='外注'; cls='tag-assem'; }
-  else if(t==='加工済'||t==='加工完了'){ key='proc-done'; label='加工済'; cls='tag-assem-done'; }
-  else if(t==='組立中'){ key='assy'; label='組立中'; cls='tag-assem'; }
-  else if(t==='組立完了'){ key='assy-done'; label='組立完了'; cls='tag-assem-done'; }
-  else if(t==='検査中'){ key='insp'; label='検査中'; cls='tag-inspect'; }
-  else if(t==='検査済'||t==='検査完了'){ key='insp-done'; label='検査済'; cls='tag-done'; }
-  else if(t==='出荷準備済'||t==='出荷待ち'){ key='ship-ready'; label='出荷準備済'; cls='tag-inspect'; }
-  else if(/(済|完了)/.test(t)){ key='insp-done'; label='検査済'; cls='tag-done'; }
-  else { key='unknown'; label=raw; cls='tag-not'; }
-  return {key,label,cls};
-}
-const selectedStatus = new Set();
-const getRowStatusKey = (row, idx)=> mapStatus(v(row, idx.status_done)).key;
-
-/* ====== cache ====== */
-let aborter=null,isLoading=false;
-let cache={header:[],rows:[],idx:null,cmp:null};
-
-/* ====== Rendering helpers ====== */
-function fmtYYMMDD(d){const yy=String(d.getFullYear()).slice(-2); const z=n=>String(n).padStart(2,'0'); return `${yy}/${z(d.getMonth()+1)}/${z(d.getDate())}`;}
-
-function statusCardHTML(row, idx){
-  const st = mapStatus(v(row, idx.status_done));
-  const urgent = idx.status_flag!=null && isUrgent(v(row,idx.status_flag));
-  const d = idx.ts!=null ? parseJPDate(v(row,idx.ts)) : null;
-  const user = S(v(row, idx.user)) || '—';
-  return `
-    <div class="statCard">
-      <div class="statTop">
-        <span class="chipStatus">${st.label}</span>
-        ${urgent ? `<span class="chipUrgent">⚠ 至急</span>` : ``}
-      </div>
-      <div class="kv">
-        <b>更新日</b><span>${d?fmtYYMMDD(d):'—'}</span>
-        <b>更新者</b><span>${user}</span>
-      </div>
-    </div>
+/* ========= Rendering ========= */
+function renderHead(headerEl){
+  headerEl.innerHTML = `
+    <div>状況</div>
+    <div>出荷日</div>
+    <div>顧客名</div>
+    <div>図番</div>
+    <div>機種</div>
+    <div>数量</div>
+    <div>送り先／注番</div>
   `;
 }
 
-function renderRows(header, idx, rows, tbodyEl, headEl){
-  // head (once)
-  if(headEl && !headEl.dataset.built){
-    headEl.innerHTML = `
-      <th style="width:320px">状況</th>
-      ${['出荷日','顧客名','図番','機種','数量','送り先','注番/備考'].map(h=>`<th>${h}</th>`).join('')}
-    `;
-    headEl.dataset.built='1';
+function renderCard(row, idx){
+  const stRaw = valAt(row, idx.status_done);
+  const st = getStatusFromValue(stRaw).label;
+  const meta = STATUS_META[st] || {icon:"🔹", color:"#2563eb"};
+  const urgent = idx.status_flag!=null && /至急|urgent|緊急|1|true/i.test(valAt(row,idx.status_flag));
+
+  const d = idx.date!=null?parseJPDate(valAt(row,idx.date)):null;
+  const dateText = d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : "";
+
+  const upd = idx.updatedAt!=null ? valAt(row,idx.updatedAt) : "";
+  let updText = "";
+  if(upd){
+    const du = parseJPDate(upd);
+    updText = du ? fmtYYMMDD(du) : S(upd);
   }
-  tbodyEl.innerHTML='';
-  rows.forEach(r=>{
-    const dateD = idx.date!=null ? parseJPDate(v(r,idx.date)) : null;
-    const dateEl = `<span class="dateBadge">${dateD ? toInputDate(dateD) : '—'}</span>`;
-    const stBadge = `<span class="tag ${mapStatus(v(r,idx.status_done)).cls}">${mapStatus(v(r,idx.status_done)).label}</span>`;
-    const urgent = idx.status_flag!=null && isUrgent(v(r,idx.status_flag));
-    const urgentBadge = urgent? `<span class="tag" style="background:#ef4444">⚠ 至急</span>`:'';
 
-    const left = `<div class="statusCell">${statusCardHTML(r,idx)}</div>`;
-    const cols = [
-      left,
-      dateEl,
-      S(v(r,idx.cust)),
-      S(v(r,idx.draw)),
-      S(v(r,idx.machine)),
-      S(v(r,idx.qty)),
-      S(v(r,idx.to)),
-      `${urgentBadge}${stBadge} ${S(v(r,idx.note))}`
-    ];
-    tbodyEl.insertAdjacentHTML('beforeend', `<tr>${cols.map((c,i)=>`<td${i===0?' style="width:320px"':''}>${c}</td>`).join('')}</tr>`);
-  });
+  const updBy = idx.updatedBy!=null ? S(valAt(row,idx.updatedBy)) : "";
+
+  const left = `
+    <div class="left-box">
+      <div class="status-pill" style="background:${meta.color}">
+        <span class="i">${meta.icon}</span><span>${st||'—'}</span>
+      </div>
+      ${urgent?`<div class="urgent-pill">⚠ 至急</div>`:""}
+      <div class="meta"><b>更新日</b>：${updText||'—'}</div>
+      <div class="meta"><b>更新者</b>：${updBy||'—'}</div>
+    </div>
+  `;
+
+  const right = `
+    <div class="date-chip">📅 ${dateText||'—'}</div>
+    <div>${S(valAt(row, idx.cust))||'—'}</div>
+    <div>${S(valAt(row, idx.draw))||'—'}</div>
+    <div>${S(valAt(row, idx.machine))||'—'}</div>
+    <div>${S(valAt(row, idx.qty))||'—'}</div>
+    <div>
+      ${S(valAt(row, idx.to))||'—'}
+      ${S(valAt(row, idx.note)) ? `<span style="margin-left:10px; background:#eef2ff; border:1px solid #e5e7eb; padding:6px 10px; border-radius:999px; font-weight:700; color:#4f46e5">${S(valAt(row, idx.note))}</span>`:""}
+    </div>
+  `;
+
+  return `<div class="row">${left}${right}</div>`;
 }
 
-/* ===== Chips (build + counts + style) ===== */
-function buildStatusChips(){
-  const bar = document.getElementById('statusChips');
-  bar.innerHTML = STATUS_DEFS.map(st=>{
-    if(st.key==='all'){
-      return `<div class="fchip active" data-key="all"><span class="ic">${st.icon}</span>${st.label}<span class="cnt">–</span></div>`;
-    }
-    return `<div class="fchip" data-key="${st.key}"><span class="ic">${st.icon}</span>${st.label}<span class="cnt">0</span></div>`;
-  }).join('');
-  bar.addEventListener('click',(e)=>{
-    const chip=e.target.closest('.fchip'); if(!chip) return;
-    const key=chip.dataset.key;
-    if(key==='all'){ selectedStatus.clear(); }
-    else{ selectedStatus.has(key)? selectedStatus.delete(key): selectedStatus.add(key); }
-    updateChipActiveStyles(); recompute();
-  });
-}
-function updateStatusChipCounts(rowsBase){
-  const counts={}; rowsBase.forEach(r=>{ const k=getRowStatusKey(r, cache.idx); counts[k]=(counts[k]||0)+1; });
-  const bar=document.getElementById('statusChips');
-  STATUS_DEFS.forEach(st=>{
-    const el=bar.querySelector(`.fchip[data-key="${st.key}"] .cnt`); if(!el) return;
-    el.textContent = st.key==='all' ? String(rowsBase.length) : String(counts[st.key]||0);
-  });
-}
-function updateChipActiveStyles(){
-  const bar=document.getElementById('statusChips');
-  bar.querySelectorAll('.fchip').forEach(el=>{
-    const k=el.dataset.key;
-    el.classList.toggle('active', k==='all' ? selectedStatus.size===0 : selectedStatus.has(k));
-  });
-}
+/* ========= State ========= */
+let cached={header:[],rows:[],idx:null,cmp:null};
+let timer=null,intervalMs=60000;
+let activeStatus=null; // quick filter status
+let filteredDate=null; // date filter (for bottom only)
 
-/* ===== recompute (tanggal + status) ===== */
-function recompute(){
-  const {header,rows,idx,cmp}=cache;
-  // tanggal
-  const dateStr=document.getElementById('filterDate').value||null;
-  let base=rows;
-  if(idx.date!=null && dateStr){
-    const target=new Date(dateStr+'T00:00:00');
-    base=rows.filter(r=>{const d=parseJPDate(v(r,idx.date)); return d&&sameYMD(d,target)}).sort(cmp);
-  }
-  updateStatusChipCounts(base);
-
-  // status multi
-  let view=base;
-  if(selectedStatus.size>0){
-    view=base.filter(r=> selectedStatus.has(getRowStatusKey(r, idx)));
-  }
-  renderRows(header,idx,view,document.getElementById('shipBody'),document.getElementById('shipHead'));
-}
-
-/* ===== today section ===== */
-function renderTodaySection(){
-  const {header,rows,idx,cmp}=cache;
-  if(idx.date==null){document.getElementById('todaySection').style.display='none'; return;}
-  const today=new Date();
-  const todayRows=rows.filter(r=>{const d=parseJPDate(v(r,idx.date)); return d&&sameYMD(d,today)}).sort(cmp);
-  const vis=todayRows.length>0; document.getElementById('todaySection').style.display=vis?'':'none'; if(!vis) return;
-  document.getElementById('todayCount').textContent=todayRows.length;
-  // reuse same structure
-  const head=document.getElementById('todayHead'); head.dataset.built=''; // force once
-  renderRows(cache.header, cache.idx, todayRows, document.getElementById('todayBody'), head);
-}
-
-/* ===== load ===== */
+/* ========= Load ========= */
 async function load(){
   try{
-    if(isLoading){aborter?.abort()} isLoading=true;
     const btn=document.getElementById('btnRefresh'); const old=btn.textContent; btn.textContent='Loading...'; btn.disabled=true;
-    aborter=new AbortController();
-    const res=await fetch(CSV_URL+"&_ts="+Date.now(),{signal:aborter.signal,cache:'no-store'});
+
+    const res=await fetch(CSV_URL+"&_ts="+Date.now(),{cache:'no-store'});
     if(!res.ok) throw new Error("HTTP "+res.status);
-    const text=await res.text();
-    const data=parseCSV(text); if(!data.length) throw new Error("CSV empty");
+    const text=await res.text(); const data=parseCSV(text); if(!data.length) throw new Error("CSV empty");
     const header=data[0], rowsRaw=data.slice(1); const idx=indexByName(header); const cmp=makeComparator(idx);
-    const rows=[...rowsRaw].sort(cmp); cache={header,rows,idx,cmp};
+    const rows=[...rowsRaw].sort(cmp); cached={header,rows,idx,cmp};
 
-    // urgent banner
-    const urgentCount=rows.reduce((n,r)=> n + (idx.status_flag!=null && isUrgent(v(r, idx.status_flag)) ? 1 : 0), 0);
+    // urgent count (from Status column)
+    const urgentCount=rows.reduce((n,r)=> n + (idx.status_flag!=null && /至急|urgent|緊急|1|true/i.test(valAt(r, idx.status_flag)) ? 1 : 0), 0);
     const banner=document.getElementById('urgent-banner');
-    if(urgentCount>0){ banner.style.display='grid'; banner.innerHTML=`⚠ 至急案件が <b>${urgentCount}</b> 件あります！早急に確認してください。`; }
-    else{ banner.style.display='none'; banner.textContent=''; }
+    const cnt=document.getElementById('urgentCount'); cnt.textContent=urgentCount;
+    banner.style.display = urgentCount>0 ? 'grid' : 'none';
 
-    renderTodaySection();
+    // render heads
+    renderHead(document.getElementById('todayHead'));
+    renderHead(document.getElementById('shipHead'));
 
-    // hint
+    // render sections
+    renderTodaySection(); // always today
+    filteredDate = (document.getElementById('filterDate').value || null); // keep user choice
+    renderAllSection();
+
+    // chips
+    buildChips();
+
+    // hint & timestamp
     const cols=[]; if(idx.qty!=null) cols.push('数量:'+header[idx.qty]); if(idx.cust!=null) cols.push('顧客:'+header[idx.cust]); if(idx.date!=null) cols.push('出荷日:'+header[idx.date]);
     document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）｜${cols.join(' ｜ ')} ｜ Urgent列: ${idx.status_flag!=null ? header[idx.status_flag] : '—'}`;
     document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
-    document.getElementById('filterDate').value=toInputDate(new Date());
 
-    // build chips once
-    if(!document.getElementById('statusChips').dataset.ready){ buildStatusChips(); document.getElementById('statusChips').dataset.ready='1'; }
-    recompute();
-
-    btn.textContent=old; btn.disabled=false; isLoading=false;
+    btn.textContent=old; btn.disabled=false;
   }catch(e){
     console.error(e);
-    const btn=document.getElementById('btnRefresh'); btn.textContent='Refresh'; btn.disabled=false; isLoading=false;
+    const btn=document.getElementById('btnRefresh'); btn.textContent='Refresh'; btn.disabled=false;
     document.getElementById('shipHint').textContent='読み込みに失敗しました。シート名/公開設定/列名をご確認ください。';
   }
 }
 
-/* ===== export ===== */
-function exportExcel(){const table=document.getElementById("shipTable"); const wb=XLSX.utils.table_to_book(table,{sheet:"出荷状況"}); XLSX.writeFile(wb,"出荷状況.xlsx");}
-function exportPDF(){const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"});
-  doc.setFontSize(14); doc.text("出荷状況一覧",40,40);
-  doc.autoTable({html:"#shipTable", startY:60, styles:{fontSize:9, cellPadding:4, halign:"center", valign:"middle"}, headStyles:{fillColor:[238,242,247]}});
-  doc.save("出荷状況.pdf");
+/* ========= Render top (today) ========= */
+function renderTodaySection(){
+  const {rows,idx,cmp}=cached; if(idx.date==null){ document.getElementById('todayBody').innerHTML=''; document.getElementById('todayCount').textContent='0'; return; }
+  const today=new Date();
+  const list=rows.filter(r=>{const d=parseJPDate(valAt(r,idx.date)); return d&&sameYMD(d,today)}).sort(cmp);
+  document.getElementById('todayBody').innerHTML = list.map(r=>renderCard(r,idx)).join('') || `<div style="padding:12px 16px;color:#64748b">本日出荷はありません。</div>`;
+  document.getElementById('todayCount').textContent=list.length;
 }
 
-/* ===== live ===== */
-let timer=null,intervalMs=60000;
+/* ========= Render bottom (all with filters) ========= */
+function renderAllSection(){
+  const {rows,idx,cmp}=cached;
+  let view=[...rows];
+
+  // date filter (bottom only)
+  if(idx.date!=null && filteredDate){
+    const target=new Date(filteredDate+"T00:00:00");
+    view = view.filter(r=>{const d=parseJPDate(valAt(r,idx.date)); return d&&sameYMD(d,target)}).sort(cmp);
+  }
+
+  // quick status filter
+  if(activeStatus){
+    view = view.filter(r=> getStatusFromValue(valAt(r,idx.status_done)).label === activeStatus );
+  }
+
+  document.getElementById('shipBody').innerHTML = view.map(r=>renderCard(r,idx)).join('') || `<div style="padding:12px 16px;color:#64748b">該当データがありません。</div>`;
+}
+
+/* ========= Chips ========= */
+function buildChips(){
+  const {rows,idx}=cached;
+  const area=document.getElementById('chips'); area.innerHTML="";
+
+  // count per status
+  const countBy={ "すべて": rows.length };
+  for(const st of STATUS_ORDER) countBy[st]=0;
+  for(const r of rows){
+    const st = getStatusFromValue(valAt(r,idx.status_done)).label;
+    if(st && st in countBy) countBy[st]++; else if(st) countBy[st]= (countBy[st]||0)+1;
+  }
+
+  function chipHTML(key, label, icon){
+    const on = activeStatus===key;
+    return `
+      <div class="chip ${on?'on':''}" data-key="${key}">
+        <span class="dot">${icon||'🌐'}</span>
+        <span>${label}</span>
+        <span class="count">${countBy[key]??0}</span>
+      </div>`;
+  }
+
+  // all
+  area.insertAdjacentHTML('beforeend', chipHTML(null, "すべて", "🌐"));
+  // statuses
+  for(const st of STATUS_ORDER){
+    const icon = (STATUS_META[st]?.icon)||'🔹';
+    area.insertAdjacentHTML('beforeend', chipHTML(st, st, icon));
+  }
+
+  // click
+  area.querySelectorAll('.chip').forEach(ch=>{
+    ch.addEventListener('click', ()=>{
+      const key = ch.getAttribute('data-key');
+      activeStatus = (key===activeStatus) ? null : key;
+      buildChips();
+      renderAllSection();
+    });
+  });
+}
+
+/* ========= Export/Refresh ========= */
+function exportExcel(){
+  const table=document.createElement("table");
+  const headRow=document.createElement("tr");
+  ["状況","出荷日","顧客名","図番","機種","数量","送り先／注番"].forEach(h=>{ const th=document.createElement("th"); th.textContent=h; headRow.appendChild(th); });
+  table.appendChild(headRow);
+  // For simplicity: export bottom view only (filtered)
+  // (You can expand to include “today” if you like)
+  table.appendChild(document.createElement("tbody"));
+  const tmp=document.createElement("div"); tmp.innerHTML=document.getElementById("shipBody").innerHTML;
+  // Just dump text (simple)
+  const trs=[...tmp.querySelectorAll(".row")];
+  trs.forEach(row=>{
+    const tr=document.createElement("tr");
+    [...row.children].forEach((cell,i)=>{
+      const td=document.createElement("td"); td.textContent=cell.textContent.replace(/\s+/g,' ').trim(); tr.appendChild(td);
+    });
+    table.querySelector("tbody").appendChild(tr);
+  });
+  const wb=XLSX.utils.table_to_book(table,{sheet:"出荷状況"});
+  XLSX.writeFile(wb,"出荷状況.xlsx");
+}
+
+document.getElementById("btnRefresh").addEventListener("click", load);
+document.getElementById("btnLive").addEventListener("click", ()=>{
+  startAutoRefresh(intervalMs<=5000?60000:5000);
+  load();
+});
+document.getElementById("btnClear").addEventListener("click", ()=>{
+  document.getElementById('filterDate').value="";
+  filteredDate=null;
+  renderAllSection();
+});
+document.getElementById('btnToday').addEventListener('click', ()=>{
+  const today=toInputDate(new Date());
+  document.getElementById('filterDate').value=today;
+  filteredDate=today;
+  renderAllSection();
+});
+document.getElementById('filterDate').addEventListener('change', e=>{
+  filteredDate = e.target.value || null;
+  renderAllSection();
+});
+
 function startAutoRefresh(ms){
   intervalMs=ms; clearInterval(timer);
   timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs);
   document.getElementById('intervalInfo').textContent=`${Math.round(intervalMs/1000)}s`;
-  const liveBtn=document.getElementById('btnLive');
-  if(intervalMs<=5000){liveBtn.classList.add('active'); liveBtn.textContent='Live: On';}
-  else{liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off';}
 }
 
-/* ===== events ===== */
-document.getElementById('btnRefresh').addEventListener('click', load);
-document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
-
-document.getElementById('filterDate').addEventListener('change', ()=>recompute());
-document.getElementById('btnToday').addEventListener('click', ()=>{ document.getElementById('filterDate').value=toInputDate(new Date()); recompute(); });
-document.getElementById('btnClear').addEventListener('click', ()=>{ document.getElementById('filterDate').value=""; recompute(); });
-
-document.getElementById('btnExcel').addEventListener('click', exportExcel);
-document.getElementById('btnPDF').addEventListener('click', exportPDF);
-
-/* ===== init ===== */
-window.addEventListener('DOMContentLoaded', ()=>{ setAdmin(isAdmin()); load(); startAutoRefresh(60000); });
+/* ===== Init ===== */
+window.addEventListener('DOMContentLoaded', ()=>{
+  // default: TOP shows today. BOTTOM shows ALL (no date set)
+  document.getElementById('filterDate').value=""; // show all by default
+  startAutoRefresh(60000);
+  load();
+});
 </script>
 </body>
 </html>
