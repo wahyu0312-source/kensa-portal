@@ -22,9 +22,9 @@
   .btn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
   .badge{height:28px;padding:0 10px;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;background:#f1f5f9;border:1px solid var(--border);border-radius:999px;color:#0f172a}
   .burger{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
-  main{max-width:1400px;margin:0 auto;padding:22px 20px 120px}
+  main{max-width:1400px;margin:0 auto;padding:22px 20px 130px}
 
-  /* Hover sidebar (selaras file kamu) */
+  /* Sidebar hover */
   .edge-hotspot{position:fixed;left:0;top:64px;width:12px;height:calc(100vh - 64px);z-index:70}
   .hover-side{position:fixed;left:0;top:64px;height:calc(100vh - 64px);width:260px;padding:14px 12px;overflow:auto;background:#fff;border-right:1px solid var(--border);box-shadow:var(--shadow);transform:translateX(-100%);transition:transform .22s ease;z-index:71}
   .hover-side.open{transform:translateX(0)}
@@ -40,9 +40,8 @@
   .drawer.open .panel{transform:translateX(0)}
   .drawer .close{position:absolute;right:10px;top:10px;border:0;background:#f1f5f9;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer}
 
-  /* Urgent banner */
-  .urgent-banner{margin:12px 0 6px;background:#fee2e2;border:1px solid #fecaca;color:#991b1b;padding:12px 14px;border-radius:12px;text-align:center;font-weight:800;animation:blink 1.8s linear infinite;display:none}
-  @keyframes blink{0%,100%{opacity:1;}50%{opacity:.82}}
+  /* Banner */
+  .urgent-banner{margin:12px 0 6px;background:#fee2e2;border:1px solid #fecaca;color:#991b1b;padding:12px 14px;border-radius:12px;text-align:center;font-weight:800;display:none}
 
   /* Panel & grid */
   .panel{background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:14px}
@@ -58,21 +57,24 @@
   .toggle button.active{background:#eef2ff;box-shadow:inset 0 0 0 2px #c7d2fe;font-weight:700}
   .badge.muted{opacity:.75}
 
-  /* Canvas container tinggi tetap */
+  /* Canvas */
   .cwrap{height:320px}
-  .cwrap.tall{height:360px}
+  .cwrap.tall{height:380px}
 
-  /* Dropdown status */
+  /* Dropdown status (header) */
   .dropdown{position:relative}
   .drop-btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
   .drop-menu{position:absolute;top:42px;left:0;min-width:280px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:10px;display:none;z-index:200}
   .dropdown.open .drop-menu{display:block}
   .chips{display:flex;flex-wrap:wrap;gap:8px}
 
+  /* Per-chart toolbar */
+  .chartbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:2px 0 10px}
+  .chartbar .btn,.fab .btn{height:30px;padding:0 10px;border-radius:9px}
+
   /* Floating controls */
   .fab{position:fixed;right:16px;bottom:16px;z-index:120;display:grid;gap:8px;justify-items:end}
   .fab .card{background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:8px 10px;display:flex;align-items:center;gap:8px}
-  .fab .sm{height:30px;padding:0 10px;border-radius:9px}
   .fab .hint{font-size:12px;color:#475569}
 
   @media (max-width:900px){
@@ -81,9 +83,13 @@
   }
 </style>
 
-<!-- Chart.js & datalabels plugin -->
-<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" crossorigin="anonymous"></script>
+<!-- Chart.js + datalabels -->
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<!-- Export libs -->
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -129,21 +135,49 @@
       </div>
 
       <div class="grid">
+        <!-- Daily -->
         <div class="panel">
-          <h2 id="hDaily">出荷（日次・直近）</h2>
+          <div class="chartbar">
+            <strong>出荷（日次・直近）</strong>
+            <button id="dailyOrient" class="btn" data-orient="v">縦</button>
+            <button id="dailyExport" class="btn">Export</button>
+          </div>
           <div class="cwrap"><canvas id="dailyShip"></canvas></div>
         </div>
+
+        <!-- Monthly overall -->
         <div class="panel">
-          <h2 id="hMonthly">出荷（⽉次・年内）</h2>
+          <div class="chartbar">
+            <strong>出荷（⽉次・年内）</strong>
+            <button id="monthlyOrient" class="btn" data-orient="v">縦</button>
+            <button id="monthlyExport" class="btn">Export</button>
+          </div>
           <div class="cwrap"><canvas id="monthlyQty"></canvas></div>
         </div>
+
+        <!-- Customer Top-N -->
         <div class="panel">
-          <h2 id="hCust">顧客別 出荷（Top 10）</h2>
+          <div class="chartbar">
+            <strong id="hCust">顧客別 出荷（Top 10）</strong>
+            <button id="custTypeBar"  class="btn" data-type="bar">Bar</button>
+            <button id="custTypeBarH" class="btn" data-type="barH">BarH</button>
+            <button id="custTypePie"  class="btn" data-type="pie">Pie</button>
+            <button id="custTypePareto" class="btn" data-type="pareto">Pareto</button>
+            <button id="custTop" class="btn" data-top="10">Top10</button>
+            <button id="custExport" class="btn">Export</button>
+          </div>
           <div class="cwrap tall"><canvas id="custQty"></canvas></div>
         </div>
+
+        <!-- Customer Monthly Stacked -->
         <div class="panel">
-          <h2 id="hDest">送り先別 出荷</h2>
-          <div class="cwrap tall"><canvas id="destQty"></canvas></div>
+          <div class="chartbar">
+            <strong>顧客別 ⽉次 出荷（YTD）</strong>
+            <button id="custMonTop" class="btn" data-top="6">Top6</button>
+            <button id="custMonOrient" class="btn" data-orient="v">縦</button>
+            <button id="custMonExport" class="btn">Export</button>
+          </div>
+          <div class="cwrap tall"><canvas id="custMonthly"></canvas></div>
         </div>
       </div>
     </section>
@@ -180,13 +214,13 @@
   </div>
 </div>
 
-<!-- Floating controls (tidak mengganggu view) -->
+<!-- Floating controls -->
 <div class="fab" aria-live="polite">
   <div class="card">
-    <button id="btnRefresh" class="btn sm" type="button">⟳ Refresh</button>
-    <button id="btnLive" class="btn sm" type="button" aria-pressed="false">● Live</button>
-    <button id="btnLabels" class="btn sm" type="button">123 Labels</button>
-    <span id="intervalInfo" class="badge sm">—</span>
+    <button id="btnRefresh" class="btn" type="button">⟳ Refresh</button>
+    <button id="btnLive" class="btn" type="button" aria-pressed="false">● Live</button>
+    <button id="btnLabels" class="btn" type="button">123 Labels</button>
+    <span id="intervalInfo" class="badge">—</span>
   </div>
   <div class="card hint"><span id="lastup">Last update: —</span></div>
 </div>
@@ -194,47 +228,40 @@
 <script>
 document.addEventListener('DOMContentLoaded', function(){
 
-  /* ========= Persist helpers ========= */
-  const LSKEY = 'kensaCharts'; // single namespace key
-  function loadState(){
-    try{ return JSON.parse(localStorage.getItem(LSKEY) || '{}'); }catch{ return {}; }
-  }
-  function saveState(patch){
-    const cur = loadState();
-    localStorage.setItem(LSKEY, JSON.stringify(Object.assign(cur, patch)));
-  }
+  /* ====== Persist helpers ====== */
+  const LSKEY='kensaCharts';
+  const readLS=()=>{ try{return JSON.parse(localStorage.getItem(LSKEY)||'{}')}catch{return{}} };
+  const writeLS=(p)=>localStorage.setItem(LSKEY, JSON.stringify(Object.assign(readLS(), p)));
 
-  /* ========= Drawer & hover ========= */
-  var drawer = document.getElementById('drawer');
-  var btnBurger = document.getElementById('btnBurger');
-  if (btnBurger) btnBurger.addEventListener('click', function(){ drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); });
-  if (drawer) drawer.addEventListener('click', function(e){ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }});
+  /* ====== Drawer & hover ====== */
+  const drawer=document.getElementById('drawer');
+  const btnBurger=document.getElementById('btnBurger');
+  btnBurger && btnBurger.addEventListener('click', ()=>{drawer.classList.add('open');drawer.setAttribute('aria-hidden','false');});
+  drawer && drawer.addEventListener('click', e=>{ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }});
+  const hot=document.getElementById('edgeHotspot'), fly=document.getElementById('hoverSide'); let hideTimer=null;
+  function openFly(){clearTimeout(hideTimer); fly.classList.add('open')}
+  function scheduleClose(){clearTimeout(hideTimer); hideTimer=setTimeout(()=>fly.classList.remove('open'), 280)}
+  hot && hot.addEventListener('mouseenter', openFly); hot && hot.addEventListener('mouseleave', scheduleClose);
+  fly && fly.addEventListener('mouseenter', ()=>clearTimeout(hideTimer)); fly && fly.addEventListener('mouseleave', scheduleClose);
 
-  var hot=document.getElementById('edgeHotspot'); var fly=document.getElementById('hoverSide');
-  var hideTimer=null; var HIDE_DELAY=280;
-  function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
-  function scheduleClose(){ clearTimeout(hideTimer); hideTimer=setTimeout(function(){ fly.classList.remove('open'); }, HIDE_DELAY); }
-  if (hot){ hot.addEventListener('mouseenter', openFly); hot.addEventListener('mouseleave', scheduleClose); }
-  if (fly){ fly.addEventListener('mouseenter', function(){ clearTimeout(hideTimer); }); fly.addEventListener('mouseleave', scheduleClose); }
+  /* ====== Data source (selaras index/file) ====== */
+  const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
+  const TAB_NAME ="最新情報";
+  const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
 
-  /* ========= Data source (selaras index & file kamu) ========= */
-  var SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
-  var TAB_NAME ="最新情報";
-  var CSV_URL = "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:csv&sheet="+encodeURIComponent(TAB_NAME);
-
-  /* ========= Utils ========= */
-  var S = s => String(s==null?'':s).trim();
+  /* ====== Utils ====== */
+  const S = s => String(s==null?'':s).trim();
   function parseCSV(t){
-    var out=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g; let row=[], m; t=t.replace(/\r\n?/g,"\n");
+    const out=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g; let row=[], m; t=t.replace(/\r\n?/g,"\n");
     for(let i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break;
       let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
       row.push(cell); i=re.lastIndex; if(m[2]==="\n"||m[2]===""){ out.push(row); row=[]; }
     } return out.filter(r=>r.length && r.some(c=>S(c)!==""));
   }
   function indexByName(header){
-    var map={}; header.forEach((h,i)=>map[S(h)]=i);
-    var f = n => (n in map ? map[n] : null);
-    var fRx = rx => { for(let i=0;i<header.length;i++){ if(rx.test(S(header[i]))) return i; } return null; };
+    const map={}; header.forEach((h,i)=>map[S(h)]=i);
+    const f = n => (n in map ? map[n] : null);
+    const fRx = rx => { for(let i=0;i<header.length;i++){ if(rx.test(S(header[i]))) return i; } return null; };
     return {
       date: f('出荷日'), cust: f('顧客名'), draw: fRx(/図番|図面|Drawing/), machine: fRx(/機種/),
       qty: f('数量'), to: fRx(/送り先|送付先|納品先/), note: fRx(/注番|備考|注文/),
@@ -242,17 +269,18 @@ document.addEventListener('DOMContentLoaded', function(){
       urgent: fRx(/Status|至急|ステータス/i)
     };
   }
-  var valAt=(r,i)=> (i==null?'':(r[i]||''));
+  const valAt=(r,i)=> (i==null?'':(r[i]||''));
   function parseJPDate(str){
-    var s=S(str); if(!s) return null;
-    var m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})(?:\D(\d{1,2})\D(\d{1,2}))?/);
+    const s=S(str); if(!s) return null;
+    const m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})(?:\D(\d{1,2})\D(\d{1,2}))?/);
     if(m) return new Date(m[1],m[2]-1,m[3],m[4]||0,m[5]||0);
-    var d=new Date(s); return isNaN(d)?null:d;
+    const d=new Date(s); return isNaN(d)?null:d;
   }
-  function fmtDate(d){ if(!d) return ''; var z=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate()); }
+  function fmtDate(d){ if(!d) return ''; const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}` }
+  function fmtMonth(d){ const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}` }
 
-  /* ========= Status dictionary ========= */
-  var STATUS = [
+  /* ====== Status ====== */
+  const STATUS = [
     {key:'shipok',   label:'出荷済',     icon:'📦', cls:'shipok',  rx:/出荷済/},
     {key:'prep',     label:'出荷準備済', icon:'🚚', cls:'prep',    rx:/出荷準備済/},
     {key:'inspect',  label:'検査中',     icon:'🔬', cls:'inspect', rx:/検査中/},
@@ -264,164 +292,262 @@ document.addEventListener('DOMContentLoaded', function(){
     {key:'sheet',    label:'板金加工',   icon:'🔩', cls:'sheet',   rx:/板金/},
     {key:'out',      label:'外注',       icon:'🏭', cls:'out',     rx:/外注/},
   ];
-  function isUrgent(v){var t=S(v).toLowerCase(); return t==='至急'||t==='urgent'||t==='緊急'||t==='1'||t==='true'}
+  function isUrgent(v){const t=S(v).toLowerCase(); return t==='至急'||t==='urgent'||t==='緊急'||t==='1'||t==='true'}
 
-  /* ========= State (dengan persist) ========= */
-  var cache={header:[],rows:[],idx:null};
-  var state = Object.assign({ range:'ytd', metric:'qty', status:null, labels:true, interval:60000 }, loadState());
-  var timer=null;
+  /* ====== State (persist) ====== */
+  const defaults = { range:'ytd', metric:'qty', labels:true, interval:60000, status:null,
+    custType:'barH', custTop:10, custMonTop:6, dailyOrient:'v', monthlyOrient:'v', custMonOrient:'v'
+  };
+  const state = Object.assign({}, defaults, readLS());
+  let cache={header:[],rows:[],idx:null};
+  let timer=null;
 
-  /* ========= UI apply state ========= */
-  function applyStateToUI(){
-    // range chips
+  /* ====== UI helpers ====== */
+  function syncUI(){
+    // Range
     document.querySelectorAll('.chipbtn').forEach(b=>{
-      const r=b.getAttribute('data-range');
-      if(r===state.range) b.classList.add('active'); else b.classList.remove('active');
+      const r=b.getAttribute('data-range'); b.classList.toggle('active', r===state.range);
     });
-    // metric toggle
+    // Metric
     document.querySelectorAll('#metricToggle button').forEach(b=>{
-      const m=b.getAttribute('data-metric');
-      if(m===state.metric) b.classList.add('active'); else b.classList.remove('active');
+      const m=b.getAttribute('data-metric'); b.classList.toggle('active', m===state.metric);
     });
     document.getElementById('metricBadge').textContent='表示: '+(state.metric==='count'?'件数':'数量');
-    // labels button
-    document.getElementById('btnLabels').textContent = (state.labels?'✓ ':'✗ ')+'Labels';
-    // live badge
-    document.getElementById('intervalInfo').textContent = Math.round(state.interval/1000)+'s';
+    // Labels & interval
+    document.getElementById('btnLabels').textContent=(state.labels?'✓ ':'✗ ')+'Labels';
+    document.getElementById('intervalInfo').textContent=Math.round(state.interval/1000)+'s';
+    // Per chart buttons
+    document.getElementById('custTop').textContent='Top'+state.custTop;
+    document.getElementById('custMonTop').textContent='Top'+state.custMonTop;
+    document.getElementById('dailyOrient').textContent = state.dailyOrient==='v'?'縦':'横';
+    document.getElementById('monthlyOrient').textContent = state.monthlyOrient==='v'?'縦':'横';
+    document.getElementById('custMonOrient').textContent = state.custMonOrient==='v'?'縦':'横';
   }
 
-  /* ========= Filters ========= */
+  /* ====== Filtering / transforms ====== */
   function applyStatusFilter(rows, idx){
     if(!state.status) return rows;
-    var d = STATUS.find(s=>s.key===state.status);
+    const d = STATUS.find(s=>s.key===state.status);
     if(!d) return rows;
     return rows.filter(r=> d.rx.test(S(valAt(r,idx.status))));
   }
   function applyRange(rows, idx){
-    var now=new Date();
-    if(state.range==='14d'){ var dt=new Date(now); dt.setDate(dt.getDate()-13); dt.setHours(0,0,0,0); return rows.filter(r=>{var d=parseJPDate(valAt(r,idx.date)); return d && d>=dt;}); }
-    if(state.range==='30d'){ var dt2=new Date(now); dt2.setDate(dt2.getDate()-29); dt2.setHours(0,0,0,0); return rows.filter(r=>{var d=parseJPDate(valAt(r,idx.date)); return d && d>=dt2;}); }
-    if(state.range==='ytd'){ var dt3=new Date(now.getFullYear(),0,1); return rows.filter(r=>{var d=parseJPDate(valAt(r,idx.date)); return d && d>=dt3;}); }
+    const now=new Date();
+    if(state.range==='14d'){ const dt=new Date(now); dt.setDate(dt.getDate()-13); dt.setHours(0,0,0,0); return rows.filter(r=>{ const d=parseJPDate(valAt(r,idx.date)); return d && d>=dt;}); }
+    if(state.range==='30d'){ const dt2=new Date(now); dt2.setDate(dt2.getDate()-29); dt2.setHours(0,0,0,0); return rows.filter(r=>{ const d=parseJPDate(valAt(r,idx.date)); return d && d>=dt2;}); }
+    if(state.range==='ytd'){ const dt3=new Date(now.getFullYear(),0,1); return rows.filter(r=>{ const d=parseJPDate(valAt(r,idx.date)); return d && d>=dt3;}); }
     return rows;
   }
-  function metricValue(r, idx){ return state.metric==='count' ? 1 : (+S(valAt(r,idx.qty))||0); }
-  function metricLabel(){ return state.metric==='count' ? '件数' : '数量'; }
+  const metricValue = (r,idx)=> state.metric==='count' ? 1 : (+S(valAt(r,idx.qty))||0);
+  const metricLabel = ()=> state.metric==='count' ? '件数' : '数量';
 
-  /* ========= Chips (dropdown status) ========= */
-  function renderChips(counts){
-    var box=document.getElementById('chipsBox');
-    function chip(key,label,icon,cnt){ return '<button class="chipbtn '+(state.status===key?'active':'')+'" data-key="'+key+'">'+icon+' '+label+' <span class="count">'+cnt+'</span></button>'; }
-    var html = '<button class="chipbtn '+(!state.status?'active':'')+'" data-key="">🌐 すべて <span class="count">'+cache.rows.length+'</span></button>';
-    for(var i=0;i<STATUS.length;i++){ var s=STATUS[i]; html += chip(s.key,s.label,s.icon,(counts[s.key]||0)); }
-    box.innerHTML=html;
-    box.querySelectorAll('.chipbtn').forEach(b=>{
-      b.addEventListener('click', ()=>{
-        state.status = b.getAttribute('data-key') || null;
-        saveState({status: state.status});
-        renderCharts();
-        dropdown.classList.remove('open');
-      });
+  /* ====== Chart instances ====== */
+  let dailyChart, monthlyChart, custChart, custMonChart;
+
+  /* ====== Build datasets ====== */
+  function buildAggregations(rows, idx){
+    // daily & monthly
+    const mapDaily={}, mapMonthly={};
+    // customers
+    const mapCust={}, mapCustMonth={}; // mapCustMonth[month][customer] = sum
+
+    rows.forEach(r=>{
+      const d=parseJPDate(valAt(r,idx.date)); if(!d) return;
+      const v = metricValue(r, idx);
+      const kDay = fmtDate(d);
+      const kMon = fmtMonth(d);
+      const cust=S(valAt(r,idx.cust))||'—';
+
+      mapDaily[kDay]=(mapDaily[kDay]||0)+v;
+      mapMonthly[kMon]=(mapMonthly[kMon]||0)+v;
+
+      mapCust[cust]=(mapCust[cust]||0)+v;
+      if(!mapCustMonth[kMon]) mapCustMonth[kMon]={};
+      mapCustMonth[kMon][cust]=(mapCustMonth[kMon][cust]||0)+v;
     });
+
+    const dailyLabels=Object.keys(mapDaily).sort();
+    const dailyValues=dailyLabels.map(k=>mapDaily[k]);
+
+    const monthlyLabels=Object.keys(mapMonthly).sort();
+    const monthlyValues=monthlyLabels.map(k=>mapMonthly[k]);
+
+    const custEntries=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,state.custTop);
+    const custLabels=custEntries.map(x=>x[0]);
+    const custValues=custEntries.map(x=>x[1]);
+
+    // Monthly stacked by top customers (choose top over YTD)
+    const topCustForStack=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,state.custMonTop).map(x=>x[0]);
+    const months=monthlyLabels;
+    const custMonthDatasets = topCustForStack.map(cn=>{
+      const data = months.map(m=> (mapCustMonth[m] && mapCustMonth[m][cn]) ? mapCustMonth[m][cn] : 0 );
+      return { label: cn, data };
+    });
+
+    return { dailyLabels, dailyValues, monthlyLabels, monthlyValues, custLabels, custValues, months, custMonthDatasets };
   }
 
-  /* ========= Urgent banner ========= */
-  function updateUrgentBanner(rows, idx){
-    var ub=document.getElementById('urgentBanner');
-    var urgentCount = idx.urgent!=null ? rows.filter(r=>isUrgent(valAt(r,idx.urgent))).length : 0;
-    if(urgentCount>0){ ub.style.display='block'; ub.textContent='⚠ 至急案件が '+urgentCount+' 件あります！早急に確認してください。'; }
-    else{ ub.style.display='none'; ub.textContent=''; }
-  }
-
-  /* ========= Charts ========= */
-  var dailyChart, monthlyChart, custChart, destChart;
-  function upsertChart(ctx, cfg, ref){
-    if(window[ref]){ window[ref].data = cfg.data; window[ref].options = cfg.options; window[ref].update(); }
-    else{ window[ref] = new Chart(ctx, cfg); }
-  }
-  function commonOptions(){
+  /* ====== Common options (labels visible + headroom) ====== */
+  function makeCommonOptions({horizontal=false, maxVal=null}={}){
+    const headroom = maxVal? Math.ceil(maxVal*1.15) : undefined;
+    const scales = horizontal
+      ? { x:{ grid:{color:'#eef2ff'}, suggestedMax: headroom }, y:{ grid:{color:'#f1f5f9'} } }
+      : { x:{ grid:{color:'#eef2ff'} }, y:{ grid:{color:'#f1f5f9'}, suggestedMax: headroom, ticks:{precision:0}} };
     return {
-      responsive:true, maintainAspectRatio:false,
+      responsive:true, maintainAspectRatio:false, layout:{padding:{right:30, top:10}},
       plugins:{
         legend:{display:false},
         datalabels:{
-          display: state.labels,
-          anchor:'end', align:'top', clamp:true, clip:true,
+          display: state.labels, clip:false, clamp:true,
+          anchor: horizontal?'end':'end',
+          align:  horizontal?'end':'top',
+          offset: 4,
           formatter:(v)=> (v==null||isNaN(v))?'':String(Math.round(v)),
           font:{weight:'700'}, padding:4
         },
         tooltip:{mode:'index',intersect:false, callbacks:{ label:(ctx)=> metricLabel()+': '+ctx.parsed.y }},
       },
-      scales:{ x:{grid:{color:'#eef2ff'}}, y:{grid:{color:'#f1f5f9'}, ticks:{precision:0}} }
+      scales
     };
   }
-  function renderCharts(){
-    var rows = cache.rows.slice(), idx = cache.idx;
 
-    // chips counter
-    var counts={}; for(var i=0;i<STATUS.length;i++) counts[STATUS[i].key]=0;
-    rows.forEach(r=>{ var t=S(valAt(r,idx.status)); for(var i=0;i<STATUS.length;i++){ if(STATUS[i].rx.test(t)){ counts[STATUS[i].key]++; break; } }});
+  /* ====== Render charts ====== */
+  function upsertChart(ctx, cfg, refName){
+    if(window[refName]){ window[refName].data=cfg.data; window[refName].options=cfg.options; window[refName].update(); }
+    else{ window[refName]=new Chart(ctx, cfg); }
+  }
+
+  function renderAll(){
+    const idx=cache.idx;
+    let rows = cache.rows.slice();
+
+    // counts for status chips + urgent banner
+    const counts={}; STATUS.forEach(s=>counts[s.key]=0);
+    rows.forEach(r=>{ const t=S(valAt(r,idx.status)); for(const s of STATUS){ if(s.rx.test(t)){ counts[s.key]++; break; } }});
     renderChips(counts);
-    updateUrgentBanner(rows, idx);
 
+    const urgentCount = idx.urgent!=null ? rows.filter(r=>isUrgent(valAt(r,idx.urgent))).length : 0;
+    const ub=document.getElementById('urgentBanner');
+    if(urgentCount>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; }
+    else{ ub.style.display='none'; ub.textContent=''; }
+
+    // filter
     rows = applyStatusFilter(rows, idx);
     rows = applyRange(rows, idx);
 
-    var mapDaily={}, mapMonthly={}, mapCust={}, mapDest={};
-    rows.forEach(function(r){
-      var d=parseJPDate(valAt(r,idx.date)); if(!d) return;
-      var kDay = fmtDate(d);
-      var kMon = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-      var v = metricValue(r, idx);
-      mapDaily[kDay]=(mapDaily[kDay]||0)+v;
-      mapMonthly[kMon]=(mapMonthly[kMon]||0)+v;
-      var cust=S(valAt(r,idx.cust))||'—'; mapCust[cust]=(mapCust[cust]||0)+v;
-      var dest=S(valAt(r,idx.to))||'—';   mapDest[dest]=(mapDest[dest]||0)+v;
-    });
+    // aggregations
+    const ag = buildAggregations(rows, idx);
 
-    var dLabels=Object.keys(mapDaily).sort();
-    var dValues=dLabels.map(k=>mapDaily[k]);
-    var mLabels=Object.keys(mapMonthly).sort();
-    var mValues=mLabels.map(k=>mapMonthly[k]);
-    var custEntries=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    var cLabels=custEntries.map(x=>x[0]); var cValues=custEntries.map(x=>x[1]);
-    var destEntries=Object.entries(mapDest).sort((a,b)=>b[1]-a[1]).slice(0,12);
-    var tLabels=destEntries.map(x=>x[0]); var tValues=destEntries.map(x=>x[1]);
-
-    document.getElementById('hDaily').textContent   = '出荷（⽇次・直近） – '+metricLabel();
-    document.getElementById('hMonthly').textContent = '出荷（⽉次・年内） – '+metricLabel();
-    document.getElementById('hCust').textContent    = '顧客別 出荷（Top 10） – '+metricLabel();
-    document.getElementById('hDest').textContent    = '送り先別 出荷 – '+metricLabel();
-
+    // register plugin
     Chart.register(ChartDataLabels);
 
+    /* Daily chart */
+    const dMax=Math.max(0,...ag.dailyValues);
+    const dailyType = state.dailyOrient==='h'?'bar':'line';
+    const dailyHorizontal = state.dailyOrient==='h';
     upsertChart(document.getElementById('dailyShip'), {
-      type:'line',
-      data:{ labels:dLabels, datasets:[{ label:metricLabel(), data:dValues, tension:.25, fill:true, pointRadius:3 }] },
-      options: commonOptions()
+      type: dailyType,
+      data:{ labels:ag.dailyLabels, datasets:[{ label:metricLabel(), data:ag.dailyValues, tension:.25, fill:!dailyHorizontal, pointRadius:3 }] },
+      options: makeCommonOptions({horizontal: dailyHorizontal, maxVal:dMax})
     }, 'dailyChart');
 
+    /* Monthly overall */
+    const mMax=Math.max(0,...ag.monthlyValues);
+    const monHorizontal = state.monthlyOrient==='h';
     upsertChart(document.getElementById('monthlyQty'), {
-      type:'bar',
-      data:{ labels:mLabels, datasets:[{ label:metricLabel(), data:mValues }] },
-      options: commonOptions()
+      type: monHorizontal?'bar':'bar',
+      data:{ labels:ag.monthlyLabels, datasets:[{ label:metricLabel(), data:ag.monthlyValues }] },
+      options: Object.assign(makeCommonOptions({horizontal: monHorizontal, maxVal:mMax}), monHorizontal?{indexAxis:'y'}:{})
     }, 'monthlyChart');
 
-    upsertChart(document.getElementById('custQty'), {
-      type:'bar',
-      data:{ labels:cLabels, datasets:[{ label:metricLabel(), data:cValues }] },
-      options: Object.assign(commonOptions(), { indexAxis:'y' })
-    }, 'custChart');
+    /* Customer Top-N (type: bar/barH/pie/pareto) */
+    const cMax=Math.max(0,...ag.custValues);
+    let custConfig;
+    if(state.custType==='pie'){
+      custConfig = {
+        type:'pie',
+        data:{ labels:ag.custLabels, datasets:[{ label:metricLabel(), data:ag.custValues }] },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{
+            legend:{position:'right'},
+            datalabels:{ display: state.labels, formatter:(v,ctx)=>{
+              const sum = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0)||1;
+              const p = Math.round(v/sum*100); return `${v} (${p}%)`;
+            }}
+          }
+        }
+      };
+    } else if(state.custType==='pareto'){
+      // bars + cumulative line
+      const total = ag.custValues.reduce((a,b)=>a+b,0)||1;
+      const cum = []; ag.custValues.reduce((acc,v,i)=> (cum[i]=Math.round((acc+v)/total*100), acc+v),0);
+      custConfig = {
+        type:'bar',
+        data:{ labels:ag.custLabels, datasets:[
+          { label:metricLabel(), data:ag.custValues, yAxisID:'y' },
+          { label:'累積(%)', data:cum, type:'line', yAxisID:'y1', tension:.25, pointRadius:3 }
+        ]},
+        options:{
+          responsive:true, maintainAspectRatio:false, layout:{padding:{right:30}},
+          plugins:{
+            legend:{display:true},
+            datalabels:{ display: state.labels, anchor:'end', align:'top', formatter:(v,ctx)=> ctx.dataset.type==='line'? v+'%': v, clip:false }
+          },
+          scales:{ x:{grid:{color:'#eef2ff'}},
+            y:{grid:{color:'#f1f5f9'}, beginAtZero:true},
+            y1:{position:'right', beginAtZero:true, max:100, grid:{drawOnChartArea:false}}
+          }
+        }
+      };
+    } else {
+      const horiz = state.custType==='barH';
+      custConfig = {
+        type:'bar',
+        data:{ labels:ag.custLabels, datasets:[{ label:metricLabel(), data:ag.custValues }] },
+        options: Object.assign(makeCommonOptions({horizontal:horiz, maxVal:cMax}), horiz?{indexAxis:'y'}:{})
+      };
+    }
+    upsertChart(document.getElementById('custQty'), custConfig, 'custChart');
 
-    upsertChart(document.getElementById('destQty'), {
+    /* Customer Monthly stacked (Top N) */
+    const stackedHorizontal = state.custMonOrient==='h';
+    upsertChart(document.getElementById('custMonthly'), {
       type:'bar',
-      data:{ labels:tLabels, datasets:[{ label:metricLabel(), data:tValues }] },
-      options: Object.assign(commonOptions(), { indexAxis:'y' })
-    }, 'destChart');
+      data:{ labels:ag.months, datasets: ag.custMonthDatasets },
+      options:Object.assign({
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'bottom'},
+          datalabels:{ display:false } // stacked usually crowded
+        },
+        scales: stackedHorizontal
+          ? { x:{ stacked:true, grid:{color:'#eef2ff'}}, y:{ stacked:true, grid:{color:'#f1f5f9'} } }
+          : { x:{ stacked:true, grid:{color:'#eef2ff'}}, y:{ stacked:true, grid:{color:'#f1f5f9'}, ticks:{precision:0}} }
+      }, stackedHorizontal?{indexAxis:'y'}:{})
+    }, 'custMonChart');
 
     document.getElementById('lastup').textContent = 'Last update: '+new Date().toLocaleString();
   }
 
-  /* ========= Fetch & live ========= */
+  /* ====== Build Chips in dropdown ====== */
+  function renderChips(counts){
+    const box=document.getElementById('chipsBox');
+    const makeChip=(key,label,icon,cnt)=>`<button class="chipbtn ${state.status===key?'active':''}" data-key="${key}">${icon} ${label} <span class="count">${cnt}</span></button>`;
+    let html=`<button class="chipbtn ${!state.status?'active':''}" data-key="">🌐 すべて <span class="count">${cache.rows.length}</span></button>`;
+    STATUS.forEach(s=> html+=makeChip(s.key,s.label,s.icon, counts[s.key]||0));
+    box.innerHTML=html;
+    box.querySelectorAll('.chipbtn').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        state.status = b.getAttribute('data-key') || null;
+        writeLS({status:state.status});
+        renderAll();
+        dropdown.classList.remove('open');
+      });
+    });
+  }
+
+  /* ====== Fetch & live ====== */
   async function load(){
     const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
     try{
@@ -432,64 +558,143 @@ document.addEventListener('DOMContentLoaded', function(){
       const header=data[0], rows=data.slice(1);
       const idx=indexByName(header);
       cache={header,rows,idx};
-      renderCharts();
+      renderAll();
     }finally{
       btn.textContent=old; btn.disabled=false;
     }
   }
   function startAuto(ms){
     if(timer) clearInterval(timer);
-    timer=setInterval(function(){ if(document.visibilityState==='visible') load(); }, ms);
-    state.interval = ms; saveState({interval: ms});
-    document.getElementById('intervalInfo').textContent = Math.round(ms/1000)+'s';
+    timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, ms);
+    state.interval=ms; writeLS({interval:ms});
+    document.getElementById('intervalInfo').textContent=Math.round(ms/1000)+'s';
     document.getElementById('btnLive').textContent = (ms<=5000?'● Live: On':'● Live: Off');
   }
 
-  /* ========= Wire UI events ========= */
-  // range chips
+  /* ====== Export helpers ====== */
+  function exportExcel(ag){
+    const wb = XLSX.utils.book_new();
+    // Daily
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['日付', metricLabel()], ...ag.dailyLabels.map((d,i)=>[d, ag.dailyValues[i]])]), 'Daily');
+    // Monthly
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['月', metricLabel()], ...ag.monthlyLabels.map((m,i)=>[m, ag.monthlyValues[i]])]), 'Monthly');
+    // Customer Top
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['顧客', metricLabel()], ...ag.custLabels.map((c,i)=>[c, ag.custValues[i]])]), 'CustomersTop');
+    // Customer Monthly stacked
+    const header=['月', ...ag.custMonthDatasets.map(d=>d.label)];
+    const rows=ag.months.map((m,i)=> [m, ...ag.custMonthDatasets.map(ds=> ds.data[i]) ]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), 'CustMonthly');
+    XLSX.writeFile(wb, 'charts_export.xlsx');
+  }
+
+  async function exportPDF(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l','pt','a4');
+    const charts = [dailyChart, monthlyChart, custChart, custMonChart].filter(Boolean);
+    let y=40;
+    for(const ch of charts){
+      const img = ch.toBase64Image();
+      const w=760, h=300;
+      doc.addImage(img, 'PNG', 30, y, w, h);
+      y += h+24;
+      if(y>520){ doc.addPage(); y=40; }
+    }
+    // Ringkas tabel Top Customers
+    const ag = buildAggregations(applyRange(applyStatusFilter(cache.rows, cache.idx), cache.idx), cache.idx);
+    doc.addPage();
+    doc.text('Top Customers', 40, 40);
+    const data = ag.custLabels.map((c,i)=>[c, ag.custValues[i]]);
+    doc.autoTable({ startY:60, head:[['顧客', metricLabel()]], body:data });
+    doc.save('charts_export.pdf');
+  }
+
+  function exportAllExcelCurrent(){
+    const ag = buildAggregations(applyRange(applyStatusFilter(cache.rows, cache.idx), cache.idx), cache.idx);
+    exportExcel(ag);
+  }
+
+  /* ====== Wire controls ====== */
+  // Range chips
   document.querySelectorAll('.chipbtn').forEach(b=>{
     b.addEventListener('click', ()=>{
       document.querySelectorAll('.chipbtn').forEach(x=>x.classList.remove('active'));
       b.classList.add('active');
       state.range = b.getAttribute('data-range');
-      saveState({range: state.range});
-      renderCharts();
+      writeLS({range:state.range});
+      renderAll();
     });
   });
-
-  // metric toggle
+  // Metric toggle
   document.querySelectorAll('#metricToggle button').forEach(b=>{
     b.addEventListener('click', ()=>{
       document.querySelectorAll('#metricToggle button').forEach(x=>x.classList.remove('active'));
       b.classList.add('active');
       state.metric = b.getAttribute('data-metric');
-      saveState({metric: state.metric});
+      writeLS({metric:state.metric});
       document.getElementById('metricBadge').textContent='表示: '+(state.metric==='count'?'件数':'数量');
-      renderCharts();
+      renderAll();
     });
   });
-
-  // labels toggle
+  // Labels toggle
   document.getElementById('btnLabels').addEventListener('click', ()=>{
-    state.labels = !state.labels;
-    saveState({labels: state.labels});
-    document.getElementById('btnLabels').textContent = (state.labels?'✓ ':'✗ ')+'Labels';
-    renderCharts();
+    state.labels = !state.labels; writeLS({labels:state.labels});
+    document.getElementById('btnLabels').textContent=(state.labels?'✓ ':'✗ ')+'Labels';
+    renderAll();
   });
-
-  // refresh & live
+  // Refresh / Live
   document.getElementById('btnRefresh').addEventListener('click', load);
   document.getElementById('btnLive').addEventListener('click', ()=>{ startAuto(state.interval<=5000?60000:5000); load(); });
   document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
 
-  // dropdown status
-  var dropdown=document.getElementById('statusDropdown');
+  // Status dropdown
+  const dropdown=document.getElementById('statusDropdown');
   dropdown.querySelector('.drop-btn').addEventListener('click', ()=> dropdown.classList.toggle('open'));
-  document.getElementById('clearFilter').addEventListener('click', ()=>{ state.status=null; saveState({status:null}); renderCharts(); dropdown.classList.remove('open'); });
+  document.getElementById('clearFilter').addEventListener('click', ()=>{ state.status=null; writeLS({status:null}); renderAll(); dropdown.classList.remove('open'); });
   document.addEventListener('click', (e)=>{ if(!dropdown.contains(e.target)) dropdown.classList.remove('open'); });
 
-  /* ========= Boot: restore state & go ========= */
-  applyStateToUI();
+  // Customer Top controls
+  document.getElementById('custTypeBar').addEventListener('click', ()=>{ state.custType='bar'; writeLS({custType:'bar'}); renderAll(); });
+  document.getElementById('custTypeBarH').addEventListener('click', ()=>{ state.custType='barH'; writeLS({custType:'barH'}); renderAll(); });
+  document.getElementById('custTypePie').addEventListener('click', ()=>{ state.custType='pie'; writeLS({custType:'pie'}); renderAll(); });
+  document.getElementById('custTypePareto').addEventListener('click', ()=>{ state.custType='pareto'; writeLS({custType:'pareto'}); renderAll(); });
+  document.getElementById('custTop').addEventListener('click', ()=>{
+    state.custTop = (state.custTop===10)?20:10; writeLS({custTop:state.custTop});
+    document.getElementById('custTop').textContent='Top'+state.custTop;
+    renderAll();
+  });
+
+  // Customer Monthly controls
+  document.getElementById('custMonTop').addEventListener('click', ()=>{
+    state.custMonTop = (state.custMonTop===6)?10:6; writeLS({custMonTop:state.custMonTop});
+    document.getElementById('custMonTop').textContent='Top'+state.custMonTop;
+    renderAll();
+  });
+
+  // Orientation toggles
+  document.getElementById('dailyOrient').addEventListener('click', ()=>{
+    state.dailyOrient = state.dailyOrient==='v'?'h':'v'; writeLS({dailyOrient:state.dailyOrient});
+    document.getElementById('dailyOrient').textContent= state.dailyOrient==='v'?'縦':'横';
+    renderAll();
+  });
+  document.getElementById('monthlyOrient').addEventListener('click', ()=>{
+    state.monthlyOrient = state.monthlyOrient==='v'?'h':'v'; writeLS({monthlyOrient:state.monthlyOrient});
+    document.getElementById('monthlyOrient').textContent= state.monthlyOrient==='v'?'縦':'横';
+    renderAll();
+  });
+  document.getElementById('custMonOrient').addEventListener('click', ()=>{
+    state.custMonOrient = state.custMonOrient==='v'?'h':'v'; writeLS({custMonOrient:state.custMonOrient});
+    document.getElementById('custMonOrient').textContent= state.custMonOrient==='v'?'縦':'横';
+    renderAll();
+  });
+
+  // Exports
+  document.getElementById('dailyExport').addEventListener('click', exportAllExcelCurrent);
+  document.getElementById('monthlyExport').addEventListener('click', exportAllExcelCurrent);
+  document.getElementById('custExport').addEventListener('click', async ()=>{ await exportPDF(); });
+  document.getElementById('custMonExport').addEventListener('click', async ()=>{ await exportPDF(); });
+
+  /* ====== Boot ====== */
+  syncUI();
   load();
   startAuto(state.interval);
 });
