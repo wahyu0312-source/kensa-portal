@@ -40,6 +40,10 @@
   .btn:hover{border-color:#c7d2fe}
   .badge{height:28px; display:inline-flex; align-items:center; padding:0 10px; border:1px solid var(--border); border-radius:999px; background:#f1f5f9; font:700 12px/1 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif}
 
+  /* burger (mobile) */
+  .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
+  .burger:active{transform:scale(.98)}
+
   main{max-width:1400px; margin:0 auto; padding:22px 20px 96px}
   .panel{background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-2); padding:18px; overflow:auto}
   .panel + .panel{margin-top:18px}
@@ -55,14 +59,14 @@
     padding:12px 14px; border-bottom:1px solid var(--border);
   }
   tbody td{
-    padding:12px 14px;                     /* padding seragam */
+    padding:12px 14px;
     border-bottom:1px solid var(--border);
-    background:#fff; vertical-align:middle; /* biar rapi */
+    background:#fff; vertical-align:middle;
   }
   tbody tr:nth-child(odd) td{background:#fcfdff}
   tbody tr:hover td{background:#f6faff}
 
-  /* col widths (dipakai kedua tabel via colgroup) */
+  /* col widths */
   .w-gutter{width:var(--gutter-w)}
   .w-date{width:180px}
   .w-cust{width:260px}
@@ -72,21 +76,49 @@
   .w-qty{width:80px}
   .w-to{width:120px}
 
-  /* cell content: single line, ellipsis */
   .cell{display:flex; align-items:center; gap:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .cell-date{gap:12px}
 
+  /* ===== left hover sidebar (desktop) ===== */
+  .edge-hotspot{
+    position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px);
+    z-index:70;
+  }
+  .hover-side{
+    position:fixed; left:0; top:64px; height:calc(100vh - 64px);
+    width:260px; padding:14px 12px; overflow:auto;
+    background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
+    transform:translateX(-100%); transition:transform .22s ease; z-index:71;
+  }
+  .hover-side.open{ transform:translateX(0) }
+  .hover-side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
+  .navlist{ display:grid; gap:4px }
+  .slink{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink) }
+  .slink:hover{ background:#f1f5ff }
+  .ico{ width:22px; text-align:center }
+
+  /* ===== mobile drawer ===== */
+  .drawer{ position:fixed; inset:0; z-index:80; display:none }
+  .drawer.open{ display:block }
+  .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
+  .drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
+                  background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto;
+                  transform:translateX(-100%); transition:transform .25s ease }
+  .drawer.open .panel{ transform:translateX(0) }
+  .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
+
   /* ===== left gutter (sticky card) ===== */
+  .w-gutter,.gutter-th,.gutter-td{width:var(--gutter-w)}
   .gutter-th,.gutter-td{
     position:sticky; left:0; z-index:3;
-    width:var(--gutter-w); min-width:var(--gutter-w); max-width:var(--gutter-w);
+    min-width:var(--gutter-w); max-width:var(--gutter-w);
     background:linear-gradient(180deg,#f8fafc,#f2f6ff);
     border-right:1px solid var(--border);
   }
-  .gutter-td{z-index:1; padding:10px 8px} /* beri padding supaya kartu tidak nempel tepi */
+  .gutter-td{z-index:1; padding:10px 8px}
 
   .status-card{
-    width:100%;                    /* penuh kolom */
+    width:100%;
     padding:10px 12px;
     display:flex; flex-direction:column; gap:8px;
     border:1px solid #e8eefc; border-radius:16px; background:#fff;
@@ -100,39 +132,45 @@
   .tag-not{background:#94a3b8}
 
   .status-grid{
-    display:grid;
-    grid-template-columns: 62px 1fr;  /* label | value */
-    gap:6px 10px;
-    align-items:center;
+    display:grid; grid-template-columns: 62px 1fr; gap:6px 10px; align-items:center;
   }
   .status-label{color:#475569; font-size:13px}
   .status-value{color:#0f172a; font-weight:800; font-size:13px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
-  /* chip tanggal */
   .chip{display:inline-block; padding:9px 16px; border-radius:999px; font-weight:800; font-size:13px; border:1px solid var(--blue-200); background:var(--blue-100); color:#0f172a}
-
   .urgent{display:inline-flex; align-items:center; gap:6px; padding:2px 10px; margin-right:8px; border-radius:999px; background:#ef4444; color:#fff; font:800 12px/1 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif}
 
-  /* marquee/footer */
   .marquee{position:fixed; left:20px; right:20px; bottom:20px; z-index:30; background:var(--accent); color:#fff; font-weight:800; border-radius:12px; box-shadow:var(--shadow-1); white-space:nowrap; overflow:hidden}
   .marquee span{display:inline-block; padding:8px 0 8px 100%; animation:marquee 25s linear infinite}
   @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
   .footer{position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:#64748b; background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border)}
+
+  /* admin group hidden by default */
+  .admin-only{ display:none }
+
+  /* responsive */
+  @media (max-width:900px){
+    .burger{display:inline-flex}
+    .edge-hotspot, .hover-side{ display:none }
+  }
 </style>
 </head>
 <body>
 <div class="app">
   <header>
     <div class="header-wrap">
-      <div class="brand">
-        <img src="tsh.png" alt="TSH" onerror="this.style.display='none'">
-        <div class="ttl"><strong>品質管理生産技術</strong></div>
+      <div style="display:flex; align-items:center; gap:10px">
+        <button id="btnBurger" class="burger" aria-label="メニュー">☰</button>
+        <div class="brand">
+          <img src="tsh.png" alt="TSH" onerror="this.style.display='none'">
+          <div class="ttl"><strong>品質管理生産技術</strong></div>
+        </div>
       </div>
       <div style="display:flex; gap:8px; align-items:center">
         <button id="btnRefresh" class="btn">⟳ Refresh</button>
         <button id="btnLive" class="btn" aria-pressed="false">Live: Off</button>
         <span id="intervalInfo" class="badge">60s</span>
-        <button id="btnAdmin" class="btn">管理</button>
+        <button id="btnAdmin" class="btn" title="Admin login/logout">管理</button>
       </div>
     </div>
   </header>
@@ -182,13 +220,63 @@
             <col class="w-gutter"><col class="w-date"><col class="w-cust"><col class="w-draw">
             <col class="w-machine"><col class="w-item"><col class="w-qty"><col class="w-to">
           </colgroup>
-          <thead><tr id="shipHead"></tr></thead>
-          <tbody id="shipBody"></tbody>
+        <thead><tr id="shipHead"></tr></thead>
+        <tbody id="shipBody"></tbody>
         </table>
       </div>
       <div id="shipHint" style="margin-top:8px; color:#64748b; font-size:12px"></div>
     </section>
   </main>
+</div>
+
+<!-- ===== Hover Sidebar (desktop) ===== -->
+<div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
+<aside id="hoverSide" class="hover-side" aria-label="Pages">
+  <h3>Pages</h3>
+  <div class="navlist">
+    <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
+    <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+    <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+    <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+    <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+    <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+  </div>
+
+  <div class="admin-only" style="margin-top:12px">
+    <h3>Admin</h3>
+    <div class="navlist">
+      <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+      <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix / 製造No</strong></a>
+      <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+      <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+    </div>
+  </div>
+</aside>
+
+<!-- ===== Drawer (mobile) ===== -->
+<div id="drawer" class="drawer" aria-hidden="true">
+  <div class="backdrop" data-close></div>
+  <aside class="panel">
+    <button class="close" data-close>✕</button>
+    <div class="navlist" style="margin-top:30px">
+      <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
+      <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+      <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+      <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+      <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+      <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
+    </div>
+
+    <div class="admin-only" style="margin-top:12px">
+      <h3>Admin</h3>
+      <div class="navlist">
+        <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
+        <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix / 製造No</strong></a>
+        <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
+        <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
+      </div>
+    </div>
+  </aside>
 </div>
 
 <div class="marquee"><span>品質管理生産技術システム - 最新の出荷状況を表示しています - Awali Dengan Bismillah</span></div>
@@ -200,6 +288,45 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <script>
+  /* ========= Drawer (mobile) ========= */
+  const drawer = document.getElementById('drawer');
+  document.getElementById('btnBurger')?.addEventListener('click', ()=>{
+    drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');
+  });
+  drawer?.addEventListener('click', (e)=>{
+    if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
+  });
+
+  /* ========= Admin & Prefix (hidupkan/ matikan) ========= */
+  const ADMIN_FLAG_KEY = 'kensa_admin';
+  function setAdmin(on){
+    document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
+    if (on){ localStorage.setItem(ADMIN_FLAG_KEY,'1'); }
+    else   { localStorage.removeItem(ADMIN_FLAG_KEY); }
+    const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
+  }
+  function isAdmin(){ return localStorage.getItem(ADMIN_FLAG_KEY)==='1'; }
+  document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
+    if(isAdmin()){
+      if(confirm('Admin akan dimatikan. Lanjut?')) setAdmin(false);
+    }else{
+      const code = prompt('Admin code:');
+      if(code==='admin2025') setAdmin(true); else alert('Kode tidak sesuai');
+    }
+  });
+
+  /* ========= EDGE-HOVER sidebar (desktop) ========= */
+  const hot = document.getElementById('edgeHotspot');
+  const fly = document.getElementById('hoverSide');
+  let hideTimer = null;
+  const HIDE_DELAY = 280;
+  function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
+  function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
+  hot?.addEventListener('mouseenter', openFly);
+  hot?.addEventListener('mouseleave', scheduleClose);
+  fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer));
+  fly?.addEventListener('mouseleave', scheduleClose);
+
   /* ====== data source ====== */
   const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
   const TAB_NAME ="最新情報";
@@ -274,12 +401,10 @@
     };
   }
 
-  /* ====== renderers ====== */
   function buildHead(header, headEl){
     const ths = ['','出荷日','顧客名','図番','機種','商品名','数量','送り先'];
     headEl.innerHTML = ths.map((h,i)=> i===0 ? `<th class="gutter-th">${h}</th>` : `<th>${h}</th>`).join('');
   }
-
   function gutterCard(st, ts, user){
     return `
       <div class="status-card">
@@ -290,7 +415,6 @@
         </div>
       </div>`;
   }
-
   function buildRow(r, idx){
     const urgent = idx.status_flag!=null && isUrgent(v(r,idx.status_flag));
     const st = idx.status_done!=null ? mapStatus(v(r, idx.status_done)) : {label:'未設定',cls:'tag-not'};
@@ -311,7 +435,6 @@
 
     return `<tr>${gutter}${dateCell}${cust}${draw}${machine}${item}${qty}${to}</tr>`;
   }
-
   function renderRows(header, idx, rows, tbodyEl, headEl){
     buildHead(header, headEl);
     tbodyEl.innerHTML = rows.map(r => buildRow(r, idx)).join('');
@@ -350,14 +473,12 @@
         }
       }
 
-      // main table (tanpa filter)
+      // main table
       renderRows(header, idx, rows, document.getElementById('shipBody'), document.getElementById('shipHead'));
 
-      // hint + info
       document.getElementById('shipHint').textContent = `データ元: ${TAB_NAME}（${rows.length} 行）`;
       document.getElementById('lastUpdated').textContent = 'Last update: ' + new Date().toLocaleString();
 
-      // default filter date isi hari ini
       document.getElementById('filterDate').value = toInputDate(new Date());
     }catch(e){
       console.error(e);
@@ -394,7 +515,11 @@
   document.getElementById('btnPDF').addEventListener('click', exportPDF);
 
   // init
-  window.addEventListener('DOMContentLoaded', ()=>{ setLive(60000); load(); });
+  window.addEventListener('DOMContentLoaded', ()=>{
+    setAdmin(isAdmin());     // tampilkan grup admin bila ON
+    setLive(60000);
+    load();
+  });
 </script>
 </body>
 </html>
