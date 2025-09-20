@@ -71,6 +71,7 @@
   /* Per-chart toolbar */
   .chartbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:2px 0 10px}
   .chartbar .btn,.fab .btn{height:30px;padding:0 10px;border-radius:9px}
+  .chartbar select{height:30px;border:1px solid var(--border);border-radius:9px;padding:0 8px;background:#fff}
 
   /* Floating controls */
   .fab{position:fixed;right:16px;bottom:16px;z-index:120;display:grid;gap:8px;justify-items:end}
@@ -169,10 +170,14 @@
           <div class="cwrap tall"><canvas id="custQty"></canvas></div>
         </div>
 
-        <!-- Customer Monthly Stacked -->
+        <!-- Customer Monthly: Stacked / Pie / Pareto -->
         <div class="panel">
           <div class="chartbar">
             <strong>顧客別 ⽉次 出荷（YTD）</strong>
+            <select id="custMonMonth"></select>
+            <button id="custMonModeStack"  class="btn" data-mode="stacked">Stacked</button>
+            <button id="custMonModePie"    class="btn" data-mode="pie">Pie</button>
+            <button id="custMonModePareto" class="btn" data-mode="pareto">Pareto</button>
             <button id="custMonTop" class="btn" data-top="6">Top6</button>
             <button id="custMonOrient" class="btn" data-orient="v">縦</button>
             <button id="custMonExport" class="btn">Export</button>
@@ -228,12 +233,12 @@
 <script>
 document.addEventListener('DOMContentLoaded', function(){
 
-  /* ====== Persist helpers ====== */
+  /* ===== Persist ===== */
   const LSKEY='kensaCharts';
-  const readLS=()=>{ try{return JSON.parse(localStorage.getItem(LSKEY)||'{}')}catch{return{}} };
-  const writeLS=(p)=>localStorage.setItem(LSKEY, JSON.stringify(Object.assign(readLS(), p)));
+  const getLS=()=>{ try{return JSON.parse(localStorage.getItem(LSKEY)||'{}')}catch{return{}} };
+  const setLS=(p)=>localStorage.setItem(LSKEY, JSON.stringify(Object.assign(getLS(), p)));
 
-  /* ====== Drawer & hover ====== */
+  /* ===== Drawer & hover ===== */
   const drawer=document.getElementById('drawer');
   const btnBurger=document.getElementById('btnBurger');
   btnBurger && btnBurger.addEventListener('click', ()=>{drawer.classList.add('open');drawer.setAttribute('aria-hidden','false');});
@@ -244,12 +249,12 @@ document.addEventListener('DOMContentLoaded', function(){
   hot && hot.addEventListener('mouseenter', openFly); hot && hot.addEventListener('mouseleave', scheduleClose);
   fly && fly.addEventListener('mouseenter', ()=>clearTimeout(hideTimer)); fly && fly.addEventListener('mouseleave', scheduleClose);
 
-  /* ====== Data source (selaras index/file) ====== */
+  /* ===== Data source ===== */
   const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
   const TAB_NAME ="最新情報";
   const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
 
-  /* ====== Utils ====== */
+  /* ===== Utils ===== */
   const S = s => String(s==null?'':s).trim();
   function parseCSV(t){
     const out=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g; let row=[], m; t=t.replace(/\r\n?/g,"\n");
@@ -279,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function(){
   function fmtDate(d){ if(!d) return ''; const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}` }
   function fmtMonth(d){ const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}` }
 
-  /* ====== Status ====== */
+  /* ===== Status & helpers ===== */
   const STATUS = [
     {key:'shipok',   label:'出荷済',     icon:'📦', cls:'shipok',  rx:/出荷済/},
     {key:'prep',     label:'出荷準備済', icon:'🚚', cls:'prep',    rx:/出荷準備済/},
@@ -292,39 +297,34 @@ document.addEventListener('DOMContentLoaded', function(){
     {key:'sheet',    label:'板金加工',   icon:'🔩', cls:'sheet',   rx:/板金/},
     {key:'out',      label:'外注',       icon:'🏭', cls:'out',     rx:/外注/},
   ];
-  function isUrgent(v){const t=S(v).toLowerCase(); return t==='至急'||t==='urgent'||t==='緊急'||t==='1'||t==='true'}
+  const isUrgent=v=>['至急','urgent','緊急','1','true'].includes(S(v).toLowerCase());
 
-  /* ====== State (persist) ====== */
-  const defaults = { range:'ytd', metric:'qty', labels:true, interval:60000, status:null,
-    custType:'barH', custTop:10, custMonTop:6, dailyOrient:'v', monthlyOrient:'v', custMonOrient:'v'
+  /* ===== State (persist) ===== */
+  const defaults = {
+    range:'ytd', metric:'qty', labels:true, interval:60000, status:null,
+    custType:'barH', custTop:10,
+    dailyOrient:'v', monthlyOrient:'v',
+    custMonMode:'stacked', custMonTop:6, custMonOrient:'v', custMonMonth:'ALL'
   };
-  const state = Object.assign({}, defaults, readLS());
+  const state = Object.assign({}, defaults, getLS());
   let cache={header:[],rows:[],idx:null};
   let timer=null;
 
-  /* ====== UI helpers ====== */
+  /* ===== UI sync ===== */
   function syncUI(){
-    // Range
-    document.querySelectorAll('.chipbtn').forEach(b=>{
-      const r=b.getAttribute('data-range'); b.classList.toggle('active', r===state.range);
-    });
-    // Metric
-    document.querySelectorAll('#metricToggle button').forEach(b=>{
-      const m=b.getAttribute('data-metric'); b.classList.toggle('active', m===state.metric);
-    });
+    document.querySelectorAll('.chipbtn').forEach(b=> b.classList.toggle('active', b.getAttribute('data-range')===state.range));
+    document.querySelectorAll('#metricToggle button').forEach(b=> b.classList.toggle('active', b.getAttribute('data-metric')===state.metric));
     document.getElementById('metricBadge').textContent='表示: '+(state.metric==='count'?'件数':'数量');
-    // Labels & interval
     document.getElementById('btnLabels').textContent=(state.labels?'✓ ':'✗ ')+'Labels';
     document.getElementById('intervalInfo').textContent=Math.round(state.interval/1000)+'s';
-    // Per chart buttons
     document.getElementById('custTop').textContent='Top'+state.custTop;
     document.getElementById('custMonTop').textContent='Top'+state.custMonTop;
-    document.getElementById('dailyOrient').textContent = state.dailyOrient==='v'?'縦':'横';
-    document.getElementById('monthlyOrient').textContent = state.monthlyOrient==='v'?'縦':'横';
-    document.getElementById('custMonOrient').textContent = state.custMonOrient==='v'?'縦':'横';
+    document.getElementById('dailyOrient').textContent  = state.dailyOrient==='v'?'縦':'横';
+    document.getElementById('monthlyOrient').textContent= state.monthlyOrient==='v'?'縦':'横';
+    document.getElementById('custMonOrient').textContent= state.custMonOrient==='v'?'縦':'横';
   }
 
-  /* ====== Filtering / transforms ====== */
+  /* ===== Filters ===== */
   function applyStatusFilter(rows, idx){
     if(!state.status) return rows;
     const d = STATUS.find(s=>s.key===state.status);
@@ -338,56 +338,49 @@ document.addEventListener('DOMContentLoaded', function(){
     if(state.range==='ytd'){ const dt3=new Date(now.getFullYear(),0,1); return rows.filter(r=>{ const d=parseJPDate(valAt(r,idx.date)); return d && d>=dt3;}); }
     return rows;
   }
-  const metricValue = (r,idx)=> state.metric==='count' ? 1 : (+S(valAt(r,idx.qty))||0);
-  const metricLabel = ()=> state.metric==='count' ? '件数' : '数量';
+  const metricValue=(r,idx)=> state.metric==='count' ? 1 : (+S(valAt(r,idx.qty))||0);
+  const metricLabel=()=> state.metric==='count' ? '件数' : '数量';
 
-  /* ====== Chart instances ====== */
-  let dailyChart, monthlyChart, custChart, custMonChart;
-
-  /* ====== Build datasets ====== */
+  /* ===== Aggregations ===== */
   function buildAggregations(rows, idx){
-    // daily & monthly
-    const mapDaily={}, mapMonthly={};
-    // customers
-    const mapCust={}, mapCustMonth={}; // mapCustMonth[month][customer] = sum
-
+    const mapDaily={}, mapMonthly={}, mapCust={}, mapCustMonth={};
     rows.forEach(r=>{
       const d=parseJPDate(valAt(r,idx.date)); if(!d) return;
-      const v = metricValue(r, idx);
-      const kDay = fmtDate(d);
-      const kMon = fmtMonth(d);
-      const cust=S(valAt(r,idx.cust))||'—';
-
-      mapDaily[kDay]=(mapDaily[kDay]||0)+v;
-      mapMonthly[kMon]=(mapMonthly[kMon]||0)+v;
-
+      const v=metricValue(r,idx);
+      const day=fmtDate(d), mon=fmtMonth(d), cust=S(valAt(r,idx.cust))||'—';
+      mapDaily[day]=(mapDaily[day]||0)+v;
+      mapMonthly[mon]=(mapMonthly[mon]||0)+v;
       mapCust[cust]=(mapCust[cust]||0)+v;
-      if(!mapCustMonth[kMon]) mapCustMonth[kMon]={};
-      mapCustMonth[kMon][cust]=(mapCustMonth[kMon][cust]||0)+v;
+      (mapCustMonth[mon]||(mapCustMonth[mon]={}))[cust]=(mapCustMonth[mon][cust]||0)+v;
     });
 
     const dailyLabels=Object.keys(mapDaily).sort();
     const dailyValues=dailyLabels.map(k=>mapDaily[k]);
-
     const monthlyLabels=Object.keys(mapMonthly).sort();
     const monthlyValues=monthlyLabels.map(k=>mapMonthly[k]);
-
     const custEntries=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,state.custTop);
-    const custLabels=custEntries.map(x=>x[0]);
-    const custValues=custEntries.map(x=>x[1]);
+    const custLabels=custEntries.map(x=>x[0]), custValues=custEntries.map(x=>x[1]);
 
-    // Monthly stacked by top customers (choose top over YTD)
-    const topCustForStack=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,state.custMonTop).map(x=>x[0]);
+    // for monthly customers: build YTD top list & datasets
     const months=monthlyLabels;
-    const custMonthDatasets = topCustForStack.map(cn=>{
-      const data = months.map(m=> (mapCustMonth[m] && mapCustMonth[m][cn]) ? mapCustMonth[m][cn] : 0 );
-      return { label: cn, data };
+    // YTD total per customer for ranking
+    const ytdCustTotals = {};
+    months.forEach(m=>{
+      const o=mapCustMonth[m]||{};
+      Object.keys(o).forEach(c=> ytdCustTotals[c]=(ytdCustTotals[c]||0)+o[c]);
     });
+    const topForStack = Object.entries(ytdCustTotals).sort((a,b)=>b[1]-a[1]).slice(0,state.custMonTop).map(x=>x[0]);
+    const custMonthDatasets = topForStack.map(cn=>({
+      label:cn,
+      data: months.map(m=> (mapCustMonth[m] && mapCustMonth[m][cn]) ? mapCustMonth[m][cn] : 0 )
+    }));
 
-    return { dailyLabels, dailyValues, monthlyLabels, monthlyValues, custLabels, custValues, months, custMonthDatasets };
+    return { dailyLabels, dailyValues, monthlyLabels, monthlyValues, custLabels, custValues, months, mapCustMonth, ytdCustTotals, custMonthDatasets };
   }
 
-  /* ====== Common options (labels visible + headroom) ====== */
+  /* ===== Charts ===== */
+  let dailyChart, monthlyChart, custChart, custMonChart;
+
   function makeCommonOptions({horizontal=false, maxVal=null}={}){
     const headroom = maxVal? Math.ceil(maxVal*1.15) : undefined;
     const scales = horizontal
@@ -399,29 +392,41 @@ document.addEventListener('DOMContentLoaded', function(){
         legend:{display:false},
         datalabels:{
           display: state.labels, clip:false, clamp:true,
-          anchor: horizontal?'end':'end',
-          align:  horizontal?'end':'top',
-          offset: 4,
-          formatter:(v)=> (v==null||isNaN(v))?'':String(Math.round(v)),
-          font:{weight:'700'}, padding:4
+          anchor: horizontal?'end':'end', align: horizontal?'end':'top', offset:4,
+          formatter:v=> (v==null||isNaN(v))?'':String(Math.round(v)), font:{weight:'700'}
         },
-        tooltip:{mode:'index',intersect:false, callbacks:{ label:(ctx)=> metricLabel()+': '+ctx.parsed.y }},
+        tooltip:{mode:'index',intersect:false, callbacks:{ label:ctx=> metricLabel()+': '+ctx.parsed.y }},
       },
       scales
     };
   }
 
-  /* ====== Render charts ====== */
-  function upsertChart(ctx, cfg, refName){
-    if(window[refName]){ window[refName].data=cfg.data; window[refName].options=cfg.options; window[refName].update(); }
-    else{ window[refName]=new Chart(ctx, cfg); }
+  function upsertChart(ctx, cfg, ref){ if(window[ref]){ window[ref].data=cfg.data; window[ref].options=cfg.options; window[ref].update(); } else { window[ref]=new Chart(ctx, cfg); } }
+
+  function renderChips(counts){
+    const box=document.getElementById('chipsBox');
+    const chip=(key,label,icon,cnt)=>`<button class="chipbtn ${state.status===key?'active':''}" data-key="${key}">${icon} ${label} <span class="count">${cnt}</span></button>`;
+    let html=`<button class="chipbtn ${!state.status?'active':''}" data-key="">🌐 すべて <span class="count">${cache.rows.length}</span></button>`;
+    STATUS.forEach(s=> html+=chip(s.key,s.label,s.icon, counts[s.key]||0));
+    box.innerHTML=html;
+    box.querySelectorAll('.chipbtn').forEach(b=>{
+      b.addEventListener('click', ()=>{ state.status=b.getAttribute('data-key')||null; setLS({status:state.status}); renderAll(); dropdown.classList.remove('open'); });
+    });
+  }
+
+  function buildMonthSelect(months){
+    const sel=document.getElementById('custMonMonth');
+    const cur=state.custMonMonth;
+    sel.innerHTML = `<option value="ALL">All (YTD)</option>` + months.map(m=>`<option value="${m}">${m}</option>`).join('');
+    sel.value = cur && (cur==='ALL' || months.includes(cur)) ? cur : 'ALL';
+    sel.onchange = ()=>{ state.custMonMonth = sel.value; setLS({custMonMonth:state.custMonMonth}); renderAll(); };
   }
 
   function renderAll(){
     const idx=cache.idx;
     let rows = cache.rows.slice();
 
-    // counts for status chips + urgent banner
+    // status counters + urgent
     const counts={}; STATUS.forEach(s=>counts[s.key]=0);
     rows.forEach(r=>{ const t=S(valAt(r,idx.status)); for(const s of STATUS){ if(s.rx.test(t)){ counts[s.key]++; break; } }});
     renderChips(counts);
@@ -431,123 +436,99 @@ document.addEventListener('DOMContentLoaded', function(){
     if(urgentCount>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; }
     else{ ub.style.display='none'; ub.textContent=''; }
 
-    // filter
     rows = applyStatusFilter(rows, idx);
     rows = applyRange(rows, idx);
 
-    // aggregations
     const ag = buildAggregations(rows, idx);
-
-    // register plugin
     Chart.register(ChartDataLabels);
 
-    /* Daily chart */
+    /* Daily */
     const dMax=Math.max(0,...ag.dailyValues);
-    const dailyType = state.dailyOrient==='h'?'bar':'line';
-    const dailyHorizontal = state.dailyOrient==='h';
+    const dHoriz = state.dailyOrient==='h';
     upsertChart(document.getElementById('dailyShip'), {
-      type: dailyType,
-      data:{ labels:ag.dailyLabels, datasets:[{ label:metricLabel(), data:ag.dailyValues, tension:.25, fill:!dailyHorizontal, pointRadius:3 }] },
-      options: makeCommonOptions({horizontal: dailyHorizontal, maxVal:dMax})
+      type: dHoriz?'bar':'line',
+      data:{ labels:ag.dailyLabels, datasets:[{ label:metricLabel(), data:ag.dailyValues, tension:.25, fill:!dHoriz, pointRadius:3 }] },
+      options: Object.assign(makeCommonOptions({horizontal:dHoriz, maxVal:dMax}), dHoriz?{indexAxis:'y'}:{})
     }, 'dailyChart');
 
     /* Monthly overall */
     const mMax=Math.max(0,...ag.monthlyValues);
-    const monHorizontal = state.monthlyOrient==='h';
+    const mHoriz = state.monthlyOrient==='h';
     upsertChart(document.getElementById('monthlyQty'), {
-      type: monHorizontal?'bar':'bar',
+      type:'bar',
       data:{ labels:ag.monthlyLabels, datasets:[{ label:metricLabel(), data:ag.monthlyValues }] },
-      options: Object.assign(makeCommonOptions({horizontal: monHorizontal, maxVal:mMax}), monHorizontal?{indexAxis:'y'}:{})
+      options: Object.assign(makeCommonOptions({horizontal:mHoriz, maxVal:mMax}), mHoriz?{indexAxis:'y'}:{})
     }, 'monthlyChart');
 
-    /* Customer Top-N (type: bar/barH/pie/pareto) */
+    /* Customer Top-N (bar/barH/pie/pareto) */
     const cMax=Math.max(0,...ag.custValues);
-    let custConfig;
+    let custCfg;
     if(state.custType==='pie'){
-      custConfig = {
-        type:'pie',
-        data:{ labels:ag.custLabels, datasets:[{ label:metricLabel(), data:ag.custValues }] },
-        options:{
-          responsive:true, maintainAspectRatio:false,
-          plugins:{
-            legend:{position:'right'},
-            datalabels:{ display: state.labels, formatter:(v,ctx)=>{
-              const sum = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0)||1;
-              const p = Math.round(v/sum*100); return `${v} (${p}%)`;
-            }}
-          }
-        }
-      };
+      custCfg={ type:'pie', data:{labels:ag.custLabels, datasets:[{data:ag.custValues}]},
+        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right'},
+          datalabels:{display:state.labels, formatter:(v,ctx)=>{const sum=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0)||1; const p=Math.round(v/sum*100); return `${v} (${p}%)`;}}}} };
     } else if(state.custType==='pareto'){
-      // bars + cumulative line
-      const total = ag.custValues.reduce((a,b)=>a+b,0)||1;
-      const cum = []; ag.custValues.reduce((acc,v,i)=> (cum[i]=Math.round((acc+v)/total*100), acc+v),0);
-      custConfig = {
-        type:'bar',
-        data:{ labels:ag.custLabels, datasets:[
-          { label:metricLabel(), data:ag.custValues, yAxisID:'y' },
-          { label:'累積(%)', data:cum, type:'line', yAxisID:'y1', tension:.25, pointRadius:3 }
-        ]},
-        options:{
-          responsive:true, maintainAspectRatio:false, layout:{padding:{right:30}},
-          plugins:{
-            legend:{display:true},
-            datalabels:{ display: state.labels, anchor:'end', align:'top', formatter:(v,ctx)=> ctx.dataset.type==='line'? v+'%': v, clip:false }
-          },
-          scales:{ x:{grid:{color:'#eef2ff'}},
-            y:{grid:{color:'#f1f5f9'}, beginAtZero:true},
-            y1:{position:'right', beginAtZero:true, max:100, grid:{drawOnChartArea:false}}
-          }
-        }
-      };
+      const total=ag.custValues.reduce((a,b)=>a+b,0)||1;
+      const cum=[]; ag.custValues.reduce((acc,v,i)=> (cum[i]=Math.round((acc+v)/total*100), acc+v),0);
+      custCfg={ type:'bar', data:{labels:ag.custLabels, datasets:[
+        {label:metricLabel(), data:ag.custValues, yAxisID:'y'},
+        {label:'累積(%)', data:cum, type:'line', yAxisID:'y1', tension:.25, pointRadius:3 }
+      ]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true},
+        datalabels:{display:state.labels, formatter:(v,ctx)=> ctx.dataset.type==='line'? v+'%': v}},
+        scales:{ x:{grid:{color:'#eef2ff'}}, y:{beginAtZero:true, grid:{color:'#f1f5f9'}}, y1:{position:'right', beginAtZero:true, max:100, grid:{drawOnChartArea:false}} } };
     } else {
       const horiz = state.custType==='barH';
-      custConfig = {
-        type:'bar',
-        data:{ labels:ag.custLabels, datasets:[{ label:metricLabel(), data:ag.custValues }] },
-        options: Object.assign(makeCommonOptions({horizontal:horiz, maxVal:cMax}), horiz?{indexAxis:'y'}:{})
-      };
+      custCfg={ type:'bar', data:{labels:ag.custLabels, datasets:[{data:ag.custValues, label:metricLabel()}]},
+        options:Object.assign(makeCommonOptions({horizontal:horiz, maxVal:cMax}), horiz?{indexAxis:'y'}:{}) };
     }
-    upsertChart(document.getElementById('custQty'), custConfig, 'custChart');
+    upsertChart(document.getElementById('custQty'), custCfg, 'custChart');
 
-    /* Customer Monthly stacked (Top N) */
-    const stackedHorizontal = state.custMonOrient==='h';
-    upsertChart(document.getElementById('custMonthly'), {
-      type:'bar',
-      data:{ labels:ag.months, datasets: ag.custMonthDatasets },
-      options:Object.assign({
-        responsive:true, maintainAspectRatio:false,
-        plugins:{
-          legend:{position:'bottom'},
-          datalabels:{ display:false } // stacked usually crowded
-        },
-        scales: stackedHorizontal
-          ? { x:{ stacked:true, grid:{color:'#eef2ff'}}, y:{ stacked:true, grid:{color:'#f1f5f9'} } }
-          : { x:{ stacked:true, grid:{color:'#eef2ff'}}, y:{ stacked:true, grid:{color:'#f1f5f9'}, ticks:{precision:0}} }
-      }, stackedHorizontal?{indexAxis:'y'}:{})
-    }, 'custMonChart');
+    /* Customer Monthly panel: mode = stacked | pie | pareto  */
+    buildMonthSelect(ag.months);
+    let cmCfg;
+    if(state.custMonMode==='stacked'){
+      const horiz = state.custMonOrient==='h';
+      cmCfg = { type:'bar', data:{ labels:ag.months, datasets: ag.custMonthDatasets },
+        options:Object.assign({responsive:true, maintainAspectRatio:false,
+          plugins:{legend:{position:'bottom'}, datalabels:{display:false}},
+          scales: horiz
+            ? { x:{ stacked:true, grid:{color:'#eef2ff'}}, y:{ stacked:true, grid:{color:'#f1f5f9'} } }
+            : { x:{ stacked:true, grid:{color:'#eef2ff'}}, y:{ stacked:true, grid:{color:'#f1f5f9'}, ticks:{precision:0}} }
+        }, horiz?{indexAxis:'y'}:{}) };
+    } else {
+      // Build dataset for selected month or YTD (ALL)
+      let dict={};
+      if(state.custMonMonth==='ALL'){
+        dict = ag.ytdCustTotals;
+      } else {
+        dict = ag.mapCustMonth[state.custMonMonth] || {};
+      }
+      const entries = Object.entries(dict).sort((a,b)=>b[1]-a[1]).slice(0,state.custMonTop);
+      const labels = entries.map(x=>x[0]), values = entries.map(x=>x[1]);
+
+      if(state.custMonMode==='pie'){
+        cmCfg = { type:'pie', data:{ labels, datasets:[{ data:values }] },
+          options:{ responsive:true, maintainAspectRatio:false,
+            plugins:{ legend:{position:'right'}, datalabels:{ display:state.labels, formatter:(v,ctx)=>{ const sum=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0)||1; const p=Math.round(v/sum*100); return `${v} (${p}%)`; } } }
+          } };
+      } else { // pareto
+        const total = values.reduce((a,b)=>a+b,0)||1;
+        const cum=[]; values.reduce((acc,v,i)=> (cum[i]=Math.round((acc+v)/total*100), acc+v),0);
+        cmCfg = { type:'bar', data:{ labels, datasets:[
+          { label:metricLabel(), data:values, yAxisID:'y' },
+          { label:'累積(%)', data:cum, type:'line', yAxisID:'y1', tension:.25, pointRadius:3 }
+        ]}, options:{ responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{display:true}, datalabels:{ display:state.labels, formatter:(v,ctx)=> ctx.dataset.type==='line'? v+'%': v } },
+          scales:{ x:{grid:{color:'#eef2ff'}}, y:{beginAtZero:true, grid:{color:'#f1f5f9'}}, y1:{position:'right', beginAtZero:true, max:100, grid:{drawOnChartArea:false}} }
+        } };
+      }
+    }
+    upsertChart(document.getElementById('custMonthly'), cmCfg, 'custMonChart');
 
     document.getElementById('lastup').textContent = 'Last update: '+new Date().toLocaleString();
   }
 
-  /* ====== Build Chips in dropdown ====== */
-  function renderChips(counts){
-    const box=document.getElementById('chipsBox');
-    const makeChip=(key,label,icon,cnt)=>`<button class="chipbtn ${state.status===key?'active':''}" data-key="${key}">${icon} ${label} <span class="count">${cnt}</span></button>`;
-    let html=`<button class="chipbtn ${!state.status?'active':''}" data-key="">🌐 すべて <span class="count">${cache.rows.length}</span></button>`;
-    STATUS.forEach(s=> html+=makeChip(s.key,s.label,s.icon, counts[s.key]||0));
-    box.innerHTML=html;
-    box.querySelectorAll('.chipbtn').forEach(b=>{
-      b.addEventListener('click', ()=>{
-        state.status = b.getAttribute('data-key') || null;
-        writeLS({status:state.status});
-        renderAll();
-        dropdown.classList.remove('open');
-      });
-    });
-  }
-
-  /* ====== Fetch & live ====== */
+  /* ===== Fetch & live ===== */
   async function load(){
     const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
     try{
@@ -566,27 +547,24 @@ document.addEventListener('DOMContentLoaded', function(){
   function startAuto(ms){
     if(timer) clearInterval(timer);
     timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, ms);
-    state.interval=ms; writeLS({interval:ms});
+    state.interval=ms; setLS({interval:ms});
     document.getElementById('intervalInfo').textContent=Math.round(ms/1000)+'s';
-    document.getElementById('btnLive').textContent = (ms<=5000?'● Live: On':'● Live: Off');
+    document.getElementById('btnLive').textContent=(ms<=5000?'● Live: On':'● Live: Off');
   }
 
-  /* ====== Export helpers ====== */
-  function exportExcel(ag){
+  /* ===== Export ===== */
+  function exportExcelCurrent(){
+    const idx=cache.idx; const rows=applyRange(applyStatusFilter(cache.rows, idx), idx);
+    const ag=buildAggregations(rows, idx);
     const wb = XLSX.utils.book_new();
-    // Daily
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['日付', metricLabel()], ...ag.dailyLabels.map((d,i)=>[d, ag.dailyValues[i]])]), 'Daily');
-    // Monthly
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['月', metricLabel()], ...ag.monthlyLabels.map((m,i)=>[m, ag.monthlyValues[i]])]), 'Monthly');
-    // Customer Top
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['顧客', metricLabel()], ...ag.custLabels.map((c,i)=>[c, ag.custValues[i]])]), 'CustomersTop');
-    // Customer Monthly stacked
     const header=['月', ...ag.custMonthDatasets.map(d=>d.label)];
-    const rows=ag.months.map((m,i)=> [m, ...ag.custMonthDatasets.map(ds=> ds.data[i]) ]);
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), 'CustMonthly');
+    const rows2=ag.months.map((m,i)=> [m, ...ag.custMonthDatasets.map(ds=> ds.data[i]) ]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows2]), 'CustMonthly');
     XLSX.writeFile(wb, 'charts_export.xlsx');
   }
-
   async function exportPDF(){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l','pt','a4');
@@ -599,101 +577,54 @@ document.addEventListener('DOMContentLoaded', function(){
       y += h+24;
       if(y>520){ doc.addPage(); y=40; }
     }
-    // Ringkas tabel Top Customers
-    const ag = buildAggregations(applyRange(applyStatusFilter(cache.rows, cache.idx), cache.idx), cache.idx);
-    doc.addPage();
-    doc.text('Top Customers', 40, 40);
-    const data = ag.custLabels.map((c,i)=>[c, ag.custValues[i]]);
-    doc.autoTable({ startY:60, head:[['顧客', metricLabel()]], body:data });
     doc.save('charts_export.pdf');
   }
 
-  function exportAllExcelCurrent(){
-    const ag = buildAggregations(applyRange(applyStatusFilter(cache.rows, cache.idx), cache.idx), cache.idx);
-    exportExcel(ag);
-  }
-
-  /* ====== Wire controls ====== */
-  // Range chips
+  /* ===== Wire controls ===== */
+  // Range
   document.querySelectorAll('.chipbtn').forEach(b=>{
-    b.addEventListener('click', ()=>{
-      document.querySelectorAll('.chipbtn').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
-      state.range = b.getAttribute('data-range');
-      writeLS({range:state.range});
-      renderAll();
-    });
+    b.addEventListener('click', ()=>{ document.querySelectorAll('.chipbtn').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+      state.range=b.getAttribute('data-range'); setLS({range:state.range}); renderAll(); });
   });
-  // Metric toggle
+  // Metric
   document.querySelectorAll('#metricToggle button').forEach(b=>{
-    b.addEventListener('click', ()=>{
-      document.querySelectorAll('#metricToggle button').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
-      state.metric = b.getAttribute('data-metric');
-      writeLS({metric:state.metric});
-      document.getElementById('metricBadge').textContent='表示: '+(state.metric==='count'?'件数':'数量');
-      renderAll();
-    });
+    b.addEventListener('click', ()=>{ document.querySelectorAll('#metricToggle button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+      state.metric=b.getAttribute('data-metric'); setLS({metric:state.metric});
+      document.getElementById('metricBadge').textContent='表示: '+(state.metric==='count'?'件数':'数量'); renderAll(); });
   });
-  // Labels toggle
-  document.getElementById('btnLabels').addEventListener('click', ()=>{
-    state.labels = !state.labels; writeLS({labels:state.labels});
-    document.getElementById('btnLabels').textContent=(state.labels?'✓ ':'✗ ')+'Labels';
-    renderAll();
-  });
+  // Labels
+  document.getElementById('btnLabels').addEventListener('click', ()=>{ state.labels=!state.labels; setLS({labels:state.labels}); document.getElementById('btnLabels').textContent=(state.labels?'✓ ':'✗ ')+'Labels'; renderAll(); });
   // Refresh / Live
   document.getElementById('btnRefresh').addEventListener('click', load);
   document.getElementById('btnLive').addEventListener('click', ()=>{ startAuto(state.interval<=5000?60000:5000); load(); });
   document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
-
   // Status dropdown
   const dropdown=document.getElementById('statusDropdown');
   dropdown.querySelector('.drop-btn').addEventListener('click', ()=> dropdown.classList.toggle('open'));
-  document.getElementById('clearFilter').addEventListener('click', ()=>{ state.status=null; writeLS({status:null}); renderAll(); dropdown.classList.remove('open'); });
+  document.getElementById('clearFilter').addEventListener('click', ()=>{ state.status=null; setLS({status:null}); renderAll(); dropdown.classList.remove('open'); });
   document.addEventListener('click', (e)=>{ if(!dropdown.contains(e.target)) dropdown.classList.remove('open'); });
 
-  // Customer Top controls
-  document.getElementById('custTypeBar').addEventListener('click', ()=>{ state.custType='bar'; writeLS({custType:'bar'}); renderAll(); });
-  document.getElementById('custTypeBarH').addEventListener('click', ()=>{ state.custType='barH'; writeLS({custType:'barH'}); renderAll(); });
-  document.getElementById('custTypePie').addEventListener('click', ()=>{ state.custType='pie'; writeLS({custType:'pie'}); renderAll(); });
-  document.getElementById('custTypePareto').addEventListener('click', ()=>{ state.custType='pareto'; writeLS({custType:'pareto'}); renderAll(); });
-  document.getElementById('custTop').addEventListener('click', ()=>{
-    state.custTop = (state.custTop===10)?20:10; writeLS({custTop:state.custTop});
-    document.getElementById('custTop').textContent='Top'+state.custTop;
-    renderAll();
-  });
+  // Customer Top panel mode
+  document.getElementById('custTypeBar').addEventListener('click', ()=>{ state.custType='bar'; setLS({custType:'bar'}); renderAll(); });
+  document.getElementById('custTypeBarH').addEventListener('click', ()=>{ state.custType='barH'; setLS({custType:'barH'}); renderAll(); });
+  document.getElementById('custTypePie').addEventListener('click', ()=>{ state.custType='pie'; setLS({custType:'pie'}); renderAll(); });
+  document.getElementById('custTypePareto').addEventListener('click', ()=>{ state.custType='pareto'; setLS({custType:'pareto'}); renderAll(); });
+  document.getElementById('custTop').addEventListener('click', ()=>{ state.custTop = (state.custTop===10?20:10); setLS({custTop:state.custTop}); document.getElementById('custTop').textContent='Top'+state.custTop; renderAll(); });
 
-  // Customer Monthly controls
-  document.getElementById('custMonTop').addEventListener('click', ()=>{
-    state.custMonTop = (state.custMonTop===6)?10:6; writeLS({custMonTop:state.custMonTop});
-    document.getElementById('custMonTop').textContent='Top'+state.custMonTop;
-    renderAll();
-  });
-
-  // Orientation toggles
-  document.getElementById('dailyOrient').addEventListener('click', ()=>{
-    state.dailyOrient = state.dailyOrient==='v'?'h':'v'; writeLS({dailyOrient:state.dailyOrient});
-    document.getElementById('dailyOrient').textContent= state.dailyOrient==='v'?'縦':'横';
-    renderAll();
-  });
-  document.getElementById('monthlyOrient').addEventListener('click', ()=>{
-    state.monthlyOrient = state.monthlyOrient==='v'?'h':'v'; writeLS({monthlyOrient:state.monthlyOrient});
-    document.getElementById('monthlyOrient').textContent= state.monthlyOrient==='v'?'縦':'横';
-    renderAll();
-  });
-  document.getElementById('custMonOrient').addEventListener('click', ()=>{
-    state.custMonOrient = state.custMonOrient==='v'?'h':'v'; writeLS({custMonOrient:state.custMonOrient});
-    document.getElementById('custMonOrient').textContent= state.custMonOrient==='v'?'縦':'横';
-    renderAll();
-  });
+  // Customer Monthly panel controls
+  document.getElementById('custMonModeStack').addEventListener('click', ()=>{ state.custMonMode='stacked'; setLS({custMonMode:'stacked'}); renderAll(); });
+  document.getElementById('custMonModePie').addEventListener('click',   ()=>{ state.custMonMode='pie'; setLS({custMonMode:'pie'}); renderAll(); });
+  document.getElementById('custMonModePareto').addEventListener('click',()=>{ state.custMonMode='pareto'; setLS({custMonMode:'pareto'}); renderAll(); });
+  document.getElementById('custMonTop').addEventListener('click', ()=>{ state.custMonTop=(state.custMonTop===6?10:6); setLS({custMonTop:state.custMonTop}); document.getElementById('custMonTop').textContent='Top'+state.custMonTop; renderAll(); });
+  document.getElementById('custMonOrient').addEventListener('click', ()=>{ state.custMonOrient=state.custMonOrient==='v'?'h':'v'; setLS({custMonOrient:state.custMonOrient}); document.getElementById('custMonOrient').textContent=state.custMonOrient==='v'?'縦':'横'; renderAll(); });
 
   // Exports
-  document.getElementById('dailyExport').addEventListener('click', exportAllExcelCurrent);
-  document.getElementById('monthlyExport').addEventListener('click', exportAllExcelCurrent);
-  document.getElementById('custExport').addEventListener('click', async ()=>{ await exportPDF(); });
-  document.getElementById('custMonExport').addEventListener('click', async ()=>{ await exportPDF(); });
+  document.getElementById('dailyExport').addEventListener('click', exportExcelCurrent);
+  document.getElementById('monthlyExport').addEventListener('click', exportExcelCurrent);
+  document.getElementById('custExport').addEventListener('click', exportPDF);
+  document.getElementById('custMonExport').addEventListener('click', exportPDF);
 
-  /* ====== Boot ====== */
+  /* Boot */
   syncUI();
   load();
   startAuto(state.interval);
