@@ -9,13 +9,11 @@
     --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb; --ring:#c7d2fe;
     --accent:#2563eb; --danger:#dc2626; --success:#10b981; --warning:#f59e0b; --purple:#8b5cf6;
     --radius-xl:20px; --radius:12px; --shadow:0 15px 40px rgba(15,23,42,.08);
-    --chip:#eef2ff;
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP","Yu Gothic",sans-serif;background:var(--bg);color:var(--ink)}
   a{text-decoration:none;color:inherit}
 
-  /* ===== App shell ===== */
   .app{display:grid;grid-template-rows:64px 1fr;grid-template-areas:"header" "main";min-height:100vh}
   header{grid-area:header;position:sticky;top:0;z-index:60;background:#ffffffc7;backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
   .header-wrap{height:64px;max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px}
@@ -30,7 +28,7 @@
 
   main{grid-area:main;max-width:1400px;margin:0 auto;padding:22px 20px 96px}
 
-  /* ===== Hover sidebar (desktop) ===== */
+  /* Hover sidebar */
   .edge-hotspot{position:fixed;left:0;top:64px;width:12px;height:calc(100vh - 64px);z-index:70}
   .hover-side{position:fixed;left:0;top:64px;height:calc(100vh - 64px);width:260px;padding:14px 12px;overflow:auto;background:var(--panel);border-right:1px solid var(--border);box-shadow:var(--shadow);transform:translateX(-100%);transition:transform .22s ease;z-index:71}
   .hover-side.open{transform:translateX(0)}
@@ -40,7 +38,7 @@
   .slink:hover{background:#f1f5ff}
   .ico{width:22px;text-align:center}
 
-  /* ===== Drawer (mobile) ===== */
+  /* Drawer mobile */
   .drawer{position:fixed;inset:0;z-index:80;display:none}
   .drawer.open{display:block}
   .drawer .backdrop{position:absolute;inset:0;background:#0006}
@@ -48,39 +46,49 @@
   .drawer.open .panel{transform:translateX(0)}
   .drawer .close{position:absolute;right:10px;top:10px;border:0;background:#f1f5f9;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer}
 
-  /* ===== Urgent banner ===== */
+  /* Urgent banner */
   .urgent-banner{margin:12px 0 6px;background:#fee2e2;border:1px solid #fecaca;color:#991b1b;padding:12px 14px;border-radius:12px;text-align:center;font-weight:800;animation:blink 1.8s linear infinite}
   @keyframes blink{0%,100%{opacity:1;}50%{opacity:.82}}
 
-  /* ===== Tables ===== */
-  .panel{background:#fff;border:1px solid var(--border);border-radius:var(--radius-xl);box-shadow:var(--shadow);padding:10px}
+  /* Panels / table */
+  .panel{background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:10px}
   .panel + .panel{margin-top:18px}
   h2{margin:8px 0 12px}
   .thead{display:grid;grid-template-columns:300px 150px 1fr 210px 80px 1fr;gap:10px;padding:10px 12px;color:#475569}
   .row{display:grid;grid-template-columns:300px 150px 1fr 210px 80px 1fr;gap:10px;align-items:center;padding:14px 12px;border-top:1px solid var(--border)}
   .row:first-child{border-top:0}
 
-  /* status-left box */
   .sbox{display:flex;flex-direction:column;gap:10px;background:#f8fafc;border:1px solid var(--border);border-radius:16px;padding:12px}
   .slabel{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;font-weight:700;color:#fff}
-  .slabel.shipok{background:#0891b2}     /* 出荷済 */
-  .slabel.prep{background:#0284c7}       /* 出荷準備済 */
-  .slabel.inspect{background:#4f46e5}    /* 検査中 */
-  .slabel.hold{background:#dc2626}       /* 検査保留 */
-  .slabel.assem{background:#f59e0b}      /* 組立中 */
-  .slabel.assemok{background:#10b981}    /* 組立完了 */
-  .slabel.proc{background:#22c55e}       /* 加工済 */
-  .slabel.laser{background:#ef4444}      /* レーザ加工 */
-  .slabel.sheet{background:#eab308}      /* 板金加工 */
-  .slabel.out{background:#6366f1}        /* 外注 */
+  .slabel.shipok{background:#0891b2}    /* 出荷済 */
+  .slabel.prep{background:#0284c7}      /* 出荷準備済 */
+  .slabel.inspect{background:#4f46e5}   /* 検査中 */
+  .slabel.hold{background:#dc2626}      /* 検査保留 */
+  .slabel.assem{background:#f59e0b}     /* 組立中 */
+  .slabel.assemok{background:#10b981}   /* 組立完了 */
+  .slabel.proc{background:#22c55e}      /* 加工済 */
+  .slabel.laser{background:#ef4444}     /* レーザ加工 */
+  .slabel.sheet{background:#eab308}     /* 板金加工 */
+  .slabel.out{background:#6366f1}       /* 外注 */
   .urgent{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:#fee2e2;color:#b91c1c;font-weight:700}
   .meta{display:grid;gap:6px}
   .meta small{color:#64748b}
-
   .chip{display:inline-flex;align-items:center;gap:8px;background:#f1f5f9;border:1px solid var(--border);border-radius:999px;padding:8px 12px}
   .num{font-size:18px;font-weight:900}
   .codegroup{display:flex;flex-wrap:wrap;gap:10px}
   .code{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;background:#edf2ff;border:1px solid #c7d2fe}
+
+  /* Filter dropdown */
+  .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 14px}
+  .dropdown{position:relative}
+  .drop-btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
+  .drop-menu{position:absolute;top:42px;left:0;min-width:280px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:10px;display:none;z-index:20}
+  .dropdown.open .drop-menu{display:block}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chipbtn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:#f8fafc;cursor:pointer}
+  .chipbtn.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+  .count{font-weight:800;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:2px 8px}
+  .clearlink{color:#2563eb;cursor:pointer}
 
   @media (max-width:1100px){
     .thead,.row{grid-template-columns:280px 140px 1fr 200px 70px 1fr}
@@ -95,7 +103,7 @@
 </head>
 <body>
 <div class="app">
-  <!-- ===== HEADER ===== -->
+  <!-- HEADER -->
   <header>
     <div class="header-wrap">
       <button id="btnBurger" class="burger" aria-label="メニュー">☰</button>
@@ -104,6 +112,13 @@
         <div class="ttl"><strong>品質管理生産技術</strong></div>
       </div>
       <nav class="top-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div class="dropdown" id="statusDropdown">
+          <button class="drop-btn" type="button">🔎 ステータス フィルター</button>
+          <div class="drop-menu">
+            <div class="chips" id="chipsBox"></div>
+            <div style="margin-top:10px;text-align:right"><span class="clearlink" id="clearFilter">すべて表示</span></div>
+          </div>
+        </div>
         <button id="btnRefresh" class="btn" type="button">⟳ Refresh</button>
         <button id="btnLive" class="btn" type="button" aria-pressed="false">● Live</button>
         <span id="intervalInfo" class="badge">60s</span>
@@ -112,30 +127,24 @@
     </div>
   </header>
 
-  <!-- ===== MAIN ===== -->
+  <!-- MAIN -->
   <main>
     <div id="urgentBanner" class="urgent-banner" style="display:none"></div>
 
-    <!-- Today -->
     <section class="panel" id="todaySec" style="display:none">
       <h2>本日出荷</h2>
-      <div class="thead">
-        <div>状況</div><div>出荷日</div><div>顧客名</div><div>図番／機種</div><div>数量</div><div>送り先／注番</div>
-      </div>
+      <div class="thead"><div>状況</div><div>出荷日</div><div>顧客名</div><div>図番／機種</div><div>数量</div><div>送り先／注番</div></div>
       <div id="todayBody"></div>
     </section>
 
-    <!-- All -->
     <section class="panel">
       <h2>全件一覧</h2>
-      <div class="thead">
-        <div>状況</div><div>出荷日</div><div>顧客名</div><div>図番／機種</div><div>数量</div><div>送り先／注番</div>
-      </div>
+      <div class="thead"><div>状況</div><div>出荷日</div><div>顧客名</div><div>図番／機種</div><div>数量</div><div>送り先／注番</div></div>
       <div id="allBody"></div>
     </section>
   </main>
 
-  <!-- ===== Hover Sidebar (desktop) ===== -->
+  <!-- Hover Sidebar -->
   <div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
   <aside id="hoverSide" class="hover-side" aria-label="Pages">
     <h3>Pages</h3>
@@ -149,7 +158,7 @@
     </div>
   </aside>
 
-  <!-- ===== Drawer (mobile) ===== -->
+  <!-- Drawer mobile -->
   <div id="drawer" class="drawer" aria-hidden="true">
     <div class="backdrop" data-close></div>
     <aside class="panel">
@@ -167,24 +176,16 @@
 </div>
 
 <script>
-/* ===== Drawer & hover menu ===== */
+/* ===== Drawer & hover ===== */
 const drawer = document.getElementById('drawer');
-document.getElementById('btnBurger')?.addEventListener('click', ()=>{
-  drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');
-});
-drawer?.addEventListener('click', e=>{
-  if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
-});
-const hot = document.getElementById('edgeHotspot');
-const fly = document.getElementById('hoverSide');
-let hideTimer=null;
-const HIDE_DELAY=280;
-function openFly(){clearTimeout(hideTimer); fly.classList.add('open');}
-function scheduleClose(){clearTimeout(hideTimer); hideTimer=setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY);}
-hot?.addEventListener('mouseenter', openFly);
-hot?.addEventListener('mouseleave', scheduleClose);
-fly?.addEventListener('mouseenter', ()=>clearTimeout(hideTimer));
-fly?.addEventListener('mouseleave', scheduleClose);
+document.getElementById('btnBurger')?.addEventListener('click', ()=>{ drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');});
+drawer?.addEventListener('click', e=>{ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true');}});
+const hot=document.getElementById('edgeHotspot'); const fly=document.getElementById('hoverSide');
+let hideTimer=null; const HIDE_DELAY=280;
+function openFly(){clearTimeout(hideTimer); fly.classList.add('open')}
+function scheduleClose(){clearTimeout(hideTimer); hideTimer=setTimeout(()=>fly.classList.remove('open'),HIDE_DELAY)}
+hot?.addEventListener('mouseenter', openFly); hot?.addEventListener('mouseleave', scheduleClose);
+fly?.addEventListener('mouseenter', ()=>clearTimeout(hideTimer)); fly?.addEventListener('mouseleave', scheduleClose);
 
 /* ===== Data source ===== */
 const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
@@ -196,107 +197,135 @@ function parseCSV(t){
   const out=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g; let row=[], m; t=t.replace(/\r\n?/g,"\n");
   for(let i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break;
     let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-    row.push(cell); i=re.lastIndex;
-    if(m[2]==="\n"||m[2]===""){ out.push(row); row=[]; }
-  }
-  return out.filter(r=>r.length && r.some(c=>S(c)!==""));
+    row.push(cell); i=re.lastIndex; if(m[2]==="\n"||m[2]===""){ out.push(row); row=[]; }
+  } return out.filter(r=>r.length && r.some(c=>S(c)!==""));
 }
 function indexByName(header){
   const map={}; header.forEach((h,i)=>map[S(h)]=i);
   const f = n => (n in map ? map[n] : null);
   const fRx = rx => { for(let i=0;i<header.length;i++){ if(rx.test(S(header[i]))) return i; } return null; };
   return {
-    date: f('出荷日'),
-    cust: f('顧客名'),
-    draw: fRx(/図番|図面|Drawing/),
-    machine: fRx(/機種/),
-    qty: f('数量'),
-    to: fRx(/送り先|送付先|納品先/),
-    note: fRx(/注番|備考|注文/),
-    status: fRx(/製品状況|製品状態|納品状況/),
-    ts: f('製品状況更新日時'),
-    user: f('更新者'),
+    date: f('出荷日'), cust: f('顧客名'), draw: fRx(/図番|図面|Drawing/), machine: fRx(/機種/),
+    qty: f('数量'), to: fRx(/送り先|送付先|納品先/), note: fRx(/注番|備考|注文/),
+    status: fRx(/製品状況|製品状態|納品状況/), ts: f('製品状況更新日時'), user: f('更新者'),
     urgent: fRx(/Status|至急|ステータス/i)
   };
 }
-const valAt = (row, i) => (i==null?'':(row[i]??''));
+const valAt=(r,i)=> (i==null?'':(r[i]??''));
 function parseJPDate(str){
   const s=S(str); if(!s) return null;
   const m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})(?:\D(\d{1,2})\D(\d{1,2}))?/);
-  if(m){ return new Date(m[1], m[2]-1, m[3], m[4]||0, m[5]||0); }
+  if(m) return new Date(m[1],m[2]-1,m[3],m[4]||0,m[5]||0);
   const d=new Date(s); return isNaN(d)?null:d;
 }
-function fmtTS(d){
-  if(!d) return '';
-  const yy=String(d.getFullYear()).slice(2);
-  const z=n=>String(n).padStart(2,'0');
-  return `${yy}/${z(d.getMonth()+1)}/${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`;
-}
-function fmtDate(d){
-  if(!d) return '';
-  const z=n=>String(n).padStart(2,'0');
-  return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
-}
+function fmtTS(d){ if(!d) return ''; const z=n=>String(n).padStart(2,'0'); return `${String(d.getFullYear()).slice(2)}/${z(d.getMonth()+1)}/${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}` }
+function fmtDate(d){ if(!d) return ''; const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}` }
 function sameYMD(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
 
-/* status mapping */
+/* ===== Status dictionary (ikon + class + regex) ===== */
+const STATUS = [
+  {key:'shipok',   label:'出荷済',     icon:'📦', cls:'shipok',  rx:/出荷済/},
+  {key:'prep',     label:'出荷準備済', icon:'🚚', cls:'prep',    rx:/出荷準備済/},
+  {key:'inspect',  label:'検査中',     icon:'🔬', cls:'inspect', rx:/検査中/},
+  {key:'hold',     label:'検査保留',   icon:'⛔', cls:'hold',    rx:/検査保留/},
+  {key:'assem',    label:'組立中',     icon:'🧰', cls:'assem',   rx:/組立中/},
+  {key:'assemok',  label:'組立完了',   icon:'✅', cls:'assemok', rx:/組立完了/},
+  {key:'proc',     label:'加工済',     icon:'🔧', cls:'proc',    rx:/加工済/},
+  {key:'laser',    label:'レーザ加工', icon:'🪚', cls:'laser',   rx:/レーザ/},
+  {key:'sheet',    label:'板金加工',   icon:'🔩', cls:'sheet',   rx:/板金/},
+  {key:'out',      label:'外注',       icon:'🏭', cls:'out',     rx:/外注/},
+];
+
+/* map status string -> dict */
 function statusInfo(raw){
   const t=S(raw);
-  if(/出荷済/.test(t))    return {label:'出荷済', cls:'shipok'};
-  if(/出荷準備済/.test(t))return {label:'出荷準備済', cls:'prep'};
-  if(/検査保留/.test(t))  return {label:'検査保留', cls:'hold'};
-  if(/検査中/.test(t))    return {label:'検査中', cls:'inspect'};
-  if(/組立完了/.test(t))  return {label:'組立完了', cls:'assemok'};
-  if(/組立中/.test(t))    return {label:'組立中', cls:'assem'};
-  if(/加工済/.test(t))    return {label:'加工済', cls:'proc'};
-  if(/レーザ/.test(t))    return {label:'レーザ加工', cls:'laser'};
-  if(/板金/.test(t))      return {label:'板金加工', cls:'sheet'};
-  if(/外注/.test(t))      return {label:'外注', cls:'out'};
+  for(const s of STATUS){ if(s.rx.test(t)) return {label:s.label, cls:s.cls}; }
   return {label: t || '—', cls:'inspect'};
 }
 function isUrgent(v){const t=S(v).toLowerCase(); return t==='至急'||t==='urgent'||t==='緊急'||t==='1'||t==='true'}
 
-/* render row */
+/* ===== Rendering ===== */
 function makeRow(r, idx){
-  const st = statusInfo(valAt(r, idx.status));
-  const ts = parseJPDate(valAt(r, idx.ts));
-  const user = S(valAt(r, idx.user));
-  const urgentChip = idx.urgent!=null && isUrgent(valAt(r, idx.urgent)) ? `<span class="urgent">⚠ 至急</span>` : '';
-
-  const sbox = `
-    <div class="sbox">
+  const st = statusInfo(valAt(r,idx.status));
+  const ts = parseJPDate(valAt(r,idx.ts));
+  const user = S(valAt(r,idx.user));
+  const urgentChip = idx.urgent!=null && isUrgent(valAt(r,idx.urgent)) ? `<span class="urgent">⚠ 至急</span>` : '';
+  const sbox = `<div class="sbox">
       <div class="slabel ${st.cls}">${st.label}</div>
       ${urgentChip}
-      <div class="meta">
-        <div><small>更新日：</small><strong>${ts?fmtTS(ts):'—'}</strong></div>
-        <div><small>更新者：</small><strong>${user||'—'}</strong></div>
-      </div>
+      <div class="meta"><div><small>更新日：</small><strong>${ts?fmtTS(ts):'—'}</strong></div><div><small>更新者：</small><strong>${user||'—'}</strong></div></div>
     </div>`;
-
-  const d = parseJPDate(valAt(r, idx.date));
-  const dateChip = `<span class="chip">📅 ${d?fmtDate(d):'—'}</span>`;
-  const cust = S(valAt(r, idx.cust));
-  const draw = S(valAt(r, idx.draw));
-  const machine = S(valAt(r, idx.machine));
-  const qty = S(valAt(r, idx.qty));
-  const to = S(valAt(r, idx.to));
-  const note = S(valAt(r, idx.note));
-  const codeChips = [];
-  if (note) note.split(/\s+/).filter(Boolean).forEach(c => codeChips.push(`<span class="code">${c}</span>`));
-
-  return `
-    <div class="row">
-      <div>${sbox}</div>
-      <div>${dateChip}</div>
-      <div><div style="font-weight:800">${cust||'—'}</div></div>
-      <div><div style="font-weight:700">${draw||'—'}</div><div class="muted" style="margin-top:4px">${machine||''}</div></div>
-      <div class="num">${qty||''}</div>
-      <div><div style="font-weight:700">${to||'—'}</div><div class="codegroup" style="margin-top:8px">${codeChips.join('')}</div></div>
-    </div>`;
+  const d=parseJPDate(valAt(r,idx.date)); const dateChip=`<span class="chip">📅 ${d?fmtDate(d):'—'}</span>`;
+  const cust=S(valAt(r,idx.cust)), draw=S(valAt(r,idx.draw)), machine=S(valAt(r,idx.machine)), qty=S(valAt(r,idx.qty)), to=S(valAt(r,idx.to)), note=S(valAt(r,idx.note));
+  const codes=[]; if(note) note.split(/\s+/).filter(Boolean).forEach(c=>codes.push(`<span class="code">${c}</span>`));
+  return `<div class="row">
+    <div>${sbox}</div>
+    <div>${dateChip}</div>
+    <div><div style="font-weight:800">${cust||'—'}</div></div>
+    <div><div style="font-weight:700">${draw||'—'}</div><div class="muted" style="margin-top:4px">${machine||''}</div></div>
+    <div class="num">${qty||''}</div>
+    <div><div style="font-weight:700">${to||'—'}</div><div class="codegroup" style="margin-top:8px">${codes.join('')}</div></div>
+  </div>`;
 }
 
-/* load & render */
+/* cache & filtering */
 let cache={header:[],rows:[],idx:null};
+let activeStatusKey=null; // null => all
+
+function applyFilter(rows, idx){
+  if(!activeStatusKey) return rows;
+  const d=STATUS.find(s=>s.key===activeStatusKey);
+  if(!d) return rows;
+  return rows.filter(r=> d.rx.test(S(valAt(r,idx.status))));
+}
+
+function render(){
+  const {rows,idx}=cache;
+
+  // build counts for chips
+  const counts = {};
+  for(const s of STATUS) counts[s.key]=0;
+  rows.forEach(r=>{
+    const t=S(valAt(r,idx.status));
+    for(const s of STATUS){ if(s.rx.test(t)){ counts[s.key]++; break; } }
+  });
+  renderChips(counts);
+
+  // urgent banner
+  const urgentCount=idx.urgent!=null ? rows.filter(r=>isUrgent(valAt(r,idx.urgent))).length : 0;
+  const ub=document.getElementById('urgentBanner');
+  if(urgentCount>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; }
+  else{ ub.style.display='none'; ub.textContent=''; }
+
+  // today
+  const today=new Date();
+  const rowsTodayBase = idx.date!=null ? rows.filter(r=>{const d=parseJPDate(valAt(r,idx.date)); return d && sameYMD(d,today);}) : [];
+  const rowsToday = applyFilter(rowsTodayBase, idx);
+  const sec=document.getElementById('todaySec');
+  if(rowsToday.length){ sec.style.display=''; document.getElementById('todayBody').innerHTML=rowsToday.map(r=>makeRow(r,idx)).join(''); }
+  else{ sec.style.display='none'; }
+
+  // all
+  const rowsAll = applyFilter(rows, idx);
+  document.getElementById('allBody').innerHTML = rowsAll.map(r=>makeRow(r,idx)).join('');
+}
+
+function renderChips(counts){
+  const box=document.getElementById('chipsBox');
+  const makeChip=(key,label,icon,cnt)=>`<button class="chipbtn ${activeStatusKey===key?'active':''}" data-key="${key}">${icon} ${label} <span class="count">${cnt}</span></button>`;
+  let html = `<button class="chipbtn ${!activeStatusKey?'active':''}" data-key="">🌐 すべて <span class="count">${cache.rows.length}</span></button>`;
+  for(const s of STATUS){ html += makeChip(s.key,s.label,s.icon, counts[s.key]||0); }
+  box.innerHTML=html;
+  box.querySelectorAll('.chipbtn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const k=b.getAttribute('data-key'); activeStatusKey = k || null;
+      render();
+      dropdown.classList.remove('open');
+    });
+  });
+}
+
+/* fetch & live */
 async function load(){
   const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
   try{
@@ -307,39 +336,23 @@ async function load(){
     const header=data[0], rows=data.slice(1);
     const idx=indexByName(header);
     cache={header,rows,idx};
-
-    /* urgent banner */
-    const urgentCount=idx.urgent!=null ? rows.filter(r=>isUrgent(valAt(r,idx.urgent))).length : 0;
-    const ub=document.getElementById('urgentBanner');
-    if(urgentCount>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; }
-    else{ ub.style.display='none'; ub.textContent=''; }
-
     render();
     document.getElementById('lastup').textContent='Last update: '+new Date().toLocaleString();
   }finally{
     btn.textContent=old; btn.disabled=false;
   }
 }
-function render(){
-  const {rows,idx}=cache;
-
-  // today
-  const today=new Date();
-  const rowsToday = idx.date!=null ? rows.filter(r=>{const d=parseJPDate(valAt(r,idx.date)); return d && sameYMD(d,today);}) : [];
-  const sec=document.getElementById('todaySec');
-  if(rowsToday.length){ sec.style.display=''; document.getElementById('todayBody').innerHTML=rowsToday.map(r=>makeRow(r,idx)).join(''); }
-  else{ sec.style.display='none'; }
-
-  // all
-  document.getElementById('allBody').innerHTML = rows.map(r=>makeRow(r,idx)).join('');
-}
-
-/* live/refresh */
 let timer=null,intervalMs=60000;
 function startAuto(ms){ intervalMs=ms; clearInterval(timer); timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs); document.getElementById('intervalInfo').textContent=Math.round(intervalMs/1000)+'s'; const b=document.getElementById('btnLive'); b.textContent=intervalMs<=5000?'● Live: On':'● Live: Off';}
 document.getElementById('btnRefresh').addEventListener('click', load);
 document.getElementById('btnLive').addEventListener('click', ()=>{ startAuto(intervalMs<=5000?60000:5000); load(); });
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
+
+/* dropdown open/close */
+const dropdown=document.getElementById('statusDropdown');
+dropdown.querySelector('.drop-btn').addEventListener('click', ()=> dropdown.classList.toggle('open'));
+document.getElementById('clearFilter').addEventListener('click', ()=>{ activeStatusKey=null; render(); dropdown.classList.remove('open');});
+document.addEventListener('click', (e)=>{ if(!dropdown.contains(e.target)) dropdown.classList.remove('open'); });
 
 /* boot */
 load(); startAuto(60000);
