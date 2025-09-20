@@ -4,293 +4,149 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>品質管理生産技術システム</title>
-
 <style>
 :root{
   --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb; --ring:#c7d2fe;
-  --brand:#1f6feb; --brand-2:#60a5fa;
-  --danger:#ef4444; --warning:#f59e0b; --success:#10b981; --purple:#8b5cf6; --sky:#0ea5e9;
-  --radius-xl:22px; --radius:14px; --shadow-1:0 12px 30px rgba(15,23,42,.08); --shadow-2:0 30px 60px rgba(15,23,42,.10);
+  --blue:#2563eb; --green:#10b981; --orange:#f59e0b; --purple:#8b5cf6; --sky:#0ea5e9; --danger:#dc2626;
+  --radius:14px; --radius-xl:22px; --shadow:0 12px 30px rgba(15,23,42,.08);
 }
 *{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0; color:var(--ink);
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif;
-  background:
-    radial-gradient(1200px 600px at -10% -10%, #c7d2fe 0%, transparent 60%),
-    radial-gradient(900px 500px at 110% 0%, #bae6fd 0%, transparent 55%),
-    linear-gradient(120deg,#f8fafc,var(--bg));
-}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif}
 a{color:inherit; text-decoration:none}
+.container{max-width:1400px; margin:0 auto; padding:16px}
 
-/* ===== Topbar ===== */
-.topbar{position:sticky; top:0; z-index:60; backdrop-filter:blur(10px); background:#ffffffcf; border-bottom:1px solid var(--border)}
-.topbar .wrap{max-width:1400px; margin:0 auto; height:64px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 14px}
-.brand{display:flex; align-items:center; gap:10px; font-weight:800}
-.brand .logo{height:28px; width:auto}
-.actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-.btn{
-  display:inline-flex; align-items:center; gap:8px; line-height:1;
-  height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--border); background:#fff; cursor:pointer
+/* Header */
+.header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; background:#fff; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50
 }
-.btn:hover{border-color:var(--ring)}
-.badge{height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--ink); background:#f1f5f9; border:1px solid var(--border); border-radius:999px}
+.brand{display:flex; align-items:center; gap:10px}
+.brand img{width:auto; height:32px; object-fit:contain}
+.actions{display:flex; gap:8px; align-items:center}
+.btn{height:34px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
+.badge{height:28px; padding:0 10px; display:inline-flex; align-items:center; gap:8px; font-weight:700; background:#f1f5f9; border:1px solid var(--border); border-radius:999px}
 
-/* ===== Sidebar (desktop hover) ===== */
-.edge-hotspot{ position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:70 }
-.hover-side{
-  position:fixed; left:0; top:64px; height:calc(100vh - 64px);
-  width:260px; padding:14px 12px; overflow:auto;
-  background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-1);
-  transform:translateX(-100%); transition:transform .22s ease; z-index:71;
+/* Urgent banner */
+.urgent{
+  margin:16px auto; max-width:1400px;
+  background:#fee2e2; color:#991b1b; font-weight:800; border:1px solid #fecaca;
+  border-radius:12px; padding:12px 16px; display:none; justify-content:center; align-items:center; gap:10px;
+  animation:pulse 1.6s ease-in-out infinite;
 }
-.hover-side.open{ transform:translateX(0) }
-.hover-side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
-.navlist{ display:grid; gap:4px }
-.slink{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color:var(--ink) }
-.slink:hover{ background:#f1f5ff }
-.ico{ width:22px; text-align:center }
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.75}}
 
-/* ===== Drawer (mobile) ===== */
-.drawer{ position:fixed; inset:0; z-index:80; display:none }
-.drawer.open{ display:block }
-.drawer .backdrop{ position:absolute; inset:0; background:#0006 }
-.drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
-  background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-1); padding:14px 12px; overflow:auto;
-  transform:translateX(-100%); transition:transform .25s ease }
-.drawer.open .panel{ transform:translateX(0) }
-.drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
-.burger{ display:none; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer }
-.burger:active{ transform:scale(.98) }
+/* Panel & table */
+.panel{background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow); padding:14px}
+.panel + .panel{margin-top:14px}
+.panel h2{margin:0 0 12px}
+
+.table{width:100%; border-collapse:separate; border-spacing:0; min-width:900px}
+.table th{position:sticky; top:66px; background:#f8fafc; font-weight:800; text-align:left; padding:12px 10px; z-index:1; border-bottom:1px solid var(--border)}
+.table td{padding:12px 10px; border-bottom:1px solid var(--border); vertical-align:middle}
+
+/* Left status card */
+.statusCard{
+  width:280px; background:#f8fafc; border:1px solid var(--border); border-radius:16px; padding:12px;
+}
+.statusPill{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; color:#fff; font-weight:800; margin-right:10px}
+.tag-blue{background:var(--blue)} .tag-green{background:var(--green)} .tag-orange{background:var(--orange)}
+.tag-purple{background:var(--purple)} .tag-sky{background:var(--sky)} .tag-danger{background:var(--danger)}
+.small{font-size:12px; color:#334155}
+
+/* Chips row (status filter) */
+.filterBar{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.chip{display:inline-flex; align-items:center; gap:10px; padding:8px 12px; border:1px solid var(--border); background:#fff; border-radius:999px; font-weight:700}
+.chip .count{min-width:26px; height:26px; padding:0 8px; border-radius:999px; background:#eef2ff; display:inline-flex; align-items:center; justify-content:center}
+
+/* destination numbers */
+.destWrap{display:flex; gap:10px; flex-wrap:wrap}
+.dest{padding:6px 12px; background:#f1f5f9; border:1px solid var(--border); border-radius:999px; white-space:nowrap}
+
+/* Responsive header chip scroll on mobile */
 @media (max-width:900px){
-  .burger{ display:inline-flex }
-  .edge-hotspot, .hover-side{ display:none }
+  .table{min-width:700px}
 }
-
-/* ===== Main ===== */
-main{ max-width:1400px; margin:0 auto; padding:22px 20px 96px }
-.h1{font-size:22px; margin:0}
-.small{font-size:12px; color:var(--muted)}
-.panel{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-2); padding:18px; overflow:auto }
-.panel + .panel{ margin-top:18px }
-.panel-title{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px }
-
-/* Urgent banner center + blink */
-.urgent-banner{
-  background:#fee2e2; color:#991b1b; padding:12px 16px; border-radius:12px; font-weight:800; border:1px solid #fecaca;
-  text-align:center;
-}
-@keyframes blinkSoft{ 0%,100%{opacity:1} 50%{opacity:.65} }
-.urgent-banner.blink{ animation: blinkSoft 1.2s infinite }
-
-/* Table head/body */
-.grid-head{ display:grid; grid-template-columns: 260px 160px 1fr 180px 120px 1.2fr; gap:12px; padding:12px 8px; color:#475569; font-weight:800; border-bottom:1px solid var(--border) }
-.grid-row { display:grid; grid-template-columns: 260px 160px 1fr 180px 120px 1.2fr; gap:12px; align-items:center; padding:12px 8px; border-top:1px solid var(--border) }
-.grid-row:hover{ background:#f8fafc }
-
-/* Left card (status + meta) */
-.leftcard{display:flex; align-items:center; gap:12px}
-.meta{ background:#f8fafc; border:1px solid var(--border); border-radius:16px; padding:10px 12px; min-width:220px }
-.meta .line{ display:flex; align-items:center; gap:8px; margin:6px 0; font-size:13px }
-.meta strong{ font-weight:800 }
-
-/* Badges */
-.tag{ display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; color:#fff; font-weight:800; font-size:12px }
-.tag-red{ background:var(--danger)} .tag-orange{background:var(--warning)}
-.tag-green{background:var(--success)} .tag-purple{background:var(--purple)} .tag-sky{background:var(--sky)}
-.tag-blue{background:var(--brand)}
-.chip{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; background:#eff6ff; border:1px solid #dbeafe; color:#1e3a8a; font-weight:700; border-radius:999px; white-space:nowrap }
-
-/* 注番/送り先 chips wrap */
-.note-wrap{ display:flex; flex-wrap:wrap; gap:8px }
-.note-chip{ display:inline-flex; align-items:center; padding:8px 10px; background:#f1f5f9; border:1px solid var(--border); border-radius:999px; font-weight:700; color:#0f172a; }
-.note-chip:hover{ background:#e2e8f0 }
-
-/* ===== Filter dropdown ===== */
-.tools{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
-.filter-dropdown{ position:relative }
-#filterToggle{ display:inline-flex; align-items:center; gap:8px }
-.filter-panel{
-  position:absolute; left:0; top:110%; z-index:40;
-  background:#fff; border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow-2);
-  padding:12px; min-width:520px; display:none;
-}
-.filter-panel.open{ display:block }
-.fbar{ display:flex; gap:10px; flex-wrap:wrap }
-.fchip{ display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--border); background:#fff; border-radius:999px; cursor:pointer; font-weight:800 }
-.fchip.active{ background:#ebf5ff; border-color:#bfdbfe; box-shadow: inset 0 0 0 2px #bfdbfe }
-.fcount{ background:#1e3a8a; color:#fff; font-size:12px; font-weight:800; border-radius:999px; padding:0 8px; line-height:18px; display:inline-flex; align-items:center }
-@media (max-width:720px){
-  .filter-panel{ min-width:280px; right:auto; left:0 }
-}
-
-/* Footer ticker */
-.marquee{position:fixed; left:20px; right:20px; bottom:20px; z-index:30; background:var(--brand); color:#fff; font-weight:800; border-radius:12px; box-shadow:var(--shadow-1); white-space:nowrap; overflow:hidden}
-.marquee span{display:inline-block; padding:8px 0 8px 100%; animation:marquee 25s linear infinite}
-@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
-.footer{position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:var(--muted); background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border)}
 </style>
 </head>
-
 <body>
-<header class="topbar">
-  <div class="wrap">
-    <button id="btnBurger" class="burger" aria-label="メニュー"><span>☰</span></button>
-    <div class="brand">
-      <img src="./tsh.png" alt="TSH" class="logo" onerror="this.style.display='none'">
-      品質管理生産技術
-    </div>
-    <div class="actions">
-      <button id="btnRefresh" class="btn">⟳ Refresh</button>
-      <button id="btnLive" class="btn" aria-pressed="false">● Live</button>
-      <span id="intervalInfo" class="badge">60s</span>
-      <span id="lastUpdated" class="small"></span>
-    </div>
+
+<header class="header">
+  <div class="brand">
+    <img src="tsh.png" alt="TSH" onerror="this.src='tsh.png'">
+    <strong>品質管理生産技術</strong>
+  </div>
+  <div class="actions">
+    <button class="btn" id="btnRefresh">⟳ Refresh</button>
+    <button class="btn" id="btnLive" aria-pressed="false">● Live</button>
+    <span class="badge" id="lastUpdate">—</span>
   </div>
 </header>
 
-<main>
-  <!-- Urgent -->
-  <div id="urgentBanner" class="urgent-banner" style="display:none"></div>
+<div id="urgentBanner" class="urgent">⚠ 至急案件があります！早急に確認してください。</div>
+
+<main class="container">
 
   <!-- 本日出荷 -->
   <section class="panel">
-    <div class="panel-title">
-      <h2 class="h1">本日出荷</h2>
-      <span class="badge">件数 <strong id="todayCount">0</strong></span>
-    </div>
-    <div class="grid-head">
-      <div>状況</div><div>出荷日</div><div>顧客名</div><div>図番 / 機種</div><div>数量</div><div>送り先／注番</div>
-    </div>
-    <div id="todayBody"></div>
+    <h2>本日出荷</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width:300px">状況</th>
+          <th>出荷日</th>
+          <th>顧客名</th>
+          <th>図番 / 機種</th>
+          <th>数量</th>
+          <th>送り先 / 注番</th>
+        </tr>
+      </thead>
+      <tbody id="todayBody"></tbody>
+    </table>
   </section>
 
   <!-- 全件一覧 -->
   <section class="panel">
-    <div class="panel-title">
-      <h2 class="h1">全件一覧</h2>
-      <div class="tools">
-        <!-- DROPDOWN FILTER -->
-        <div class="filter-dropdown">
-          <button id="filterToggle" class="btn">🔎 Filter status ▾ <span id="activeFilterLabel" class="small" style="margin-left:6px;color:#0f172a;font-weight:800">すべて</span></button>
-          <div id="filterPanel" class="filter-panel" role="dialog" aria-label="status filters">
-            <div style="margin-bottom:8px; font-size:12px; color:#64748b">Klik status untuk filter. Klik lagi untuk clear.</div>
-            <div class="fbar" id="filterBar"><!-- chips by JS --></div>
-          </div>
-        </div>
+    <h2>全件一覧</h2>
 
-        <label class="small">出荷日：</label>
-        <input type="date" id="filterDate" style="height:36px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff;">
-        <button class="btn" id="btnToday">本日出荷のみ</button>
-        <button class="btn" id="btnClear">Clear</button>
-      </div>
+    <!-- dropdown filter: status chips disatukan -->
+    <details style="margin:0 0 10px">
+      <summary class="btn">🔎 フィルターを開く</summary>
+      <div class="filterBar" id="filterBar"></div>
+    </details>
+
+    <div style="display:flex; gap:10px; align-items:center; margin:6px 0 10px">
+      <label class="small">出荷日：</label>
+      <input type="date" id="filterDate" class="btn" style="height:36px">
+      <button class="btn" id="btnTodayOnly">本日出荷のみ</button>
+      <button class="btn" id="btnClear">Clear</button>
     </div>
 
-    <div class="grid-head">
-      <div>状況</div><div>出荷日</div><div>顧客名</div><div>図番 / 機種</div><div>数量</div><div>送り先／備考</div>
-    </div>
-    <div id="allBody"></div>
-
-    <div class="small" id="sourceHint" style="margin-top:8px"></div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width:300px">状況</th>
+          <th>出荷日</th>
+          <th>顧客名</th>
+          <th>図番 / 機種</th>
+          <th>数量</th>
+          <th>送り先 / 注番</th>
+        </tr>
+      </thead>
+      <tbody id="allBody"></tbody>
+    </table>
+    <div class="small" id="hint"></div>
   </section>
 </main>
 
-<!-- Hover Sidebar (desktop) -->
-<div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
-<aside id="hoverSide" class="hover-side" aria-label="Pages">
-  <h3>Pages</h3>
-  <div class="navlist">
-    <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
-    <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
-    <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
-    <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
-    <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-    <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
-  </div>
-  <div style="margin-top:12px">
-    <h3>Admin</h3>
-    <div class="navlist">
-      <a class="slink" href="./admin-numbering.html"><span class="ico">#</span><strong>Admin Numbering</strong></a>
-      <a class="slink" href="./admin-prefix.html"><span class="ico">🔧</span><strong>Admin Prefix / 製造No</strong></a>
-      <a class="slink" href="./admin-serial-gas.html"><span class="ico">⛽</span><strong>Admin Serial Gas</strong></a>
-      <a class="slink" href="./thanks.html"><span class="ico">✨</span><strong>Thanks</strong></a>
-    </div>
-  </div>
-</aside>
-
-<!-- Drawer (mobile) -->
-<div id="drawer" class="drawer" aria-hidden="true">
-  <div class="backdrop" data-close></div>
-  <aside class="panel">
-    <button class="close" data-close>✕</button>
-    <div class="navlist" style="margin-top:30px">
-      <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
-      <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
-      <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
-      <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
-      <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
-      <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
-    </div>
-  </aside>
-</div>
-
-<div class="marquee"><span>品質管理生産技術システム - 最新の出荷状況を表示しています - Awali Dengan Bismillah</span></div>
-<div class="footer">Design by Wahyu</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-/* ========= Sidebar/Drawer ========= */
-const edge=document.getElementById('edgeHotspot'); const side=document.getElementById('hoverSide');
-let hideTimer=null; const HIDE_DELAY=280;
-function openSide(){ clearTimeout(hideTimer); side.classList.add('open'); }
-function scheduleClose(){ clearTimeout(hideTimer); hideTimer=setTimeout(()=>side.classList.remove('open'), HIDE_DELAY); }
-edge?.addEventListener('mouseenter', openSide);
-edge?.addEventListener('mouseleave', scheduleClose);
-side?.addEventListener('mouseenter', ()=>clearTimeout(hideTimer));
-side?.addEventListener('mouseleave', scheduleClose);
+/* ====== Konfigurasi sumber data ====== */
+const SHEET_ID = "1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
+const TAB_NAME = "最新情報";
+const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
+const S = s => String(s ?? '').trim();
 
-const drawer=document.getElementById('drawer');
-document.getElementById('btnBurger')?.addEventListener('click', ()=>{ drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); });
-drawer?.addEventListener('click', (e)=>{ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); } });
-
-/* ========= Data ========= */
-const SHEET_ID="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
-const TAB_NAME="最新情報";
-const CSV_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
-const S=s=>String(s??'').trim();
-
-function parseCSV(t){
-  const rows=[],re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g; let m,row=[]; t=t.replace(/\r\n?/g,"\n");
-  for(let i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break;
-    let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-    row.push(cell); i=re.lastIndex; if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
-  }
-  return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
-}
-function indexByName(header){
-  const map={}; header.forEach((h,i)=>map[S(h)]=i);
-  const find=nms=>{ for(const n of nms){ if(n in map) return map[n]; } return null; };
-  const findFz=re=>{ for(let i=0;i<header.length;i++){ if(re.test(S(header[i]))) return i; } return null; };
-  return {
-    date:find(["出荷日","日付","Date"]),
-    cust:find(["顧客名","客先","Customer"]),
-    draw:find(["図番","Drawing","図面"]),
-    item:find(["商品名","品名","Item"]),
-    machine:find(["機種","機種名","Machine"]),
-    qty:find(["数量","Qty"]),
-    to:find(["送り先","納品先","送付先"]),
-    note:find(["注番","備考","注文番号","注釈","Order"]),
-    status_done:find(["製品状況","製品状態","納品状況"]) ?? findFz(/(製品|納品).*(状況|状態)/),
-    status_flag:find(["Status","ステータス","状態","至急"]) ?? findFz(/status|至急/i),
-    ts:find(["製品状況更新日時","更新日時","TS"]),
-    user:find(["更新者","入力者","User"])
-  };
-}
-const at=(r,i)=> (i==null?"":(r[i]??""));
-
-/* Status map */
-const STATUS_MAP=[
+/* ====== Status map (termasuk status baru) ====== */
+const STATUS_MAP = [
   {key:'レーザ加工', label:'レーザ加工', color:'tag-blue',   icon:'🛠️'},
   {key:'板金加工',   label:'板金加工',   color:'tag-purple', icon:'🔩'},
   {key:'外注',       label:'外注',       color:'tag-orange', icon:'🏭'},
@@ -299,12 +155,20 @@ const STATUS_MAP=[
   {key:'組立完了',   label:'組立完了',   color:'tag-green',  icon:'🧩'},
   {key:'検査中',     label:'検査中',     color:'tag-blue',   icon:'🔬'},
   {key:'検査済',     label:'検査済',     color:'tag-green',  icon:'✅'},
-  {key:'出荷準備済', label:'出荷準備済', color:'tag-sky',    icon:'🚚'}
+  {key:'出荷準備済', label:'出荷準備済', color:'tag-sky',    icon:'🚚'},
+  // ===== Tambahan baru =====
+  {key:'検査保留',   label:'検査保留',   color:'tag-orange', icon:'⏸️'},
+  {key:'出荷済',     label:'出荷済',     color:'tag-green',  icon:'📦'},
 ];
-const STATUS_KEYS=STATUS_MAP.map(s=>s.key);
+
 function normalizeStatus(raw){
   const t=S(raw);
+  // status baru
+  if(t.includes('検査保留')) return '検査保留';
+  if(t.includes('出荷済'))   return '出荷済';
+  // status map (exact contains)
   for(const s of STATUS_MAP){ if(t.includes(s.key)) return s.key; }
+  // fallback heuristik
   if(/検査中|検/.test(t)) return '検査中';
   if(/検査済|済|完了|OK|Done/i.test(t)) return '検査済';
   if(/組立中|組/.test(t)) return '組立中';
@@ -312,183 +176,201 @@ function normalizeStatus(raw){
   return t||'';
 }
 
-function fmtDate(d){ const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;}
+/* ===== CSV parser simpel ===== */
+function parseCSV(t){
+  const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g; let m,row=[];
+  t=t.replace(/\r\n?/g,"\n");
+  for(let i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break;
+    let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
+    row.push(cell); i=re.lastIndex; if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; } }
+  return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
+}
+
+/* ===== Index kolom dinamis ===== */
+function indexByHeader(header){
+  const map={}; header.forEach((h,i)=>map[S(h)]=i);
+  const find=nms=>{ for(const n of nms){ if(n in map) return map[n]; } return null; };
+  const findFz=re=>{ for(let i=0;i<header.length;i++){ if(re.test(S(header[i]))) return i; } return null; };
+  return {
+    date:find(["出荷日","日付","Date"]),
+    cust:find(["顧客名","客先","Customer"]),
+    draw:find(["図番","Drawing","図面"]),
+    machine:find(["機種","機種名","Machine"]),
+    item:find(["商品名","品名","Item"]),
+    qty:find(["数量","Qty"]),
+    to:find(["送り先","納品先","送付先"]),
+    note:find(["注番","注文番号","備考","注文","Order"]),
+    status_done:find(["製品状況","製品状態","納品状況"]) ?? findFz(/(製品|納品).*(状況|状態)/),
+    status_flag:find(["Status","ステータス","状態","至急"]) ?? findFz(/status|至急/i),
+  };
+}
+const valAt=(row,idx)=>(idx==null?"":(row[idx]??""));
+
+/* ===== Util tanggal ===== */
 function parseJPDate(str){
   const s=String(str??"").trim();
-  const mJP=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/); if(mJP) return new Date(mJP[1],mJP[2]-1,mJP[3]);
+  const mJP=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+  if(mJP) return new Date(mJP[1],mJP[2]-1,mJP[3]);
   const p=s.replaceAll('-','/').split('/'); if(p.length===3) return new Date(p[0],p[1]-1,p[2]);
   const d=new Date(s); return isNaN(d)?null:d;
 }
-function sameYMD(a,b){ return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+function sameYMD(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
+function toInputDate(d){const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`}
 
-function statusTag(key){
-  const def=STATUS_MAP.find(s=>s.key===key);
-  if(!def) return `<span class="tag tag-purple">状態不明</span>`;
-  return `<span class="tag ${def.color}">${def.icon} ${def.label}</span>`;
+/* ===== State ===== */
+let cached={header:[], rows:[], idx:null};
+
+/* ===== Render helper ===== */
+function statusBadge(key){
+  const def = STATUS_MAP.find(s=>s.key===key);
+  const color = def?.color || 'tag-blue';
+  const icon  = def?.icon  || '🏷️';
+  const label = def?.label || key || '—';
+  return `<span class="statusPill ${color}">${icon} ${label}</span>`;
 }
-function urgentTag(){ return `<span class="tag tag-red">⚠ 至急</span>`; }
-function chipDate(d){ return `<span class="chip">📅 ${fmtDate(d)}</span>`; }
-function noteChips(text){
-  const s=S(text); if(!s) return '';
-  const parts=s.split(/[\s,、]+/).filter(Boolean);
-  return parts.map(p=>`<span class="note-chip">${p}</span>`).join('');
-}
+function urgentPill(){ return `<span class="statusPill tag-danger">⚠ 至急</span>`; }
 
-function rowHTML(idx,r){
-  const d=idx.date!=null?parseJPDate(at(r,idx.date)):null;
-  const cust=S(at(r,idx.cust));
-  const draw=S(at(r,idx.draw));
-  const machine=S(at(r,idx.machine));
-  const qty=S(at(r,idx.qty));
-  const to=S(at(r,idx.to)); const note=S(at(r,idx.note));
-  const stRaw=idx.status_done!=null?normalizeStatus(at(r,idx.status_done)):'';
-  const urgent=idx.status_flag!=null && /至急|urgent|緊急|true|1/i.test(S(at(r,idx.status_flag)));
-  const ts=S(at(r,idx.ts)); const user=S(at(r,idx.user));
+function renderRow(row,idx){
+  const stKey = normalizeStatus(valAt(row, idx.status_done));
+  const isUrg = idx.status_flag!=null && /至急|urgent|緊急|1|true/i.test(S(valAt(row,idx.status_flag)));
+  const date  = parseJPDate(valAt(row,idx.date));
+  const dateChip = date ? `<span class="chip"><span>📅</span>${toInputDate(date)}</span>` : '';
 
-  return `<div class="grid-row">
-    <div class="leftcard">
-      <div class="meta">
-        <div class="line">${urgent?urgentTag():statusTag(stRaw)}</div>
-        <div class="line"><strong>更新日：</strong>${ts||'—'}</div>
-        <div class="line"><strong>更新者：</strong>${user||'—'}</div>
+  const left = `
+    <div class="statusCard">
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px">
+        ${statusBadge(stKey)} ${isUrg?urgentPill():''}
       </div>
-    </div>
-    <div>${d?chipDate(d):''}</div>
-    <div>${cust||''}</div>
-    <div><div>${draw||''}</div><div style="color:#64748b; font-size:13px">${machine||''}</div></div>
-    <div style="font-weight:800">${qty||''}</div>
-    <div class="note-wrap">${to?`<span class="note-chip">${to}</span>`:''}${noteChips(note)}</div>
-  </div>`;
+      <div class="small" style="margin:4px 0">更新日：<strong id="ts">—</strong></div>
+      <div class="small">更新者：<strong id="who">—</strong></div>
+    </div>`;
+
+  const center = `
+    ${dateChip}
+    <div class="small" style="margin-top:8px">${S(valAt(row,idx.cust))||''}</div>`;
+
+  const right1 = `
+    <div>${S(valAt(row,idx.draw))||''}</div>
+    <div class="small">${S(valAt(row,idx.machine))||''}</div>`;
+
+  const qty = S(valAt(row,idx.qty))||'';
+
+  const dest = S(valAt(row,idx.to))||'';
+  const note = S(valAt(row,idx.note))||'';
+  const chips = (note||'')
+    .split(/\s+/).filter(Boolean)
+    .map(x=>`<span class="dest">${x}</span>`).join('');
+
+  const toCell = `
+    <div class="small" style="margin-bottom:6px">${dest||'—'}</div>
+    <div class="destWrap">${chips}</div>`;
+
+  return `<tr>
+    <td>${left}</td>
+    <td>${dateChip}</td>
+    <td>${S(valAt(row,idx.cust))||''}</td>
+    <td>${right1}</td>
+    <td style="font-weight:800">${qty}</td>
+    <td>${toCell}</td>
+  </tr>`;
 }
 
-/* Rendering */
-let cached={header:[],rows:[],idx:null};
-
-function buildFilters(rows, idx){
-  const bar=document.getElementById('filterBar');
-  const counts={}; for(const k of STATUS_KEYS) counts[k]=0;
-  rows.forEach(r=>{ const st=idx.status_done!=null?normalizeStatus(at(r,idx.status_done)):''; if(counts[st]!=null) counts[st]++; });
-  const all=rows.length;
-
-  let html=`<div class="fchip active" data-key="*">🌐 すべて <span class="fcount">${all}</span></div>`;
+/* ===== Filter bar (chips) ===== */
+let activeFilter = 'ALL';
+function buildFilterBar(rows, idx){
+  const cnt = {};
+  const all = rows.length;
+  for(const r of rows){
+    const k = normalizeStatus(valAt(r,idx.status_done));
+    cnt[k] = (cnt[k]||0)+1;
+  }
+  const bar = document.getElementById('filterBar');
+  bar.innerHTML = '';
+  const addChip = (key, label, count) => {
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.innerHTML = `${label} <span class="count">${count}</span>`;
+    chip.onclick = ()=>{ activeFilter = key; applyAllFilter(); };
+    bar.appendChild(chip);
+  };
+  addChip('ALL', '🌐 すべて', all);
   for(const s of STATUS_MAP){
-    html+=`<div class="fchip" data-key="${s.key}">${s.icon}&nbsp;${s.label} <span class="fcount">${counts[s.key]||0}</span></div>`;
+    addChip(s.key, `${s.icon} ${s.label}`, cnt[s.key]||0);
   }
-  bar.innerHTML=html;
-  bar.querySelectorAll('.fchip').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      bar.querySelectorAll('.fchip').forEach(e=>e.classList.remove('active'));
-      el.classList.add('active');
-      document.getElementById('activeFilterLabel').textContent = el.dataset.key==='*' ? 'すべて' : el.textContent.replace(/\s*\d+$/, '').trim();
-      applyAllFilter();
-    });
-  });
 }
 
-function renderToday(rows, idx){
-  document.getElementById('todayBody').innerHTML = rows.map(r=>rowHTML(idx,r)).join('') || `<div style="padding:12px;color:#64748b">本日出荷はありません。</div>`;
-  document.getElementById('todayCount').textContent=rows.length;
-}
-function renderAll(rows, idx){
-  document.getElementById('allBody').innerHTML = rows.map(r=>rowHTML(idx,r)).join('') || `<div style="padding:12px;color:#64748b">データがありません。</div>`;
-}
-
+/* ===== Apply filters & render ===== */
 function applyAllFilter(){
-  const active = document.querySelector('#filterBar .fchip.active')?.dataset.key || '*';
-  const dateStr = document.getElementById('filterDate').value || null;
-  const {rows, idx}=cached;
-  let view=rows.slice();
+  const {rows, idx} = cached;
+  const dateStr = document.getElementById('filterDate').value;
+  const targetDate = dateStr ? new Date(dateStr+'T00:00:00') : null;
 
-  if(dateStr && idx.date!=null){
-    const target=new Date(dateStr+"T00:00:00");
-    view=view.filter(r=>{const d=parseJPDate(at(r,idx.date)); return d&&sameYMD(d,target)});
-  }
-  if(active!=='*' && idx.status_done!=null){
-    view=view.filter(r=> normalizeStatus(at(r,idx.status_done))===active );
-  }
-  renderAll(view, idx);
-}
-
-function load(){
-  const btn=document.getElementById('btnRefresh'); const old=btn.textContent; btn.textContent='Loading...'; btn.disabled=true;
-  fetch(CSV_URL+"&_ts="+Date.now(),{cache:'no-store'})
-    .then(r=>r.text()).then(text=>{
-      const data=parseCSV(text); if(!data.length) throw new Error('CSV empty');
-      const header=data[0], body=data.slice(1);
-      const idx=indexByName(header);
-
-      const urgentCount=body.reduce((n,r)=> n + (idx.status_flag!=null && /至急|urgent|緊急|true|1/i.test(S(at(r,idx.status_flag))) ? 1 : 0), 0);
-      const ub=document.getElementById('urgentBanner');
-      if(urgentCount>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; ub.classList.add('blink'); } else { ub.style.display='none'; ub.classList.remove('blink'); }
-
-      const cmp=(a,b)=>{
-        const ua=idx.status_flag!=null && /至急|urgent|緊急|true|1/i.test(S(at(a,idx.status_flag)));
-        const ub=idx.status_flag!=null && /至急|urgent|緊急|true|1/i.test(S(at(b,idx.status_flag)));
-        if(ua!==ub) return ua?-1:1;
-        const da=idx.date!=null?parseJPDate(at(a,idx.date)):null;
-        const db=idx.date!=null?parseJPDate(at(b,idx.date)):null;
-        const ta=da?da.getTime():-Infinity, tb=db?db.getTime():-Infinity;
-        return tb-ta;
-      };
-      const rows=body.filter(r=>r.some(c=>S(c)!=="")).sort(cmp);
-
-      cached={header,rows,idx};
-
-      // today
-      const todayRows=(idx.date==null)?[]:rows.filter(r=>{const d=parseJPDate(at(r,idx.date)); return d&&sameYMD(d,new Date());});
-      renderToday(todayRows, idx);
-
-      // filters
-      buildFilters(rows, idx);
-      applyAllFilter();
-
-      const cols=[]; if(idx.qty!=null) cols.push('数量:'+header[idx.qty]); if(idx.cust!=null) cols.push('顧客:'+header[idx.cust]); if(idx.date!=null) cols.push('出荷日:'+header[idx.date]);
-      document.getElementById('sourceHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）｜${cols.join(' ｜ ')} ｜ Urgent列: ${idx.status_flag!=null ? header[idx.status_flag] : '—'}`;
-      document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
-
-      btn.textContent=old; btn.disabled=false;
-    }).catch(e=>{
-      console.error(e);
-      document.getElementById('sourceHint').textContent='読み込みに失敗しました。シート名/公開設定/列名をご確認ください。';
-      btn.textContent='Refresh'; btn.disabled=false;
+  let view = rows;
+  if (targetDate){
+    view = view.filter(r => {
+      const d=parseJPDate(valAt(r, idx.date)); return d && sameYMD(d,targetDate);
     });
-}
-
-/* ========= Filter dropdown behavior ========= */
-const toggleBtn=document.getElementById('filterToggle');
-const panel=document.getElementById('filterPanel');
-toggleBtn.addEventListener('click', (e)=>{
-  e.stopPropagation();
-  panel.classList.toggle('open');
-  const open=panel.classList.contains('open');
-  toggleBtn.innerHTML = (open? '🔎 Filter status ▲ ' : '🔎 Filter status ▾ ') + `<span id="activeFilterLabel" class="small" style="margin-left:6px;color:#0f172a;font-weight:800">${document.getElementById('activeFilterLabel')?.textContent||'すべて'}</span>`;
-});
-document.addEventListener('click', (e)=>{
-  if(panel.classList.contains('open') && !panel.contains(e.target) && e.target!==toggleBtn){
-    panel.classList.remove('open');
-    toggleBtn.innerHTML = '🔎 Filter status ▾ <span id="activeFilterLabel" class="small" style="margin-left:6px;color:#0f172a;font-weight:800">'+(document.getElementById('activeFilterLabel')?.textContent||'すべて')+'</span>';
   }
+  if (activeFilter !== 'ALL'){
+    view = view.filter(r => normalizeStatus(valAt(r,idx.status_done))===activeFilter);
+  }
+
+  document.getElementById('allBody').innerHTML = view.map(r=>renderRow(r,idx)).join('');
+}
+
+function renderToday(){
+  const {rows, idx} = cached;
+  const today = new Date();
+  const todayRows = rows.filter(r=>{
+    const d=parseJPDate(valAt(r,idx.date)); return d && sameYMD(d,today);
+  });
+  document.getElementById('todayBody').innerHTML = todayRows.map(r=>renderRow(r,idx)).join('');
+  // Banner urgent di tengah
+  const urgentCount = todayRows.filter(r => idx.status_flag!=null && /至急|urgent|緊急|1|true/i.test(S(valAt(r,idx.status_flag)))).length;
+  const ub = document.getElementById('urgentBanner');
+  ub.style.display = urgentCount>0 ? 'flex' : 'none';
+  ub.textContent = urgentCount>0 ? `⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。` : '';
+}
+
+/* ===== Load & bootstrap ===== */
+async function load(){
+  document.getElementById('btnRefresh').disabled = true;
+  const res = await fetch(CSV_URL+'&_ts='+Date.now(), {cache:'no-store'});
+  const text = await res.text();
+  const data = parseCSV(text);
+  const header = data[0], rowsRaw = data.slice(1);
+  const idx = indexByHeader(header);
+  cached = {header, rows:rowsRaw, idx};
+
+  // Build filter & render
+  buildFilterBar(rowsRaw, idx);
+  renderToday();
+  applyAllFilter();
+
+  document.getElementById('lastUpdate').textContent = 'Last update: '+(new Date()).toLocaleString();
+  document.getElementById('hint').textContent = `データ元: ${TAB_NAME}（${rowsRaw.length} 行）`;
+  document.getElementById('btnRefresh').disabled = false;
+}
+
+/* ===== Event ===== */
+document.getElementById('btnRefresh').addEventListener('click', load);
+document.getElementById('btnLive').addEventListener('click', (e)=>{
+  const on = e.target.getAttribute('aria-pressed')==='true';
+  e.target.setAttribute('aria-pressed', (!on)+'');
+});
+document.getElementById('filterDate').addEventListener('change', applyAllFilter);
+document.getElementById('btnTodayOnly').addEventListener('click', ()=>{
+  document.getElementById('filterDate').value = toInputDate(new Date());
+  applyAllFilter();
+});
+document.getElementById('btnClear').addEventListener('click', ()=>{
+  document.getElementById('filterDate').value='';
+  activeFilter='ALL';
+  applyAllFilter();
 });
 
-/* ========= Top controls ========= */
-document.getElementById('btnRefresh').addEventListener('click', load);
-document.getElementById('btnLive').addEventListener('click', ()=>{ startAutoRefresh(intervalMs<=5000?60000:5000); load(); });
-document.getElementById('filterDate').addEventListener('change', ()=>applyAllFilter());
-document.getElementById('btnToday').addEventListener('click', ()=>{ document.getElementById('filterDate').value = fmtDate(new Date()); applyAllFilter(); });
-document.getElementById('btnClear').addEventListener('click', ()=>{ document.getElementById('filterDate').value=""; applyAllFilter(); });
-
-/* ========= Auto refresh ========= */
-let timer=null, intervalMs=60000;
-function startAutoRefresh(ms){
-  intervalMs=ms; clearInterval(timer);
-  timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs);
-  document.getElementById('intervalInfo').textContent=`${Math.round(intervalMs/1000)}s`;
-  const liveBtn=document.getElementById('btnLive');
-  if(intervalMs<=5000){liveBtn.classList.add('active'); liveBtn.textContent='Live: On';}
-  else{liveBtn.classList.remove('active'); liveBtn.textContent='Live: Off';}
-}
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
-window.addEventListener('DOMContentLoaded', ()=>{ load(); startAutoRefresh(60000); });
+/* Init */
+load();
 </script>
 </body>
 </html>
