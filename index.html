@@ -17,8 +17,7 @@
     --shadow-1:0 12px 30px rgba(15,23,42,.08); --shadow-2:0 30px 60px rgba(15,23,42,.10);
 
     /* layout */
-    --gutter-w: 210px;   /* lebar kartu kiri */
-    --row-h: 86px;       /* tinggi baris seragam */
+    --gutter-w: 210px;     /* lebar kolom kartu kiri */
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -56,8 +55,9 @@
     padding:12px 14px; border-bottom:1px solid var(--border);
   }
   tbody td{
-    padding:0 14px; border-bottom:1px solid var(--border);
-    background:#fff; vertical-align:middle; height:var(--row-h);
+    padding:12px 14px;                     /* padding seragam */
+    border-bottom:1px solid var(--border);
+    background:#fff; vertical-align:middle; /* biar rapi */
   }
   tbody tr:nth-child(odd) td{background:#fcfdff}
   tbody tr:hover td{background:#f6faff}
@@ -72,8 +72,8 @@
   .w-qty{width:80px}
   .w-to{width:120px}
 
-  /* cell content: single line, center vertikal */
-  .cell{display:flex; align-items:center; gap:10px; min-height:var(--row-h); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  /* cell content: single line, ellipsis */
+  .cell{display:flex; align-items:center; gap:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .cell-date{gap:12px}
 
   /* ===== left gutter (sticky card) ===== */
@@ -83,24 +83,30 @@
     background:linear-gradient(180deg,#f8fafc,#f2f6ff);
     border-right:1px solid var(--border);
   }
-  .gutter-td{z-index:1}
+  .gutter-td{z-index:1; padding:10px 8px} /* beri padding supaya kartu tidak nempel tepi */
+
   .status-card{
-    width:calc(var(--gutter-w) - 20px);
-    height:calc(var(--row-h) - 20px);         /* kunci tinggi kartu ≈ tinggi baris */
-    margin:0 auto;
+    width:100%;                    /* penuh kolom */
     padding:10px 12px;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    display:flex; flex-direction:column; gap:8px;
     border:1px solid #e8eefc; border-radius:16px; background:#fff;
     box-shadow:0 6px 16px rgba(37,99,235,.08);
   }
-  .status-badge{padding:6px 14px; border-radius:999px; color:#fff; font-weight:800; font-size:13px}
+  .status-badge{padding:6px 14px; border-radius:999px; color:#fff; font-weight:800; font-size:13px; align-self:flex-start}
   .tag-done{background:var(--blue-600)}
   .tag-assem{background:var(--blue-500)}
   .tag-assem-done{background:var(--blue-700)}
   .tag-inspect{background:var(--blue-400)}
   .tag-not{background:#94a3b8}
-  .status-line{width:100%; display:flex; justify-content:space-between; gap:10px; font-size:13px; color:#475569}
-  .status-line b{color:#0f172a; font-weight:800}
+
+  .status-grid{
+    display:grid;
+    grid-template-columns: 62px 1fr;  /* label | value */
+    gap:6px 10px;
+    align-items:center;
+  }
+  .status-label{color:#475569; font-size:13px}
+  .status-value{color:#0f172a; font-weight:800; font-size:13px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
   /* chip tanggal */
   .chip{display:inline-block; padding:9px 16px; border-radius:999px; font-weight:800; font-size:13px; border:1px solid var(--blue-200); background:var(--blue-100); color:#0f172a}
@@ -274,6 +280,17 @@
     headEl.innerHTML = ths.map((h,i)=> i===0 ? `<th class="gutter-th">${h}</th>` : `<th>${h}</th>`).join('');
   }
 
+  function gutterCard(st, ts, user){
+    return `
+      <div class="status-card">
+        <span class="status-badge ${st.cls}">${st.label}</span>
+        <div class="status-grid">
+          <div class="status-label">更新日</div><div class="status-value">${ts||'—'}</div>
+          <div class="status-label">更新者</div><div class="status-value">${user||'—'}</div>
+        </div>
+      </div>`;
+  }
+
   function buildRow(r, idx){
     const urgent = idx.status_flag!=null && isUrgent(v(r,idx.status_flag));
     const st = idx.status_done!=null ? mapStatus(v(r, idx.status_done)) : {label:'未設定',cls:'tag-not'};
@@ -283,15 +300,7 @@
     const dateD = idx.date!=null ? parseJPDate(v(r,idx.date)) : null;
     const dateText = dateD ? toInputDate(dateD) : '';
 
-    const gutter = `
-      <td class="gutter-td">
-        <div class="status-card">
-          <span class="status-badge ${st.cls}">${st.label}</span>
-          <div class="status-line"><b>更新日</b><span>${ts||'—'}</span></div>
-          <div class="status-line"><b>更新者</b><span>${user}</span></div>
-        </div>
-      </td>`;
-
+    const gutter = `<td class="gutter-td">${gutterCard(st, ts, user)}</td>`;
     const dateCell = `<td><div class="cell cell-date">${urgent?`<span class="urgent">⚠ 至急</span>`:''}${dateText?`<span class="chip">${dateText}</span>`:''}</div></td>`;
     const cust = `<td><div class="cell">${S(v(r,idx.cust))}</div></td>`;
     const draw = `<td><div class="cell">${S(v(r,idx.draw))}</div></td>`;
