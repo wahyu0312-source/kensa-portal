@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>チャート – 品質管理生産技術</title>
+<title>品質管理生産技術 – チャート</title>
 <style>
   :root{
     --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb; --ring:#c7d2fe;
@@ -22,19 +22,13 @@
   .ttl{font-weight:800}
   .btn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
   .btn:hover{border-color:var(--ring)}
-  .badge{height:28px;padding:0 10px;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;background:#f1f5f9;border:1px solid var(--border);border-radius:999px;color:#0f172a}
+  .badge{height:28px;padding:0 10px;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;background:#f1f5f9;border:1px solid var(--border);border-radius:999px;color:var(--ink)}
   .burger{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
   .burger:active{transform:scale(.98)}
 
   main{grid-area:main;max-width:1400px;margin:0 auto;padding:22px 20px 96px}
 
-  /* Ticker (text berjalan) */
-  .ticker-wrap{overflow:hidden;border-bottom:1px solid var(--border);background:#fff}
-  .ticker{display:inline-block;white-space:nowrap;animation:ticker 20s linear infinite;padding:8px 0}
-  .ticker span{margin-right:40px;color:#475569}
-  @keyframes ticker{0%{transform:translate3d(0,0,0)}100%{transform:translate3d(-100%,0,0)}}
-
-  /* Hover sidebar */
+  /* Hover sidebar (diambil dari file kamu) */
   .edge-hotspot{position:fixed;left:0;top:64px;width:12px;height:calc(100vh - 64px);z-index:70}
   .hover-side{position:fixed;left:0;top:64px;height:calc(100vh - 64px);width:260px;padding:14px 12px;overflow:auto;background:var(--panel);border-right:1px solid var(--border);box-shadow:var(--shadow);transform:translateX(-100%);transition:transform .22s ease;z-index:71}
   .hover-side.open{transform:translateX(0)}
@@ -56,26 +50,30 @@
   .urgent-banner{margin:12px 0 6px;background:#fee2e2;border:1px solid #fecaca;color:#991b1b;padding:12px 14px;border-radius:12px;text-align:center;font-weight:800;animation:blink 1.8s linear infinite;display:none}
   @keyframes blink{0%,100%{opacity:1;}50%{opacity:.82}}
 
-  /* Panels & grid */
+  /* Panel gaya kamu */
   .panel{background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:14px}
   .panel + .panel{margin-top:18px}
   h2{margin:8px 0 12px}
 
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  @media (max-width:1000px){ .grid{grid-template-columns:1fr} }
-
-  /* Filter bar */
+  /* Bar filter (range + metric) */
   .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 14px}
   .chipbtn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:#f8fafc;cursor:pointer}
   .chipbtn.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
-
-  /* Metric toggle group */
   .toggle{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;background:#fff}
   .toggle button{padding:8px 12px;border:0;background:transparent;cursor:pointer}
   .toggle button.active{background:#eef2ff;box-shadow:inset 0 0 0 2px #c7d2fe;font-weight:700}
+
+  /* Grid chart */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:1000px){ .grid{grid-template-columns:1fr} }
+
+  /* Canvas container dengan tinggi eksplisit agar selalu terlihat */
+  .cwrap{height:320px}
+  .cwrap.tall{height:360px}
 </style>
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+<!-- Chart.js (pakai crossorigin & defer agar stabil di GitHub Pages) -->
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
 <div class="app">
@@ -88,20 +86,27 @@
         <div class="ttl"><strong>品質管理生産技術</strong></div>
       </div>
       <nav class="top-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <!-- Dropdown status seperti file kamu -->
+        <div class="dropdown" id="statusDropdown">
+          <button class="btn" type="button">🔎 ステータス フィルター</button>
+          <div class="drop-menu">
+            <div class="chips" id="chipsBox"></div>
+            <div style="margin-top:10px;text-align:right"><span class="clearlink" id="clearFilter">すべて表示</span></div>
+          </div>
+        </div>
         <button id="btnRefresh" class="btn" type="button">⟳ Refresh</button>
         <button id="btnLive" class="btn" type="button" aria-pressed="false">● Live</button>
         <span id="intervalInfo" class="badge">60s</span>
         <span id="lastup" class="badge muted">—</span>
       </nav>
     </div>
-    <!-- Ticker (text berjalan) -->
-    <div class="ticker-wrap"><div id="ticker" class="ticker"></div></div>
   </header>
 
   <!-- MAIN -->
   <main>
     <div id="urgentBanner" class="urgent-banner"></div>
 
+    <!-- Filter chips + metric toggle -->
     <section class="panel">
       <div class="filterbar">
         <strong style="color:#475569">範囲:</strong>
@@ -119,13 +124,28 @@
         <span id="metricBadge" class="badge">表示: 数量</span>
       </div>
 
+      <!-- Chart grid -->
       <div class="grid">
-        <div class="panel"><h2 id="hDaily">出荷（⽇次・直近）</h2><div style="height:320px"><canvas id="dailyShip"></canvas></div></div>
-        <div class="panel"><h2 id="hMonthly">出荷（⽉次・年内）</h2><div style="height:320px"><canvas id="monthlyQty"></canvas></div></div>
-        <div class="panel"><h2 id="hCust">顧客別 出荷（Top 10）</h2><div style="height:360px"><canvas id="custQty"></canvas></div></div>
-        <div class="panel"><h2 id="hDest">送り先別 出荷</h2><div style="height:360px"><canvas id="destQty"></canvas></div></div>
+        <div class="panel">
+          <h2 id="hDaily">出荷（日次・直近）</h2>
+          <div class="cwrap"><canvas id="dailyShip"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2 id="hMonthly">出荷（⽉次・年内）</h2>
+          <div class="cwrap"><canvas id="monthlyQty"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2 id="hCust">顧客別 出荷（Top 10）</h2>
+          <div class="cwrap tall"><canvas id="custQty"></canvas></div>
+        </div>
+        <div class="panel">
+          <h2 id="hDest">送り先別 出荷</h2>
+          <div class="cwrap tall"><canvas id="destQty"></canvas></div>
+        </div>
       </div>
     </section>
+
+    <!-- Bagian list milikmu tetap bisa ditambahkan di bawah jika perlu -->
   </main>
 
   <!-- Hover Sidebar -->
@@ -160,217 +180,265 @@
 </div>
 
 <script>
-/* ===== Drawer & hover (konsisten dengan index) ===== */
-const drawer = document.getElementById('drawer');
-document.getElementById('btnBurger')?.addEventListener('click', ()=>{ drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');});
-drawer?.addEventListener('click', e=>{ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true');}});
+/* ====== Semua JS di-run setelah DOM siap ====== */
+document.addEventListener('DOMContentLoaded', function(){
 
-const hot=document.getElementById('edgeHotspot'); const fly=document.getElementById('hoverSide');
-let hideTimer=null; const HIDE_DELAY=280;
-function openFly(){clearTimeout(hideTimer); fly.classList.add('open')}
-function scheduleClose(){clearTimeout(hideTimer); hideTimer=setTimeout(()=>fly.classList.remove('open'),HIDE_DELAY)}
-hot?.addEventListener('mouseenter', openFly); hot?.addEventListener('mouseleave', scheduleClose);
-fly?.addEventListener('mouseenter', ()=>clearTimeout(hideTimer)); fly?.addEventListener('mouseleave', scheduleClose);
+  /* ===== Drawer & hover (selaras file kamu) ===== */
+  var drawer = document.getElementById('drawer');
+  var btnBurger = document.getElementById('btnBurger');
+  if (btnBurger) btnBurger.addEventListener('click', function(){ drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); });
+  if (drawer) drawer.addEventListener('click', function(e){ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }});
 
-/* ===== Data source (disamakan dengan index) ===== */
-const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE"; // same as index
-const TAB_NAME ="最新情報"; // same as index
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
+  var hot=document.getElementById('edgeHotspot'); var fly=document.getElementById('hoverSide');
+  var hideTimer=null; var HIDE_DELAY=280;
+  function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
+  function scheduleClose(){ clearTimeout(hideTimer); hideTimer=setTimeout(function(){ fly.classList.remove('open'); }, HIDE_DELAY); }
+  if (hot){ hot.addEventListener('mouseenter', openFly); hot.addEventListener('mouseleave', scheduleClose); }
+  if (fly){ fly.addEventListener('mouseenter', function(){ clearTimeout(hideTimer); }); fly.addEventListener('mouseleave', scheduleClose); }
 
-/* ===== Utilities sama seperti index ===== */
-const S = s => String(s ?? '').trim();
-function parseCSV(t){
-  const out=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g; let row=[], m; t=t.replace(/\r\n?/g,"\n");
-  for(let i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break;
-    let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-    row.push(cell); i=re.lastIndex; if(m[2]==="\n"||m[2]===""){ out.push(row); row=[]; }
-  } return out.filter(r=>r.length && r.some(c=>S(c)!==""));
-}
-function indexByName(header){
-  const map={}; header.forEach((h,i)=>map[S(h)]=i);
-  const f = n => (n in map ? map[n] : null);
-  const fRx = rx => { for(let i=0;i<header.length;i++){ if(rx.test(S(header[i]))) return i; } return null; };
-  return {
-    date: f('出荷日'), cust: f('顧客名'), draw: fRx(/図番|図面|Drawing/), machine: fRx(/機種/),
-    qty: f('数量'), to: fRx(/送り先|送付先|納品先/), note: fRx(/注番|備考|注文/),
-    status: fRx(/製品状況|製品状態|納品状況/), ts: f('製品状況更新日時'), user: f('更新者'),
-    urgent: fRx(/Status|至急|ステータス/i)
-  };
-}
-const valAt=(r,i)=> (i==null?'':(r[i]??''));
-function parseJPDate(str){
-  const s=S(str); if(!s) return null;
-  const m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})(?:\D(\d{1,2})\D(\d{1,2}))?/);
-  if(m) return new Date(m[1],m[2]-1,m[3],m[4]||0,m[5]||0);
-  const d=new Date(s); return isNaN(d)?null:d;
-}
-function fmtTS(d){ if(!d) return ''; const z=n=>String(n).padStart(2,'0'); return `${String(d.getFullYear()).slice(2)}/${z(d.getMonth()+1)}/${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}` }
-function fmtDate(d){ if(!d) return ''; const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}` }
-function sameYMD(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
+  /* ===== Data source (sama seperti index & file kamu) ===== */
+  var SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
+  var TAB_NAME ="最新情報";
+  var CSV_URL = "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:csv&sheet="+encodeURIComponent(TAB_NAME);
 
-/* ===== Status判定（index と揃える） ===== */
-const STATUS_SHIPOK_RX = /出荷済/;
-
-/* ===== State ===== */
-let cache={header:[],rows:[],idx:null, shipRows:[]};
-let timer=null,intervalMs=60000;
-let rangeKey='all';
-let metricKey='qty'; // 'qty' | 'count'
-
-/* ===== UI ===== */
-function setTicker(texts){ const t=document.getElementById('ticker'); t.innerHTML = texts.map(x=>`<span>${x}</span>`).join(''); }
-function setUrgentBanner(count){ const ub=document.getElementById('urgentBanner'); if(count>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${count} 件あります！早急に確認してください。`; } else { ub.style.display='none'; } }
-
-/* ===== Charts ===== */
-let dailyChart, monthlyChart, custChart, destChart;
-
-function upsertChart(ctx, cfg, instRefName){
-  if(window[instRefName]){ window[instRefName].data = cfg.data; window[instRefName].options = cfg.options; window[instRefName].update(); }
-  else{ window[instRefName] = new Chart(ctx, cfg); }
-}
-
-function prepareData(rows, idx){
-  // Filter 出荷済
-  const ship = rows.filter(r=> STATUS_SHIPOK_RX.test(S(valAt(r,idx.status))));
-  // Urgent count (optional)
-  const urgentCount = idx.urgent!=null ? ship.filter(r=>['至急','urgent','緊急','1','true'].includes(S(valAt(r,idx.urgent)).toLowerCase())).length : 0;
-  setUrgentBanner(urgentCount);
-
-  // Ticker text (customer + date + qty)
-  const tick = ship.slice(0,30).map(r=>{
-    const d=parseJPDate(valAt(r,idx.date)); const cust=S(valAt(r,idx.cust)); const qty=S(valAt(r,idx.qty)); const draw=S(valAt(r,idx.draw));
-    return `📦 ${fmtDate(d)||'—'} ｜ ${cust||'—'} ｜ ${draw||''} ×${qty||''}`;
-  });
-  setTicker(tick.length?tick:["データ読込中…"]);
-
-  return ship;
-}
-
-function applyRange(ship, key){
-  const now=new Date();
-  if(key==='14d'){ const dt=new Date(now); dt.setDate(dt.getDate()-13); dt.setHours(0,0,0,0); return ship.filter(r=>{const d=parseJPDate(valAt(r,cache.idx.date)); return d && d>=dt;}); }
-  if(key==='30d'){ const dt=new Date(now); dt.setDate(dt.getDate()-29); dt.setHours(0,0,0,0); return ship.filter(r=>{const d=parseJPDate(valAt(r,cache.idx.date)); return d && d>=dt;}); }
-  if(key==='ytd'){ const dt=new Date(now.getFullYear(),0,1); return ship.filter(r=>{const d=parseJPDate(valAt(r,cache.idx.date)); return d && d>=dt;}); }
-  return ship;
-}
-
-function metricValue(r, idx){
-  if(metricKey==='count') return 1;
-  // qty
-  return (+S(valAt(r,idx.qty))||0);
-}
-
-function metricLabel(){
-  return metricKey==='count' ? '件数' : '数量';
-}
-
-function renderCharts(){
-  const {rows,idx}=cache;
-  let ship = prepareData(rows, idx);
-  ship = applyRange(ship, rangeKey);
-
-  // Daily
-  const mapDaily={}; ship.forEach(r=>{ const d=parseJPDate(valAt(r,idx.date)); if(!d) return; const k=fmtDate(d); mapDaily[k]=(mapDaily[k]||0)+ metricValue(r, idx); });
-  const dailyLabels=Object.keys(mapDaily).sort();
-  const dailyValues=dailyLabels.map(k=>mapDaily[k]);
-
-  // Monthly
-  const mapMonthly={}; ship.forEach(r=>{ const d=parseJPDate(valAt(r,idx.date)); if(!d) return; const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; mapMonthly[k]=(mapMonthly[k]||0)+ metricValue(r, idx); });
-  const monthlyLabels=Object.keys(mapMonthly).sort();
-  const monthlyValues=monthlyLabels.map(k=>mapMonthly[k]);
-
-  // Customer top 10
-  const mapCust={}; ship.forEach(r=>{ const c=S(valAt(r,idx.cust))||'—'; mapCust[c]=(mapCust[c]||0)+ metricValue(r, idx); });
-  const custEntries=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const custLabels=custEntries.map(x=>x[0]); const custValues=custEntries.map(x=>x[1]);
-
-  // Destination
-  const mapDest={}; ship.forEach(r=>{ const c=S(valAt(r,idx.to))||'—'; mapDest[c]=(mapDest[c]||0)+ metricValue(r, idx); });
-  const destEntries=Object.entries(mapDest).sort((a,b)=>b[1]-a[1]).slice(0,12);
-  const destLabels=destEntries.map(x=>x[0]); const destValues=destEntries.map(x=>x[1]);
-
-  const commonOptions = { responsive:true, maintainAspectRatio:false, plugins:{
-      legend:{display:false},
-      tooltip:{mode:'index',intersect:false, callbacks:{ label:(ctx)=> `${metricLabel()}: ${ctx.parsed.y}` }},
-    }, scales:{ x:{grid:{color:'#eef2ff'}}, y:{grid:{color:'#f1f5f9'}, ticks:{precision:0}} } };
-
-  // Update headings with metric badge
-  document.getElementById('hDaily').textContent = `出荷（⽇次・直近） – ${metricLabel()}`;
-  document.getElementById('hMonthly').textContent = `出荷（⽉次・年内） – ${metricLabel()}`;
-  document.getElementById('hCust').textContent = `顧客別 出荷（Top 10） – ${metricLabel()}`;
-  document.getElementById('hDest').textContent = `送り先別 出荷 – ${metricLabel()}`;
-
-  upsertChart(document.getElementById('dailyShip'), {
-    type:'line',
-    data:{ labels:dailyLabels, datasets:[{ label:metricLabel(), data:dailyValues, tension:.25, fill:true }] },
-    options:{ ...commonOptions }
-  }, 'dailyChart');
-
-  upsertChart(document.getElementById('monthlyQty'), {
-    type:'bar',
-    data:{ labels:monthlyLabels, datasets:[{ label:metricLabel(), data:monthlyValues }] },
-    options:{ ...commonOptions }
-  }, 'monthlyChart');
-
-  upsertChart(document.getElementById('custQty'), {
-    type:'bar',
-    data:{ labels:custLabels, datasets:[{ label:metricLabel(), data:custValues }] },
-    options:{ ...commonOptions, indexAxis:'y' }
-  }, 'custChart');
-
-  upsertChart(document.getElementById('destQty'), {
-    type:'bar',
-    data:{ labels:destLabels, datasets:[{ label:metricLabel(), data:destValues }] },
-    options:{ ...commonOptions, indexAxis:'y' }
-  }, 'destChart');
-}
-
-/* ===== Fetch & live ===== */
-async function load(){
-  const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
-  try{
-    btn.textContent='Loading…'; btn.disabled=true;
-    const res=await fetch(CSV_URL+'&_ts='+Date.now(),{cache:'no-store'});
-    const text=await res.text();
-    const data=parseCSV(text);
-    const header=data[0], rows=data.slice(1);
-    const idx=indexByName(header);
-    cache={header,rows,idx};
-    renderCharts();
-    document.getElementById('lastup').textContent='Last update: '+new Date().toLocaleString();
-  }finally{
-    btn.textContent=old; btn.disabled=false;
+  /* ===== Utils (dari file kamu) ===== */
+  var S = function(s){ return String(s==null?'':s).trim(); };
+  function parseCSV(t){
+    var out=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g; var row=[], m; t=t.replace(/\r\n?/g,"\n");
+    for(var i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break;
+      var cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
+      row.push(cell); i=re.lastIndex; if(m[2]==="\n"||m[2]===""){ out.push(row); row=[]; }
+    } return out.filter(function(r){return r.length && r.some(function(c){return S(c)!==""})});
   }
-}
-function startAuto(ms){ intervalMs=ms; clearInterval(timer); timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs); document.getElementById('intervalInfo')?.textContent=Math.round(intervalMs/1000)+'s'; const b=document.getElementById('btnLive'); b.textContent=intervalMs<=5000?'● Live: On':'● Live: Off';}
-document.getElementById('btnRefresh').addEventListener('click', load);
-document.getElementById('btnLive').addEventListener('click', ()=>{ startAuto(intervalMs<=5000?60000:5000); load(); });
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
+  function indexByName(header){
+    var map={}; header.forEach(function(h,i){ map[S(h)]=i; });
+    var f = function(n){ return (n in map ? map[n] : null); };
+    var fRx = function(rx){ for(var i=0;i<header.length;i++){ if(rx.test(S(header[i]))) return i; } return null; };
+    return {
+      date: f('出荷日'), cust: f('顧客名'), draw: fRx(/図番|図面|Drawing/), machine: fRx(/機種/),
+      qty: f('数量'), to: fRx(/送り先|送付先|納品先/), note: fRx(/注番|備考|注文/),
+      status: fRx(/製品状況|製品状態|納品状況/), ts: f('製品状況更新日時'), user: f('更新者'),
+      urgent: fRx(/Status|至急|ステータス/i)
+    };
+  }
+  var valAt=function(r,i){ return (i==null?'':(r[i]||'')); };
+  function parseJPDate(str){
+    var s=S(str); if(!s) return null;
+    var m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})(?:\D(\d{1,2})\D(\d{1,2}))?/);
+    if(m) return new Date(m[1],m[2]-1,m[3],m[4]||0,m[5]||0);
+    var d=new Date(s); return isNaN(d)?null:d;
+  }
+  function fmtDate(d){ if(!d) return ''; var z=function(n){return String(n).padStart(2,'0')}; return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate()); }
+  function fmtTS(d){ if(!d) return ''; var z=function(n){return String(n).padStart(2,'0')}; return String(d.getFullYear()).slice(2)+"/"+z(d.getMonth()+1)+"/"+z(d.getDate())+" "+z(d.getHours())+":"+z(d.getMinutes()); }
+  function sameYMD(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
 
-/* ===== Range chips ===== */
-document.querySelectorAll('.chipbtn').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    document.querySelectorAll('.chipbtn').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active');
-    rangeKey = b.getAttribute('data-range');
-    renderCharts();
-  });
+  /* ===== Status dictionary (persis file kamu) ===== */
+  var STATUS = [
+    {key:'shipok',   label:'出荷済',     icon:'📦', cls:'shipok',  rx:/出荷済/},
+    {key:'prep',     label:'出荷準備済', icon:'🚚', cls:'prep',    rx:/出荷準備済/},
+    {key:'inspect',  label:'検査中',     icon:'🔬', cls:'inspect', rx:/検査中/},
+    {key:'hold',     label:'検査保留',   icon:'⛔', cls:'hold',    rx:/検査保留/},
+    {key:'assem',    label:'組立中',     icon:'🧰', cls:'assem',   rx:/組立中/},
+    {key:'assemok',  label:'組立完了',   icon:'✅', cls:'assemok', rx:/組立完了/},
+    {key:'proc',     label:'加工済',     icon:'🔧', cls:'proc',    rx:/加工済/},
+    {key:'laser',    label:'レーザ加工', icon:'🪚', cls:'laser',   rx:/レーザ/},
+    {key:'sheet',    label:'板金加工',   icon:'🔩', cls:'sheet',   rx:/板金/},
+    {key:'out',      label:'外注',       icon:'🏭', cls:'out',     rx:/外注/},
+  ];
+  function isUrgent(v){var t=S(v).toLowerCase(); return t==='至急'||t==='urgent'||t==='緊急'||t==='1'||t==='true'}
+
+  /* ===== State ===== */
+  var cache={header:[],rows:[],idx:null};
+  var activeStatusKey=null; // filter status (dropdown)
+  var rangeKey='all';       // filter range (chips)
+  var metricKey='qty';      // 'qty' | 'count'
+  var timer=null, intervalMs=60000;
+
+  /* ===== Dropdown chips builder (status) ===== */
+  function renderChips(counts){
+    var box=document.getElementById('chipsBox');
+    function makeChip(key,label,icon,cnt){ return '<button class="chipbtn '+(activeStatusKey===key?'active':'')+'" data-key="'+key+'">'+icon+' '+label+' <span class="count">'+cnt+'</span></button>'; }
+    var html = '<button class="chipbtn '+(!activeStatusKey?'active':'')+'" data-key="">🌐 すべて <span class="count">'+cache.rows.length+'</span></button>';
+    for(var i=0;i<STATUS.length;i++){ var s=STATUS[i]; html += makeChip(s.key,s.label,s.icon,(counts[s.key]||0)); }
+    box.innerHTML=html;
+    var btns = box.querySelectorAll('.chipbtn');
+    for(var j=0;j<btns.length;j++){
+      btns[j].addEventListener('click', function(){
+        var k=this.getAttribute('data-key'); activeStatusKey = k || null;
+        renderCharts();
+        dropdown.classList.remove('open');
+      });
+    }
+  }
+
+  /* ===== Filter ===== */
+  function applyStatusFilter(rows, idx){
+    if(!activeStatusKey) return rows;
+    var d; for(var i=0;i<STATUS.length;i++){ if(STATUS[i].key===activeStatusKey){ d=STATUS[i]; break; } }
+    if(!d) return rows;
+    return rows.filter(function(r){ return d.rx.test(S(valAt(r,idx.status)));});
+  }
+  function applyRange(rows, idx){
+    var now=new Date();
+    if(rangeKey==='14d'){ var dt=new Date(now); dt.setDate(dt.getDate()-13); dt.setHours(0,0,0,0); return rows.filter(function(r){ var d=parseJPDate(valAt(r,idx.date)); return d && d>=dt;}); }
+    if(rangeKey==='30d'){ var dt2=new Date(now); dt2.setDate(dt2.getDate()-29); dt2.setHours(0,0,0,0); return rows.filter(function(r){ var d=parseJPDate(valAt(r,idx.date)); return d && d>=dt2;}); }
+    if(rangeKey==='ytd'){ var dt3=new Date(now.getFullYear(),0,1); return rows.filter(function(r){ var d=parseJPDate(valAt(r,idx.date)); return d && d>=dt3;}); }
+    return rows;
+  }
+  function metricValue(r, idx){ return metricKey==='count' ? 1 : (+S(valAt(r,idx.qty))||0); }
+  function metricLabel(){ return metricKey==='count' ? '件数' : '数量'; }
+
+  /* ===== Urgent banner ===== */
+  function updateUrgentBanner(rows, idx){
+    var ub=document.getElementById('urgentBanner');
+    var urgentCount = idx.urgent!=null ? rows.filter(function(r){return isUrgent(valAt(r,idx.urgent));}).length : 0;
+    if(urgentCount>0){ ub.style.display='block'; ub.textContent='⚠ 至急案件が '+urgentCount+' 件あります！早急に確認してください。'; }
+    else{ ub.style.display='none'; ub.textContent=''; }
+  }
+
+  /* ===== Charts ===== */
+  var dailyChart, monthlyChart, custChart, destChart;
+  function upsertChart(ctx, cfg, refName){
+    if(window[refName]){ window[refName].data = cfg.data; window[refName].options = cfg.options; window[refName].update(); }
+    else{ window[refName] = new Chart(ctx, cfg); }
+  }
+
+  function renderCharts(){
+    var rows = cache.rows.slice(); var idx = cache.idx;
+
+    /* chips status (hitung ulang) */
+    var counts={}; for(var i=0;i<STATUS.length;i++) counts[STATUS[i].key]=0;
+    rows.forEach(function(r){ var t=S(valAt(r,idx.status)); for(var i=0;i<STATUS.length;i++){ if(STATUS[i].rx.test(t)){ counts[STATUS[i].key]++; break; } }});
+    renderChips(counts);
+
+    updateUrgentBanner(rows, idx);
+
+    /* filter */
+    rows = applyStatusFilter(rows, idx);
+    rows = applyRange(rows, idx);
+
+    /* build series */
+    var mapDaily={}, mapMonthly={}, mapCust={}, mapDest={};
+    rows.forEach(function(r){
+      var d=parseJPDate(valAt(r,idx.date)); if(!d) return;
+      var kDay = fmtDate(d);
+      var kMon = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      var v = metricValue(r, idx);
+      mapDaily[kDay]=(mapDaily[kDay]||0)+v;
+      mapMonthly[kMon]=(mapMonthly[kMon]||0)+v;
+      var cust=S(valAt(r,idx.cust))||'—'; mapCust[cust]=(mapCust[cust]||0)+v;
+      var dest=S(valAt(r,idx.to))||'—';   mapDest[dest]=(mapDest[dest]||0)+v;
+    });
+
+    var dailyLabels=Object.keys(mapDaily).sort();
+    var dailyValues=dailyLabels.map(function(k){return mapDaily[k];});
+    var monthlyLabels=Object.keys(mapMonthly).sort();
+    var monthlyValues=monthlyLabels.map(function(k){return mapMonthly[k];});
+
+    var custEntries=Object.entries(mapCust).sort(function(a,b){return b[1]-a[1]}).slice(0,10);
+    var custLabels=custEntries.map(function(x){return x[0]}); var custValues=custEntries.map(function(x){return x[1]});
+    var destEntries=Object.entries(mapDest).sort(function(a,b){return b[1]-a[1]}).slice(0,12);
+    var destLabels=destEntries.map(function(x){return x[0]}); var destValues=destEntries.map(function(x){return x[1]});
+
+    var commonOptions = { responsive:true, maintainAspectRatio:false, plugins:{
+        legend:{display:false},
+        tooltip:{mode:'index',intersect:false, callbacks:{ label:function(ctx){ return metricLabel()+': '+ctx.parsed.y; } }},
+      }, scales:{ x:{grid:{color:'#eef2ff'}}, y:{grid:{color:'#f1f5f9'}, ticks:{precision:0}} } };
+
+    document.getElementById('hDaily').textContent   = '出荷（⽇次・直近） – '+metricLabel();
+    document.getElementById('hMonthly').textContent = '出荷（⽉次・年内） – '+metricLabel();
+    document.getElementById('hCust').textContent    = '顧客別 出荷（Top 10） – '+metricLabel();
+    document.getElementById('hDest').textContent    = '送り先別 出荷 – '+metricLabel();
+
+    upsertChart(document.getElementById('dailyShip'), {
+      type:'line',
+      data:{ labels:dailyLabels, datasets:[{ label:metricLabel(), data:dailyValues, tension:.25, fill:true }] },
+      options:{ ...commonOptions }
+    }, 'dailyChart');
+
+    upsertChart(document.getElementById('monthlyQty'), {
+      type:'bar',
+      data:{ labels:monthlyLabels, datasets:[{ label:metricLabel(), data:monthlyValues }] },
+      options:{ ...commonOptions }
+    }, 'monthlyChart');
+
+    upsertChart(document.getElementById('custQty'), {
+      type:'bar',
+      data:{ labels:custLabels, datasets:[{ label:metricLabel(), data:custValues }] },
+      options:{ ...commonOptions, indexAxis:'y' }
+    }, 'custChart');
+
+    upsertChart(document.getElementById('destQty'), {
+      type:'bar',
+      data:{ labels:destLabels, datasets:[{ label:metricLabel(), data:destValues }] },
+      options:{ ...commonOptions, indexAxis:'y' }
+    }, 'destChart');
+
+    document.getElementById('lastup').textContent = 'Last update: '+new Date().toLocaleString();
+  }
+
+  /* ===== Fetch & live ===== */
+  async function load(){
+    var btn=document.getElementById('btnRefresh'); var old=btn.textContent;
+    try{
+      btn.textContent='Loading…'; btn.disabled=true;
+      var res=await fetch(CSV_URL+'&_ts='+Date.now(),{cache:'no-store'});
+      var text=await res.text();
+      var data=parseCSV(text);
+      var header=data[0], rows=data.slice(1);
+      var idx=indexByName(header);
+      cache={header:header,rows:rows,idx:idx};
+      renderCharts();
+    }catch(e){
+      alert('Gagal memuat data: '+e);
+    }finally{
+      btn.textContent=old; btn.disabled=false;
+    }
+  }
+  function startAuto(ms){
+    intervalMs=ms; if(timer) clearInterval(timer);
+    timer=setInterval(function(){ if(document.visibilityState==='visible') load(); }, intervalMs);
+    document.getElementById('intervalInfo').textContent=Math.round(intervalMs/1000)+'s';
+    var b=document.getElementById('btnLive'); b.textContent=intervalMs<=5000?'● Live: On':'● Live: Off';
+  }
+
+  document.getElementById('btnRefresh').addEventListener('click', load);
+  document.getElementById('btnLive').addEventListener('click', function(){ startAuto(intervalMs<=5000?60000:5000); load(); });
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') load(); });
+
+  /* ===== Range chips ===== */
+  var chipBtns = document.querySelectorAll('.chipbtn');
+  for(var i=0;i<chipBtns.length;i++){
+    chipBtns[i].addEventListener('click', function(){
+      for(var j=0;j<chipBtns.length;j++) chipBtns[j].classList.remove('active');
+      this.classList.add('active');
+      rangeKey = this.getAttribute('data-range');
+      renderCharts();
+    });
+  }
+
+  /* ===== Metric toggle ===== */
+  var metricToggle=document.getElementById('metricToggle');
+  var mBtns = metricToggle.querySelectorAll('button');
+  for(var k=0;k<mBtns.length;k++){
+    mBtns[k].addEventListener('click', function(){
+      for(var z=0;z<mBtns.length;z++) mBtns[z].classList.remove('active');
+      this.classList.add('active');
+      metricKey = this.getAttribute('data-metric'); // 'qty' | 'count'
+      document.getElementById('metricBadge').textContent = '表示: ' + (metricKey==='count' ? '件数' : '数量');
+      renderCharts();
+    });
+  }
+
+  /* ===== Dropdown open/close (status) ===== */
+  var dropdown=document.getElementById('statusDropdown');
+  dropdown.querySelector('button').addEventListener('click', function(){ dropdown.classList.toggle('open'); });
+  document.getElementById('clearFilter').addEventListener('click', function(){ activeStatusKey=null; renderCharts(); dropdown.classList.remove('open'); });
+  document.addEventListener('click', function(e){ if(!dropdown.contains(e.target)) dropdown.classList.remove('open'); });
+
+  /* boot */
+  load(); startAuto(60000);
 });
-
-/* ===== Metric toggle ===== */
-const metricToggle=document.getElementById('metricToggle');
-metricToggle.querySelectorAll('button').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    metricToggle.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
-    btn.classList.add('active');
-    metricKey = btn.getAttribute('data-metric'); // 'qty' | 'count'
-    document.getElementById('metricBadge').textContent = '表示: ' + (metricKey==='count' ? '件数' : '数量');
-    renderCharts();
-  });
-});
-
-/* boot */
-load(); startAuto(60000);
 </script>
 </body>
 </html>
