@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>品質管理生産技術システム</title>
 
 <style>
   :root{
     --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
-    --blue:#2563eb; --blue-50:#eff6ff; --blue-100:#dbeafe; --blue-600:#2563eb; --blue-700:#1d4ed8;
+    --blue-50:#eff6ff; --blue-100:#dbeafe; --blue-600:#2563eb; --blue-700:#1d4ed8;
     --green:#10b981; --amber:#f59e0b; --purple:#8b5cf6; --rose:#ef4444;
     --radius-xl:22px; --radius:14px; --shadow-1:0 12px 30px rgba(15,23,42,.08);
   }
@@ -24,7 +24,7 @@
   }
   a{color:inherit; text-decoration:none}
 
-  /* Header */
+  /* ===== Topbar ===== */
   .topbar{
     position:sticky; top:0; z-index:50;
     background:#ffffffc8; backdrop-filter:blur(10px);
@@ -34,24 +34,28 @@
     max-width:1400px; margin:0 auto; padding:10px 16px;
     display:flex; align-items:center; gap:10px; justify-content:space-between;
   }
-  .brand{display:flex; align-items:center; gap:10px; font-weight:800}
+  .brand{display:flex; align-items:center; gap:12px; font-weight:800}
+  .brand img.logo{height:28px; width:auto; display:block}
+  @media (min-width:1280px){ .brand img.logo{height:32px} }
+
   .actions{display:flex; gap:8px; align-items:center}
   .btn{
     height:34px; padding:0 12px; border-radius:10px;
     border:1px solid var(--border); background:#fff; cursor:pointer;
     display:inline-flex; align-items:center; gap:8px;
   }
+  .help{ font-size:12px; color:var(--muted) }
 
   main{max-width:1400px; margin:0 auto; padding:16px}
 
-  /* Urgent banner */
+  /* ===== Banner ===== */
   .urgent{
     background:#fee2e2; border:1px solid #fecaca; color:#991b1b;
     font-weight:800; text-align:center; padding:12px 14px; border-radius:12px;
     margin:10px 0 14px;
   }
 
-  /* Section container */
+  /* ===== Panel ===== */
   .panel{
     background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl);
     box-shadow:var(--shadow-1); overflow:hidden; margin-bottom:18px;
@@ -61,9 +65,9 @@
     border-bottom:1px solid var(--border);
   }
   .h2{margin:0; font-size:20px}
-  .chipbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
 
-  /* Filter chips */
+  /* ===== chipbar & filter ===== */
+  .chipbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
   .fchip{
     display:inline-flex; align-items:center; gap:10px;
     height:42px; padding:0 14px; border-radius:999px; border:1px solid var(--border);
@@ -75,74 +79,79 @@
     background:var(--blue-600); color:#fff; font-size:12px; padding:0 6px;
   }
 
-  /* Responsive grid header (table-like) */
-  .table-head{
-    display:grid; grid-template-columns: 320px 170px 1fr 170px 140px 160px;
-    padding:10px 18px; color:#475569; font-weight:800; border-bottom:1px solid var(--border);
+  /* ===== Responsive table wrapper (scroll on small screens) ===== */
+  .table-scroll{ overflow-x:auto; }
+  .grid-w{
+    min-width: 1080px; /* menjaga table tetap proporsional; di HP akan scroll horizontal */
   }
 
-  /* Card row */
+  /* ===== Grid header & row ===== */
+  .table-head{
+    display:grid; grid-template-columns: 320px 170px 1fr 170px 140px 220px;
+    padding:10px 18px; color:#475569; font-weight:800; border-bottom:1px solid var(--border);
+  }
   .row{
-    display:grid; grid-template-columns: 320px 170px 1fr 170px 140px 160px;
+    display:grid; grid-template-columns: 320px 170px 1fr 170px 140px 220px;
     gap:0; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border);
   }
   .row:hover{ background:#f9fbff }
 
-  /* Left status card */
+  /* adjust columns for medium screens */
+  @media (max-width:1200px){
+    .table-head, .row{ grid-template-columns: 300px 160px 1fr 160px 120px 220px; }
+  }
+
+  /* ===== Left status card ===== */
   .leftbox{
-    display:grid; grid-template-columns: 80px 1fr; gap:12px; align-items:center;
+    display:grid; grid-template-columns: 88px 1fr; gap:12px; align-items:center;
     background:#f8fafc; border:1px solid var(--border); border-radius:20px; padding:12px;
   }
   .status-badge{
     width:80px; height:80px; border-radius:999px; display:grid; place-items:center;
-    background:var(--blue-50); color:#0b5; border:1px solid var(--border); font-weight:800;
+    background:var(--blue-50); border:1px solid var(--border); font-weight:800;
     color:#1d4ed8; font-size:18px;
   }
   .meta small{ display:block; color:#64748b }
   .meta strong{ display:block; font-weight:800 }
+  .pill-urgent{
+    display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px;
+    background:#fee2e2; color:#991b1b; font-weight:800; margin-bottom:6px;
+  }
 
-  /* Date chip */
+  /* ===== Date chip ===== */
   .date-chip{
     display:inline-flex; align-items:center; gap:10px; padding:10px 14px;
     height:42px; background:#eef2ff; color:#1d4ed8; border:1px solid #e5e7eb;
     border-radius:999px; font-weight:800;
   }
 
-  /* 注番 chips fit & wrap */
+  /* ===== 注番 chips fit & wrap ===== */
   .note-wrap{
     display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+    padding-top:6px;
   }
   .note-chip{
     display:inline-flex; align-items:center; gap:6px;
     padding:6px 10px; border-radius:999px; border:1px solid var(--border);
     background:#f8fafc; color:#334155; font-weight:700; font-size:13px;
+    white-space:nowrap;
   }
 
-  .pill-urgent{
-    display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px;
-    background:#fee2e2; color:#991b1b; font-weight:800;
-  }
-  .pill-status{
-    display:inline-flex; align-items:center; gap:8px; height:34px; padding:0 12px;
-    border-radius:999px; font-weight:800; color:#fff;
-  }
-  .ps-laser{ background:#ef4e4e } .ps-bend{background:#f59e0b}
-  .ps-out{ background:#8b5cf6 } .ps-proc{ background:#0284c7 }
-  .ps-assy{ background:#0ea5e9 } .ps-assydone{ background:#10b981 }
-  .ps-qc{ background:#3b82f6 } .ps-qcdone{ background:#16a34a }
-  .ps-ship{ background:#64748b }
+  /* ===== Today scroll: desktop only ===== */
+  .today-scroll{ max-height:52vh; overflow:auto; }
+  @media (max-width:900px){ .today-scroll{ max-height:none; } } /* di HP biar full tanpa scroll internal */
 
-  /* Utilities */
   .muted{ color:var(--muted) }
-  .help{ font-size:12px; color:#64748b }
 </style>
 </head>
 
 <body>
+  <!-- ===== TOPBAR ===== -->
   <header class="topbar">
     <div class="wrap">
       <div class="brand">
-        <img src="https://dummyimage.com/36x18/2563eb/ffffff&text=TSH" alt="" style="height:28px;border-radius:6px">
+        <!-- gunakan path relatif agar aman di GitHub Pages -->
+        <img src="./tsh.png" alt="TSH" class="logo" />
         品質管理生産技術
       </div>
       <div class="actions">
@@ -154,28 +163,32 @@
   </header>
 
   <main>
-    <!-- Urgent banner -->
+    <!-- ===== Urgent banner ===== -->
     <div id="urgentBanner" class="urgent" style="display:none"></div>
 
-    <!-- ====== TODAY ====== -->
+    <!-- ===== TODAY ===== -->
     <section class="panel" id="todaySection">
       <div class="panel-head">
         <h2 class="h2">本日出荷</h2>
         <div class="help">件数 <span id="todayCount">0</span></div>
       </div>
-      <div class="table-head">
-        <div>状況</div><div>出荷日</div><div>顧客名</div><div>図番 / 機種</div><div>数量</div><div>送り先／注番</div>
+      <div class="table-scroll">
+        <div class="grid-w">
+          <div class="table-head">
+            <div>状況</div><div>出荷日</div><div>顧客名</div><div>図番 / 機種</div><div>数量</div><div>送り先／注番</div>
+          </div>
+          <div id="todayBody" class="today-scroll"></div>
+        </div>
       </div>
-      <div id="todayBody"></div>
     </section>
 
-    <!-- ====== ALL ====== -->
+    <!-- ===== ALL ===== -->
     <section class="panel">
       <div class="panel-head">
         <h2 class="h2">全件一覧</h2>
         <div class="chipbar">
           <button id="btnClear" class="btn">Clear</button>
-          <input id="filterDate" type="date" class="btn" style="height:34px">
+          <input id="filterDate" type="date" class="btn" style="height:34px" />
           <button id="btnTodayOnly" class="btn">本日出荷のみ</button>
         </div>
       </div>
@@ -185,10 +198,14 @@
         <div id="quickBar" class="chipbar"></div>
       </div>
 
-      <div class="table-head">
-        <div>状況</div><div>出荷日</div><div>顧客名</div><div>図番 / 機種</div><div>数量</div><div>送り先／注番</div>
+      <div class="table-scroll">
+        <div class="grid-w">
+          <div class="table-head">
+            <div>状況</div><div>出荷日</div><div>顧客名</div><div>図番 / 機種</div><div>数量</div><div>送り先／注番</div>
+          </div>
+          <div id="allBody"></div>
+        </div>
       </div>
-      <div id="allBody"></div>
 
       <div class="help" style="padding:10px 16px">
         データ元: 最新情報（<span id="rowCount">0</span> 行）｜Urgent列: Status ｜ 出荷日: 出荷日
@@ -203,20 +220,20 @@ const TAB_NAME ="最新情報";
 const CSV_URL  =`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
 const S = s => String(s ?? '').trim();
 
-/* Status mapping for quick filter + colors/icons */
+/* Status list (untuk quick filter & ikon) */
 const STATUS_LIST = [
-  {k:'レーザ加工',  key:'laser',     cls:'ps-laser',    icon:'🛠️'},
-  {k:'板金加工',    key:'bend',      cls:'ps-bend',     icon:'🧰'},
-  {k:'外注',        key:'out',       cls:'ps-out',      icon:'🏭'},
-  {k:'加工済',      key:'proc',      cls:'ps-proc',     icon:'🧪'},
-  {k:'組立中',      key:'assy',      cls:'ps-assy',     icon:'🧳'},
-  {k:'組立完了',    key:'assydone',  cls:'ps-assydone', icon:'✅'},
-  {k:'検査中',      key:'qc',        cls:'ps-qc',       icon:'🔎'},
-  {k:'検査済',      key:'qcdone',    cls:'ps-qcdone',   icon:'🟢'},
-  {k:'出荷準備済',  key:'ship',      cls:'ps-ship',     icon:'🚚'},
+  {k:'レーザ加工',  key:'laser',     icon:'🛠️'},
+  {k:'板金加工',    key:'bend',      icon:'🧰'},
+  {k:'外注',        key:'out',       icon:'🏭'},
+  {k:'加工済',      key:'proc',      icon:'🧪'},
+  {k:'組立中',      key:'assy',      icon:'🧳'},
+  {k:'組立完了',    key:'assydone',  icon:'✅'},
+  {k:'検査中',      key:'qc',        icon:'🔎'},
+  {k:'検査済',      key:'qcdone',    icon:'🟢'},
+  {k:'出荷準備済',  key:'ship',      icon:'🚚'},
 ];
 
-/* Parse CSV (robust) */
+/* CSV parser */
 function parseCSV(t){
   const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
   let m,row=[]; t=t.replace(/\r\n?/g,"\n");
@@ -265,10 +282,7 @@ function isUrgent(v){const t=S(v).toLowerCase(); return t==="至急"||t==="urgen
 
 function getStatusKey(val){
   const raw=S(val);
-  for(const s of STATUS_LIST){
-    if(raw.includes(s.k)) return s.key;
-  }
-  // fallback guesses
+  for(const s of STATUS_LIST){ if(raw.includes(s.k)) return s.key; }
   if(/検査済|済|完了/.test(raw)) return 'qcdone';
   if(/検査中/.test(raw)) return 'qc';
   if(/組立完了/.test(raw)) return 'assydone';
@@ -277,22 +291,19 @@ function getStatusKey(val){
   return '';
 }
 
-let cache={header:[], rows:[], idx:null};
-
+/* render helpers */
 function noteToChips(txt){
-  // split by space/comma/newline; produce chips wrapping nicely
   const tokens = S(txt).split(/[,\s]+/).filter(Boolean);
   if(tokens.length===0) return '';
   return `<div class="note-wrap">` + tokens.map(t=>`<span class="note-chip">${t}</span>`).join('') + `</div>`;
 }
-
 function statusBadge(raw){
   const key = getStatusKey(raw);
   const conf = STATUS_LIST.find(s=>s.key===key);
-  if(!conf) return `<div class="status-badge">—</div>`;
-  return `<div class="status-badge" title="${S(raw)}">${conf.icon}<div style="font-size:13px">${S(raw)}</div></div>`;
+  const text = S(raw) || '—';
+  const icon = conf ? conf.icon : '•';
+  return `<div class="status-badge" title="${text}">${icon}<div style="font-size:13px">${text}</div></div>`;
 }
-
 function leftBox(row, idx){
   const stRaw = valAt(row, idx.status);
   const urgent = idx.urgent!=null && isUrgent(valAt(row, idx.urgent));
@@ -309,7 +320,6 @@ function leftBox(row, idx){
       </div>
     </div>`;
 }
-
 function renderRow(row, idx){
   const date = idx.date!=null?parseJPDate(valAt(row,idx.date)):null;
   const dateText = date? `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}` : '';
@@ -328,18 +338,14 @@ function renderRow(row, idx){
       </div>
     </div>`;
 }
-
 function renderList(rows, idx, mount){
   mount.innerHTML = rows.map(r=>renderRow(r, idx)).join('') || `<div style="padding:16px">データなし</div>`;
 }
 
-/* Comparator: urgent first, then status weight, then latest date first */
 function makeComparator(idx){
   const weight = s=>{
-    const m = {
-      'qc':1, 'assy':2, 'laser':2, 'bend':2, 'out':2, 'proc':2,
-      'ship':3, 'assydone':4, 'qcdone':5
-    }; return m[getStatusKey(s)]??99;
+    const m = {'qc':1,'assy':2,'laser':2,'bend':2,'out':2,'proc':2,'ship':3,'assydone':4,'qcdone':5};
+    return m[getStatusKey(s)]??99;
   };
   return (a,b)=>{
     const au=idx.urgent!=null&&isUrgent(valAt(a,idx.urgent));
@@ -355,37 +361,30 @@ function makeComparator(idx){
   };
 }
 
-/* Quick filter bar */
+/* Quick filter */
 let activeFilter = 'all';
 function buildQuickBar(rows, idx){
-  const counts = {};
-  for(const s of STATUS_LIST) counts[s.key]=0;
+  const counts = {}; for(const s of STATUS_LIST) counts[s.key]=0;
   rows.forEach(r=>{
-    counts[getStatusKey(valAt(r, idx.status))] = (counts[getStatusKey(valAt(r, idx.status))]||0)+1;
+    const k=getStatusKey(valAt(r, idx.status)); counts[k]=(counts[k]||0)+1;
   });
-
   const el=document.getElementById('quickBar');
   el.innerHTML = `
     <button class="fchip ${activeFilter==='all'?'active':''}" data-key="all">🌐 すべて <span class="fnum">${rows.length}</span></button>
-    ${STATUS_LIST.map(s=>`
-      <button class="fchip ${activeFilter===s.key?'active':''}" data-key="${s.key}">
-        ${s.icon} ${s.k} <span class="fnum">${counts[s.key]||0}</span>
-      </button>`).join('')}
+    ${STATUS_LIST.map(s=>`<button class="fchip ${activeFilter===s.key?'active':''}" data-key="${s.key}">${s.icon} ${s.k} <span class="fnum">${counts[s.key]||0}</span></button>`).join('')}
   `;
   [...el.querySelectorAll('.fchip')].forEach(b=>{
     b.addEventListener('click', ()=>{
       activeFilter = b.dataset.key;
       buildQuickBar(rows, idx);
       applyAllFilter();
-    })
+    });
   });
 }
-
 function applyAllFilter(){
   const {rows, idx} = cache;
   const dateStr = document.getElementById('filterDate').value || null;
   let view = [...rows];
-
   if(dateStr && idx.date!=null){
     const target = new Date(dateStr+"T00:00:00");
     view = view.filter(r=>{const d=parseJPDate(valAt(r,idx.date)); return d&&sameYMD(d,target)});
@@ -397,7 +396,7 @@ function applyAllFilter(){
   renderList(view, idx, document.getElementById('allBody'));
 }
 
-/* Today section */
+/* Today & banner */
 function renderToday(){
   const {rows, idx} = cache;
   if(idx.date==null){ document.getElementById('todaySection').style.display='none'; return; }
@@ -406,8 +405,6 @@ function renderToday(){
   document.getElementById('todayCount').textContent = list.length;
   renderList(list, idx, document.getElementById('todayBody'));
 }
-
-/* Urgent banner */
 function renderUrgentBanner(){
   const {rows, idx} = cache;
   const n = rows.reduce((a,r)=> a + (idx.urgent!=null && isUrgent(valAt(r, idx.urgent)) ? 1 : 0), 0);
@@ -417,6 +414,7 @@ function renderUrgentBanner(){
 }
 
 /* LOAD */
+let cache={header:[], rows:[], idx:null};
 async function load(){
   const btn=document.getElementById('btnRefresh'); const old=btn.textContent; btn.textContent='Loading...'; btn.disabled=true;
   try{
@@ -443,7 +441,6 @@ document.getElementById('btnRefresh').addEventListener('click', load);
 document.getElementById('btnLive').addEventListener('click', (e)=>{
   const b=e.currentTarget; const on=b.getAttribute('aria-pressed')==='true';
   b.setAttribute('aria-pressed', String(!on));
-  b.textContent = on ? '● Live' : '● Live';
 });
 document.getElementById('filterDate').addEventListener('change', applyAllFilter);
 document.getElementById('btnTodayOnly').addEventListener('click', ()=>{
@@ -458,7 +455,7 @@ document.getElementById('btnClear').addEventListener('click', ()=>{
 });
 
 /* Init */
-window.addEventListener('DOMContentLoaded', ()=>{ load(); });
+window.addEventListener('DOMContentLoaded', load);
 </script>
 </body>
 </html>
