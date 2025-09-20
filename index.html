@@ -7,17 +7,13 @@
 
 <style>
   :root{
-    /* Brand biru */
     --blue-50:#eff6ff; --blue-100:#dbeafe; --blue-200:#bfdbfe; --blue-300:#93c5fd;
     --blue-400:#60a5fa; --blue-500:#3b82f6; --blue-600:#2563eb; --blue-700:#1d4ed8;
     --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb;
     --accent:var(--blue-600);
-
     --radius-xl:22px; --radius:12px;
     --shadow-1:0 12px 30px rgba(15,23,42,.08); --shadow-2:0 30px 60px rgba(15,23,42,.10);
-
-    /* layout */
-    --gutter-w: 210px;     /* lebar kolom kartu kiri */
+    --gutter-w: 210px;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -39,10 +35,7 @@
   .btn{display:inline-flex; align-items:center; gap:8px; height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--border); background:#fff; cursor:pointer}
   .btn:hover{border-color:#c7d2fe}
   .badge{height:28px; display:inline-flex; align-items:center; padding:0 10px; border:1px solid var(--border); border-radius:999px; background:#f1f5f9; font:700 12px/1 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif}
-
-  /* burger (mobile) */
   .burger{display:none; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer}
-  .burger:active{transform:scale(.98)}
 
   main{max-width:1400px; margin:0 auto; padding:22px 20px 96px}
   .panel{background:#fff; border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--shadow-2); padding:18px; overflow:auto}
@@ -50,46 +43,20 @@
   .panel-title{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px}
   .h1{margin:0; font-size:22px}
 
-  /* ===== table shared ===== */
+  /* tabel */
   .table-wrap{width:100%; overflow:auto}
   table{width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed; min-width:1180px}
-  thead th{
-    position:sticky; top:0; z-index:2;
-    background:#f8fafc; color:#475569; text-align:left; font-weight:800;
-    padding:12px 14px; border-bottom:1px solid var(--border);
-  }
-  tbody td{
-    padding:12px 14px;
-    border-bottom:1px solid var(--border);
-    background:#fff; vertical-align:middle;
-  }
+  thead th{position:sticky; top:0; z-index:2; background:#f8fafc; color:#475569; text-align:left; font-weight:800; padding:12px 14px; border-bottom:1px solid var(--border)}
+  tbody td{padding:12px 14px; border-bottom:1px solid var(--border); background:#fff; vertical-align:middle}
   tbody tr:nth-child(odd) td{background:#fcfdff}
   tbody tr:hover td{background:#f6faff}
-
-  /* col widths */
-  .w-gutter{width:var(--gutter-w)}
-  .w-date{width:180px}
-  .w-cust{width:260px}
-  .w-draw{width:170px}
-  .w-machine{width:210px}
-  .w-item{width:auto}
-  .w-qty{width:80px}
-  .w-to{width:120px}
-
+  .w-gutter{width:var(--gutter-w)} .w-date{width:180px} .w-cust{width:260px}
+  .w-draw{width:170px} .w-machine{width:210px} .w-item{width:auto} .w-qty{width:80px} .w-to{width:120px}
   .cell{display:flex; align-items:center; gap:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-  .cell-date{gap:12px}
 
-  /* ===== left hover sidebar (desktop) ===== */
-  .edge-hotspot{
-    position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px);
-    z-index:70;
-  }
-  .hover-side{
-    position:fixed; left:0; top:64px; height:calc(100vh - 64px);
-    width:260px; padding:14px 12px; overflow:auto;
-    background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1);
-    transform:translateX(-100%); transition:transform .22s ease; z-index:71;
-  }
+  /* sidebar */
+  .edge-hotspot{position:fixed; left:0; top:64px; width:12px; height:calc(100vh - 64px); z-index:70}
+  .hover-side{position:fixed; left:0; top:64px; height:calc(100vh - 64px); width:260px; padding:14px 12px; overflow:auto; background:var(--panel); border-right:1px solid var(--border); box-shadow:var(--shadow-1); transform:translateX(-100%); transition:transform .22s ease; z-index:71}
   .hover-side.open{ transform:translateX(0) }
   .hover-side h3{ margin:4px 8px 10px; font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase }
   .navlist{ display:grid; gap:4px }
@@ -97,62 +64,39 @@
   .slink:hover{ background:#f1f5ff }
   .ico{ width:22px; text-align:center }
 
-  /* ===== mobile drawer ===== */
+  /* drawer mobile */
   .drawer{ position:fixed; inset:0; z-index:80; display:none }
   .drawer.open{ display:block }
   .drawer .backdrop{ position:absolute; inset:0; background:#0006 }
-  .drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px);
-                  background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto;
-                  transform:translateX(-100%); transition:transform .25s ease }
+  .drawer .panel{ position:absolute; top:0; left:0; height:100%; width:min(86%,320px); background:#fff; border-right:1px solid var(--border); box-shadow:var(--shadow-2); padding:14px 12px; overflow:auto; transform:translateX(-100%); transition:transform .25s ease }
   .drawer.open .panel{ transform:translateX(0) }
   .drawer .close{ position:absolute; right:10px; top:10px; border:0; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer }
 
-  /* ===== left gutter (sticky card) ===== */
-  .w-gutter,.gutter-th,.gutter-td{width:var(--gutter-w)}
-  .gutter-th,.gutter-td{
-    position:sticky; left:0; z-index:3;
-    min-width:var(--gutter-w); max-width:var(--gutter-w);
-    background:linear-gradient(180deg,#f8fafc,#f2f6ff);
-    border-right:1px solid var(--border);
-  }
-  .gutter-td{z-index:1; padding:10px 8px}
-
-  .status-card{
-    width:100%;
-    padding:10px 12px;
-    display:flex; flex-direction:column; gap:8px;
-    border:1px solid #e8eefc; border-radius:16px; background:#fff;
-    box-shadow:0 6px 16px rgba(37,99,235,.08);
-  }
+  /* gutter kiri */
+  .gutter-th,.gutter-td{position:sticky; left:0; z-index:3; min-width:var(--gutter-w); max-width:var(--gutter-w)}
+  .gutter-th{background:linear-gradient(180deg,#f8fafc,#f2f6ff); border-right:1px solid var(--border)}
+  .gutter-td{z-index:1; padding:10px 8px; background:#fff; border-right:1px solid var(--border)}
+  .status-card{width:100%; padding:10px 12px; display:flex; flex-direction:column; gap:8px; border:1px solid #e8eefc; border-radius:16px; background:#fff; box-shadow:0 6px 16px rgba(37,99,235,.08)}
   .status-badge{padding:6px 14px; border-radius:999px; color:#fff; font-weight:800; font-size:13px; align-self:flex-start}
-  .tag-done{background:var(--blue-600)}
-  .tag-assem{background:var(--blue-500)}
-  .tag-assem-done{background:var(--blue-700)}
-  .tag-inspect{background:var(--blue-400)}
-  .tag-not{background:#94a3b8}
-
-  .status-grid{
-    display:grid; grid-template-columns: 62px 1fr; gap:6px 10px; align-items:center;
-  }
+  .tag-done{background:var(--blue-600)} .tag-assem{background:var(--blue-500)} .tag-assem-done{background:var(--blue-700)} .tag-inspect{background:var(--blue-400)} .tag-not{background:#94a3b8}
+  .status-grid{display:grid; grid-template-columns: 62px 1fr; gap:6px 10px; align-items:center}
   .status-label{color:#475569; font-size:13px}
   .status-value{color:#0f172a; font-weight:800; font-size:13px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
+  /* chip & urgent */
   .chip{display:inline-block; padding:9px 16px; border-radius:999px; font-weight:800; font-size:13px; border:1px solid var(--blue-200); background:var(--blue-100); color:#0f172a}
-  .urgent{display:inline-flex; align-items:center; gap:6px; padding:2px 10px; margin-right:8px; border-radius:999px; background:#ef4444; color:#fff; font:800 12px/1 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif}
+  .urgent{display:inline-flex; align-items:center; gap:6px; padding:2px 10px; border-radius:999px; background:#ef4444; color:#fff; font:800 12px/1 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Yu Gothic",sans-serif}
+  .date-stack{display:flex; flex-direction:column; align-items:flex-start; gap:6px} /* <= urgent di atas, tanggal di bawah */
+
+  /* banner urgent (reminder) */
+  .notice{display:none; margin:6px 0 14px; padding:10px 14px; border:1px solid #fecaca; background:#fee2e2; color:#991b1b; border-radius:12px; font-weight:800}
 
   .marquee{position:fixed; left:20px; right:20px; bottom:20px; z-index:30; background:var(--accent); color:#fff; font-weight:800; border-radius:12px; box-shadow:var(--shadow-1); white-space:nowrap; overflow:hidden}
   .marquee span{display:inline-block; padding:8px 0 8px 100%; animation:marquee 25s linear infinite}
-  @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
   .footer{position:fixed; bottom:0; left:0; right:0; z-index:31; text-align:center; font-size:12px; color:#64748b; background:#f1f5f9; padding:4px 0; border-top:1px solid var(--border)}
 
-  /* admin group hidden by default */
   .admin-only{ display:none }
-
-  /* responsive */
-  @media (max-width:900px){
-    .burger{display:inline-flex}
-    .edge-hotspot, .hover-side{ display:none }
-  }
+  @media (max-width:900px){ .burger{display:inline-flex} .edge-hotspot, .hover-side{ display:none } }
 </style>
 </head>
 <body>
@@ -176,12 +120,15 @@
   </header>
 
   <main>
-    <div style="display:flex; justify-content:space-between; align-items:end; margin-bottom:14px">
+    <div style="display:flex; justify-content:space-between; align-items:end; margin-bottom:6px">
       <h1 class="h1">出荷状況一覧</h1>
       <span id="lastUpdated" class="badge" style="background:#fff">—</span>
     </div>
 
-    <!-- ===== 本日出荷 ===== -->
+    <!-- reminder urgent -->
+    <div id="urgentBanner" class="notice">⚠ 至急案件が 0 件あります！早急に確認してください。</div>
+
+    <!-- 本日出荷 -->
     <section id="todaySection" class="panel" style="display:none">
       <div class="panel-title">
         <h2 style="margin:0">本日出荷</h2>
@@ -199,7 +146,7 @@
       </div>
     </section>
 
-    <!-- ===== 全件一覧 ===== -->
+    <!-- 全件一覧 -->
     <section class="panel">
       <div class="panel-title">
         <h2 style="margin:0">全件一覧</h2>
@@ -220,8 +167,8 @@
             <col class="w-gutter"><col class="w-date"><col class="w-cust"><col class="w-draw">
             <col class="w-machine"><col class="w-item"><col class="w-qty"><col class="w-to">
           </colgroup>
-        <thead><tr id="shipHead"></tr></thead>
-        <tbody id="shipBody"></tbody>
+          <thead><tr id="shipHead"></tr></thead>
+          <tbody id="shipBody"></tbody>
         </table>
       </div>
       <div id="shipHint" style="margin-top:8px; color:#64748b; font-size:12px"></div>
@@ -229,7 +176,7 @@
   </main>
 </div>
 
-<!-- ===== Hover Sidebar (desktop) ===== -->
+<!-- Hover Sidebar (desktop) -->
 <div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
 <aside id="hoverSide" class="hover-side" aria-label="Pages">
   <h3>Pages</h3>
@@ -241,7 +188,6 @@
     <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
     <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
   </div>
-
   <div class="admin-only" style="margin-top:12px">
     <h3>Admin</h3>
     <div class="navlist">
@@ -253,7 +199,7 @@
   </div>
 </aside>
 
-<!-- ===== Drawer (mobile) ===== -->
+<!-- Drawer (mobile) -->
 <div id="drawer" class="drawer" aria-hidden="true">
   <div class="backdrop" data-close></div>
   <aside class="panel">
@@ -266,7 +212,6 @@
       <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
       <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
     </div>
-
     <div class="admin-only" style="margin-top:12px">
       <h3>Admin</h3>
       <div class="navlist">
@@ -288,90 +233,42 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-  /* ========= Drawer (mobile) ========= */
+  /* Drawer mobile */
   const drawer = document.getElementById('drawer');
-  document.getElementById('btnBurger')?.addEventListener('click', ()=>{
-    drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');
-  });
-  drawer?.addEventListener('click', (e)=>{
-    if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
-  });
+  document.getElementById('btnBurger')?.addEventListener('click', ()=>{ drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); });
+  drawer?.addEventListener('click', (e)=>{ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); } });
 
-  /* ========= Admin & Prefix (hidupkan/ matikan) ========= */
-  const ADMIN_FLAG_KEY = 'kensa_admin';
-  function setAdmin(on){
-    document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none');
-    if (on){ localStorage.setItem(ADMIN_FLAG_KEY,'1'); }
-    else   { localStorage.removeItem(ADMIN_FLAG_KEY); }
-    const b=document.getElementById('btnAdmin'); if(b) b.textContent = on ? '管理（ON）' : '管理';
-  }
+  /* Admin switch */
+  const ADMIN_FLAG_KEY='kensa_admin';
+  function setAdmin(on){ document.querySelectorAll('.admin-only').forEach(el=> el.style.display = on ? '' : 'none'); on?localStorage.setItem(ADMIN_FLAG_KEY,'1'):localStorage.removeItem(ADMIN_FLAG_KEY); const b=document.getElementById('btnAdmin'); if(b) b.textContent=on?'管理（ON）':'管理';}
   function isAdmin(){ return localStorage.getItem(ADMIN_FLAG_KEY)==='1'; }
-  document.getElementById('btnAdmin')?.addEventListener('click', ()=>{
-    if(isAdmin()){
-      if(confirm('Admin akan dimatikan. Lanjut?')) setAdmin(false);
-    }else{
-      const code = prompt('Admin code:');
-      if(code==='admin2025') setAdmin(true); else alert('Kode tidak sesuai');
-    }
-  });
+  document.getElementById('btnAdmin')?.addEventListener('click', ()=>{ if(isAdmin()){ if(confirm('Admin akan dimatikan. Lanjut?')) setAdmin(false);} else { const code=prompt('Admin code:'); if(code==='admin2025') setAdmin(true); else alert('Kode tidak sesuai'); } });
 
-  /* ========= EDGE-HOVER sidebar (desktop) ========= */
-  const hot = document.getElementById('edgeHotspot');
-  const fly = document.getElementById('hoverSide');
-  let hideTimer = null;
-  const HIDE_DELAY = 280;
+  /* Hover sidebar desktop */
+  const hot=document.getElementById('edgeHotspot'), fly=document.getElementById('hoverSide'); let hideTimer=null; const HIDE_DELAY=280;
   function openFly(){ clearTimeout(hideTimer); fly.classList.add('open'); }
-  function scheduleClose(){ clearTimeout(hideTimer); hideTimer = setTimeout(()=>fly.classList.remove('open'), HIDE_DELAY); }
-  hot?.addEventListener('mouseenter', openFly);
-  hot?.addEventListener('mouseleave', scheduleClose);
-  fly?.addEventListener('mouseenter', ()=> clearTimeout(hideTimer));
-  fly?.addEventListener('mouseleave', scheduleClose);
+  function scheduleClose(){ clearTimeout(hideTimer); hideTimer=setTimeout(()=>fly.classList.remove('open'),HIDE_DELAY); }
+  hot?.addEventListener('mouseenter', openFly); hot?.addEventListener('mouseleave', scheduleClose); fly?.addEventListener('mouseenter',()=>clearTimeout(hideTimer)); fly?.addEventListener('mouseleave',scheduleClose);
 
-  /* ====== data source ====== */
+  /* Data source */
   const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
   const TAB_NAME ="最新情報";
   const CSV_URL  =`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
   const S = s => String(s ?? '').trim();
 
-  /* ====== helpers ====== */
-  function parseCSV(t){
-    const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g;
-    let m,row=[]; t=t.replace(/\r\n?/g,"\n");
-    for(let i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break;
-      let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
-      row.push(cell); i=re.lastIndex;
-      if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; }
-    }
-    return rows.filter(r=>r.length && r.some(c=>S(c)!==""));
-  }
-  function indexByName(header){
-    const map={}; header.forEach((h,i)=>map[S(h)]=i);
-    const find=n=>map[n]??null;
-    const findF=re=>{ for(let i=0;i<header.length;i++){ if(re.test(S(header[i]))) return i; } return null; };
-    return {
-      date:find("出荷日") ?? findF(/日付|Date/),
-      cust:find("顧客名") ?? findF(/客先|Customer/),
-      draw:find("図番")   ?? findF(/Drawing|図面/),
-      machine:find("機種")?? findF(/機種名|Machine/),
-      item:find("商品名") ?? findF(/品名|Item/),
-      qty:find("数量")    ?? find("Qty"),
-      to:find("送り先")   ?? findF(/納品先|送付先/),
-
-      status_done:find("製品状況") ?? findF(/(製品|納品).*(状況|状態)/),
-      status_ts:   find("製品状況更新日時") ?? findF(/(更新).*(日時|日付)|updated/i),
-      status_user: find("更新者") ?? findF(/(担当|記入者|by)/i),
-      status_flag: find("Status") ?? findF(/status|至急/i),
-    };
-  }
-  const v = (row,idx)=> idx==null ? "" : (row[idx]??"");
+  /* Helpers */
+  function parseCSV(t){ const rows=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g; let m,row=[]; t=t.replace(/\r\n?/g,"\n"); for(let i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break; let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"'); row.push(cell); i=re.lastIndex; if(m[2]==="\n"||m[2]===""){ rows.push(row); row=[]; } } return rows.filter(r=>r.length && r.some(c=>S(c)!=="")); }
+  function indexByName(header){ const map={}; header.forEach((h,i)=>map[S(h)]=i); const f=n=>map[n]??null; const fr=re=>{ for(let i=0;i<header.length;i++){ if(re.test(S(header[i]))) return i; } return null; };
+    return { date:f("出荷日")??fr(/日付|Date/), cust:f("顧客名")??fr(/客先|Customer/), draw:f("図番")??fr(/Drawing|図面/), machine:f("機種")??fr(/機種名|Machine/), item:f("商品名")??fr(/品名|Item/), qty:f("数量")??f("Qty"), to:f("送り先")??fr(/納品先|送付先/),
+      status_done:f("製品状況")??fr(/(製品|納品).*(状況|状態)/), status_ts:f("製品状況更新日時")??fr(/(更新).*(日時|日付)|updated/i), status_user:f("更新者")??fr(/(担当|記入者|by)/i), status_flag:f("Status")??fr(/status|至急/i) }; }
+  const v=(row,idx)=> idx==null? "" : (row[idx]??"");
   function parseJPDate(str){ const d=new Date(String(str??"").replace(/-/g,'/')); return isNaN(d)?null:d; }
   function sameYMD(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
   function toInputDate(d){const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`}
   function fmtYYMMDD(ts){ if(!ts) return ''; const d=new Date(ts); if(isNaN(d)) return ''; const z=n=>String(n).padStart(2,'0'); return `${String(d.getFullYear()).slice(-2)}/${z(d.getMonth()+1)}/${z(d.getDate())}`; }
   function isUrgent(val){ const t=S(val).toLowerCase(); return t==="至急"||t==="urgent"||t==="緊急"||t==="1"||t==="true" }
 
-  function mapStatus(val){
-    const raw=S(val), t=raw.replace(/\s/g,'');
+  function mapStatus(val){ const raw=S(val), t=raw.replace(/\s/g,'');
     if(!t) return {label:'未設定', cls:'tag-not'};
     if(t==='レーザ加工') return {label:'レーザ加工',cls:'tag-assem'};
     if(t==='板金加工'||t==='曲げ加工') return {label:'板金加工',cls:'tag-assem'};
@@ -386,71 +283,44 @@
     return {label:raw,cls:'tag-not'};
   }
 
-  function makeComparator(idx){
-    const rank={'検査中':1,'組立中':2,'レーザ加工':3,'板金加工':3,'外注':3,'出荷準備済':4,'加工済':5,'組立完了':6,'検査済':7,'未設定':99};
-    return (a,b)=>{
-      const au=idx.status_flag!=null&&isUrgent(v(a,idx.status_flag));
-      const bu=idx.status_flag!=null&&isUrgent(v(b,idx.status_flag));
-      if(au!==bu) return au?-1:1;
-      const sa=idx.status_done!=null?mapStatus(v(a,idx.status_done)).label:null;
-      const sb=idx.status_done!=null?mapStatus(v(b,idx.status_done)).label:null;
+  function makeComparator(idx){ const rank={'検査中':1,'組立中':2,'レーザ加工':3,'板金加工':3,'外注':3,'出荷準備済':4,'加工済':5,'組立完了':6,'検査済':7,'未設定':99};
+    return (a,b)=>{ const au=idx.status_flag!=null&&isUrgent(v(a,idx.status_flag)); const bu=idx.status_flag!=null&&isUrgent(v(b,idx.status_flag)); if(au!==bu) return au?-1:1;
+      const sa=idx.status_done!=null?mapStatus(v(a,idx.status_done)).label:null; const sb=idx.status_done!=null?mapStatus(v(b,idx.status_done)).label:null;
       if((rank[sa]??99)!==(rank[sb]??99)) return (rank[sa]??99)-(rank[sb]??99);
-      const da=idx.date!=null?parseJPDate(v(a,idx.date)):null;
-      const db=idx.date!=null?parseJPDate(v(b,idx.date)):null;
-      return (db?db.getTime():0)-(da?da.getTime():0);
-    };
+      const da=idx.date!=null?parseJPDate(v(a,idx.date)):null; const db=idx.date!=null?parseJPDate(v(b,idx.date)):null; return (db?db.getTime():0)-(da?da.getTime():0); }; }
+
+  function buildHead(_, headEl){ const ths=['','出荷日','顧客名','図番','機種','商品名','数量','送り先']; headEl.innerHTML=ths.map((h,i)=> i===0?`<th class="gutter-th">${h}</th>`:`<th>${h}</th>`).join(''); }
+  function gutterCard(st,ts,user){ return `<div class="status-card"><span class="status-badge ${st.cls}">${st.label}</span><div class="status-grid"><div class="status-label">更新日</div><div class="status-value">${ts||'—'}</div><div class="status-label">更新者</div><div class="status-value">${user||'—'}</div></div></div>`; }
+
+  function dateCellHTML(urgent,dateText){
+    const u = urgent? `<span class="urgent">⚠ 至急</span>` : '';
+    const d = dateText? `<span class="chip">${dateText}</span>` : '';
+    return `<div class="date-stack">${u}${d}</div>`;
   }
 
-  function buildHead(header, headEl){
-    const ths = ['','出荷日','顧客名','図番','機種','商品名','数量','送り先'];
-    headEl.innerHTML = ths.map((h,i)=> i===0 ? `<th class="gutter-th">${h}</th>` : `<th>${h}</th>`).join('');
-  }
-  function gutterCard(st, ts, user){
-    return `
-      <div class="status-card">
-        <span class="status-badge ${st.cls}">${st.label}</span>
-        <div class="status-grid">
-          <div class="status-label">更新日</div><div class="status-value">${ts||'—'}</div>
-          <div class="status-label">更新者</div><div class="status-value">${user||'—'}</div>
-        </div>
-      </div>`;
-  }
   function buildRow(r, idx){
     const urgent = idx.status_flag!=null && isUrgent(v(r,idx.status_flag));
     const st = idx.status_done!=null ? mapStatus(v(r, idx.status_done)) : {label:'未設定',cls:'tag-not'};
     const ts = fmtYYMMDD(v(r, idx.status_ts));
     const user = S(v(r, idx.status_user)) || '—';
-
     const dateD = idx.date!=null ? parseJPDate(v(r,idx.date)) : null;
     const dateText = dateD ? toInputDate(dateD) : '';
-
     const gutter = `<td class="gutter-td">${gutterCard(st, ts, user)}</td>`;
-    const dateCell = `<td><div class="cell cell-date">${urgent?`<span class="urgent">⚠ 至急</span>`:''}${dateText?`<span class="chip">${dateText}</span>`:''}</div></td>`;
+    const dateCell = `<td>${dateCellHTML(urgent,dateText)}</td>`;
     const cust = `<td><div class="cell">${S(v(r,idx.cust))}</div></td>`;
     const draw = `<td><div class="cell">${S(v(r,idx.draw))}</div></td>`;
     const machine = `<td><div class="cell">${S(v(r,idx.machine))}</div></td>`;
     const item = `<td><div class="cell">${S(v(r,idx.item))}</div></td>`;
     const qty = `<td><div class="cell">${S(v(r,idx.qty))}</div></td>`;
     const to = `<td><div class="cell">${S(v(r,idx.to))}</div></td>`;
-
     return `<tr>${gutter}${dateCell}${cust}${draw}${machine}${item}${qty}${to}</tr>`;
   }
-  function renderRows(header, idx, rows, tbodyEl, headEl){
-    buildHead(header, headEl);
-    tbodyEl.innerHTML = rows.map(r => buildRow(r, idx)).join('');
-  }
 
-  /* ====== load & UI ====== */
-  let cache = {header:[], rows:[], idx:null, cmp:null};
-  let timer=null, intervalMs=60000;
+  function renderRows(header, idx, rows, tbodyEl, headEl){ buildHead(header, headEl); tbodyEl.innerHTML=rows.map(r=>buildRow(r,idx)).join(''); }
 
-  function setLive(ms){
-    intervalMs = ms;
-    clearInterval(timer);
-    timer = setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs);
-    document.getElementById('intervalInfo').textContent = `${Math.round(intervalMs/1000)}s`;
-    document.getElementById('btnLive').textContent = intervalMs<=5000 ? 'Live: On' : 'Live: Off';
-  }
+  /* load & UI */
+  let cache={header:[],rows:[],idx:null,cmp:null}; let timer=null, intervalMs=60000;
+  function setLive(ms){ intervalMs=ms; clearInterval(timer); timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, intervalMs); document.getElementById('intervalInfo').textContent=`${Math.round(intervalMs/1000)}s`; document.getElementById('btnLive').textContent=intervalMs<=5000?'Live: On':'Live: Off'; }
 
   async function load(){
     const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
@@ -459,27 +329,26 @@
       const res=await fetch(CSV_URL+'&_ts='+Date.now(),{cache:'no-store'});
       const text=await res.text(); const data=parseCSV(text); if(!data.length) throw new Error('CSV empty');
       const header=data[0], rowsRaw=data.slice(1); const idx=indexByName(header); const cmp=makeComparator(idx);
-      const rows = [...rowsRaw].sort(cmp); cache={header, rows, idx, cmp};
+      const rows=[...rowsRaw].sort(cmp); cache={header,rows,idx,cmp};
 
-      // today section
-      const today = new Date();
+      /* banner urgent (count semua baris) */
+      const urgentCount = rows.reduce((n,r)=> n + (idx.status_flag!=null && isUrgent(v(r,idx.status_flag)) ? 1 : 0), 0);
+      const banner=document.getElementById('urgentBanner');
+      if(urgentCount>0){ banner.style.display='block'; banner.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; } else { banner.style.display='none'; }
+
+      /* today */
+      const today=new Date();
       if(idx.date!=null){
-        const todays = rows.filter(r=>{const d=parseJPDate(v(r,idx.date)); return d&&sameYMD(d,today)});
-        const showToday = todays.length>0;
-        document.getElementById('todaySection').style.display = showToday ? '' : 'none';
-        if(showToday){
-          document.getElementById('todayCount').textContent = todays.length;
-          renderRows(header, idx, todays, document.getElementById('todayBody'), document.getElementById('todayHead'));
-        }
+        const todays=rows.filter(r=>{const d=parseJPDate(v(r,idx.date)); return d&&sameYMD(d,today)});
+        const vis=todays.length>0; document.getElementById('todaySection').style.display=vis?'':'none';
+        if(vis){ document.getElementById('todayCount').textContent=todays.length; renderRows(header,idx,todays,document.getElementById('todayBody'),document.getElementById('todayHead')); }
       }
 
-      // main table
-      renderRows(header, idx, rows, document.getElementById('shipBody'), document.getElementById('shipHead'));
-
-      document.getElementById('shipHint').textContent = `データ元: ${TAB_NAME}（${rows.length} 行）`;
-      document.getElementById('lastUpdated').textContent = 'Last update: ' + new Date().toLocaleString();
-
-      document.getElementById('filterDate').value = toInputDate(new Date());
+      /* table utama */
+      renderRows(header,idx,rows,document.getElementById('shipBody'),document.getElementById('shipHead'));
+      document.getElementById('shipHint').textContent=`データ元: ${TAB_NAME}（${rows.length} 行）`;
+      document.getElementById('lastUpdated').textContent='Last update: '+new Date().toLocaleString();
+      document.getElementById('filterDate').value=toInputDate(new Date());
     }catch(e){
       console.error(e);
       document.getElementById('shipHint').textContent='読み込みに失敗しました。シート名/公開設定/列名をご確認ください。';
@@ -488,24 +357,14 @@
     }
   }
 
-  function applyFilter(dateStr){
-    const {header,rows,idx,cmp}=cache; let view=rows;
-    if(idx.date!=null && dateStr){
-      const target=new Date(dateStr+'T00:00:00');
-      view=rows.filter(r=>{const d=parseJPDate(v(r,idx.date)); return d&&sameYMD(d,target)}).sort(cmp);
-    }
-    renderRows(header, idx, view, document.getElementById('shipBody'), document.getElementById('shipHead'));
+  function applyFilter(dateStr){ const {header,rows,idx,cmp}=cache; let view=rows;
+    if(idx.date!=null && dateStr){ const target=new Date(dateStr+'T00:00:00'); view=rows.filter(r=>{const d=parseJPDate(v(r,idx.date)); return d&&sameYMD(d,target)}).sort(cmp); }
+    renderRows(header,idx,view,document.getElementById('shipBody'),document.getElementById('shipHead'));
   }
 
-  // export
   function exportExcel(){const t=document.getElementById("shipTable"); const wb=XLSX.utils.table_to_book(t,{sheet:"出荷状況"}); XLSX.writeFile(wb,"出荷状況.xlsx");}
-  function exportPDF(){const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"});
-    doc.setFontSize(14); doc.text("出荷状況一覧",40,40);
-    doc.autoTable({html:"#shipTable", startY:60, styles:{fontSize:9, cellPadding:4, halign:"center", valign:"middle"}, headStyles:{fillColor:[238,242,247]}});
-    doc.save("出荷状況.pdf");
-  }
+  function exportPDF(){const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"}); doc.setFontSize(14); doc.text("出荷状況一覧",40,40); doc.autoTable({html:"#shipTable", startY:60, styles:{fontSize:9, cellPadding:4, halign:"center", valign:"middle"}, headStyles:{fillColor:[238,242,247]}}); doc.save("出荷状況.pdf"); }
 
-  // events
   document.getElementById('btnRefresh').addEventListener('click', load);
   document.getElementById('btnLive').addEventListener('click', ()=>{ setLive(intervalMs<=5000?60000:5000); load(); });
   document.getElementById('filterDate').addEventListener('change', e=>applyFilter(e.target.value||null));
@@ -514,12 +373,7 @@
   document.getElementById('btnExcel').addEventListener('click', exportExcel);
   document.getElementById('btnPDF').addEventListener('click', exportPDF);
 
-  // init
-  window.addEventListener('DOMContentLoaded', ()=>{
-    setAdmin(isAdmin());     // tampilkan grup admin bila ON
-    setLive(60000);
-    load();
-  });
+  window.addEventListener('DOMContentLoaded', ()=>{ setAdmin(isAdmin()); setLive(60000); load(); });
 </script>
 </body>
 </html>
