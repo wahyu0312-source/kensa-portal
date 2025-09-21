@@ -53,7 +53,7 @@
   /* Panels / table */
   .panel{background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:10px}
   .panel + .panel{margin-top:18px}
-  h2{margin:8px 0 12px}
+  h2{margin:8px 0 12px;display:flex;align-items:center;gap:10px}
   .thead{display:grid;grid-template-columns:300px 150px 1fr 210px 80px 1fr;gap:10px;padding:10px 12px;color:#475569}
   .row{display:grid;grid-template-columns:300px 150px 1fr 210px 80px 1fr;gap:10px;align-items:center;padding:14px 12px;border-top:1px solid var(--border)}
   .row:first-child{border-top:0}
@@ -131,14 +131,16 @@
   <main>
     <div id="urgentBanner" class="urgent-banner" style="display:none"></div>
 
+    <!-- TODAY ONLY -->
     <section class="panel" id="todaySec" style="display:none">
-      <h2>本日出荷</h2>
+      <h2>本日出荷 <span id="todayCount" class="badge">0件</span></h2>
       <div class="thead"><div>状況</div><div>出荷日</div><div>顧客名</div><div>図番／機種</div><div>数量</div><div>送り先／注番</div></div>
       <div id="todayBody"></div>
     </section>
 
+    <!-- ALL EXCEPT TODAY -->
     <section class="panel">
-      <h2>全件一覧</h2>
+      <h2>全件一覧（本日以外） <span id="allCount" class="badge">0件</span></h2>
       <div class="thead"><div>状況</div><div>出荷日</div><div>顧客名</div><div>図番／機種</div><div>数量</div><div>送り先／注番</div></div>
       <div id="allBody"></div>
     </section>
@@ -222,7 +224,7 @@ function fmtTS(d){ if(!d) return ''; const z=n=>String(n).padStart(2,'0'); retur
 function fmtDate(d){ if(!d) return ''; const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}` }
 function sameYMD(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
 
-/* ===== Status dictionary (ikon + class + regex) ===== */
+/* ===== Status dictionary ===== */
 const STATUS = [
   {key:'shipok',   label:'出荷済',     icon:'📦', cls:'shipok',  rx:/出荷済/},
   {key:'prep',     label:'出荷準備済', icon:'🚚', cls:'prep',    rx:/出荷準備済/},
@@ -297,17 +299,32 @@ function render(){
   if(urgentCount>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; }
   else{ ub.style.display='none'; ub.textContent=''; }
 
-  // today
+  // Split today vs others (after filter)
   const today=new Date();
-  const rowsTodayBase = idx.date!=null ? rows.filter(r=>{const d=parseJPDate(valAt(r,idx.date)); return d && sameYMD(d,today);}) : [];
-  const rowsToday = applyFilter(rowsTodayBase, idx);
-  const sec=document.getElementById('todaySec');
-  if(rowsToday.length){ sec.style.display=''; document.getElementById('todayBody').innerHTML=rowsToday.map(r=>makeRow(r,idx)).join(''); }
-  else{ sec.style.display='none'; }
 
-  // all
-  const rowsAll = applyFilter(rows, idx);
-  document.getElementById('allBody').innerHTML = rowsAll.map(r=>makeRow(r,idx)).join('');
+  // Filtered rows first (respect status filter)
+  const rowsFiltered = applyFilter(rows, idx);
+
+  // Today
+  const rowsToday = idx.date!=null ? rowsFiltered.filter(r=>{
+    const d=parseJPDate(valAt(r,idx.date)); return d && sameYMD(d,today);
+  }) : [];
+  const secToday=document.getElementById('todaySec');
+  if(rowsToday.length){
+    secToday.style.display='';
+    document.getElementById('todayBody').innerHTML = rowsToday.map(r=>makeRow(r,idx)).join('');
+  }else{
+    secToday.style.display='none';
+    document.getElementById('todayBody').innerHTML='';
+  }
+  document.getElementById('todayCount').textContent = `${rowsToday.length}件`;
+
+  // Not today
+  const rowsNotToday = idx.date!=null ? rowsFiltered.filter(r=>{
+    const d=parseJPDate(valAt(r,idx.date)); return !(d && sameYMD(d,today));
+  }) : rowsFiltered.slice();
+  document.getElementById('allBody').innerHTML = rowsNotToday.map(r=>makeRow(r,idx)).join('');
+  document.getElementById('allCount').textContent = `${rowsNotToday.length}件`;
 }
 
 function renderChips(counts){
