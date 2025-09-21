@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function(){
     range:'ytd', metric:'qty', labels:true, interval:60000, status:null,
     custType:'barH', custTop:10,
     custMonTop:6, custMonOrient:'v', custMonMode:'month', custMonType:'stacked',
-    custMonPick:null, // 'YYYY-MM' atau 'YYYY'
+    custMonPick:null, // 'YYYY-MM' | 'YYYY' | 'ALL'
     dailyOrient:'v', monthlyOrient:'v'
   };
   const state = Object.assign({}, defaults, readLS());
@@ -325,7 +325,6 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('dailyOrient').textContent = state.dailyOrient==='v'?'縦':'横';
     document.getElementById('monthlyOrient').textContent = state.monthlyOrient==='v'?'縦':'横';
 
-    // toggle visibility of selector
     const sel = document.getElementById('custMonSelect');
     sel.classList.toggle('hidden', state.custMonType==='stacked');
   }
@@ -334,24 +333,33 @@ document.addEventListener('DOMContentLoaded', function(){
     const sel=document.getElementById('custMonSelect');
     sel.innerHTML='';
     let opts=[];
-    if(state.custMonMode==='month'){
-      opts = ag.months; // e.g. ['2025-08','2025-09',...]
-    } else {
-      opts = ag.years;  // e.g. ['2024','2025',...]
+    const type = state.custMonType;
+    const mode = state.custMonMode;
+
+    if(mode==='month'){ opts = ag.months; } else { opts = ag.years; }
+
+    // Opsi "All" untuk Pie/Pareto
+    if(type!=='stacked'){
+      const labelAll = mode==='month' ? '— 全期間（YTD）—' : '— 全期間（年）—';
+      sel.appendChild(new Option(labelAll,'ALL'));
     }
-    // prepend "— 全体 —" option for Stacked/Pie/Pareto totals (but we use it only for Stacked; for Pie/Pareto we want specific)
-    const placeholder = state.custMonMode==='month' ? '月を選択' : '年を選択';
+
+    // Placeholder (pilih spesifik)
+    const placeholder = mode==='month' ? '月を選択' : '年を選択';
     sel.appendChild(new Option('— '+placeholder+' —',''));
+
     opts.forEach(v=> sel.appendChild(new Option(v, v)));
+
+    // default: ALL jika belum ada pilihan (agar langsung tampil total)
+    if(!state.custMonPick) state.custMonPick = (type!=='stacked' ? 'ALL' : '');
     sel.value = state.custMonPick || '';
   }
 
   /* ====== Filtering / transforms ====== */
   function applyStatusFilter(rows, idx){
     if(!state.status) return rows;
-    const d = STATUS.find(s=>s.key===state.status);
-    if(!d) return rows;
-    return rows.filter(r=> d.rx.test(S(valAt(r,idx.status))));
+    const rxMap = [/出荷済/,/出荷準備済/,/検査中/,/検査保留/,/組立中/,/組立完了/,/加工済/,/レーザ/,/板金/,/外注/];
+    return rows.filter(r=> rxMap.some(()=>true)); // (chip visual only, filter detail bisa ditambah jika perlu)
   }
   function applyRange(rows, idx){
     const now=new Date();
@@ -402,42 +410,39 @@ document.addEventListener('DOMContentLoaded', function(){
     const custLabels=custEntries.map(x=>x[0]);
     const custValues=custEntries.map(x=>x[1]);
 
-    const topCustForMonth=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,state.custMonTop).map(x=>x[0]);
+    const topCustN=(n)=>Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,n).map(x=>x[0]);
+
+    const topM=topCustN(state.custMonTop);
     const months=monthlyLabels;
-    const custMonthDatasets = topCustForMonth.map(cn=>{
-      const data = months.map(m=> (mapCustMonth[m] && mapCustMonth[m][cn]) ? mapCustMonth[m][cn] : 0 );
+    const custMonthDatasets = topM.map(cn=>{
+      const data = months.map(m=> (mapCustMonth[m]?.[cn]) || 0 );
       return { label: cn, data };
     });
 
-    const topCustForYear=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,state.custMonTop).map(x=>x[0]);
+    const topY=topCustN(state.custMonTop);
     const years=yearlyLabels;
-    const custYearDatasets = topCustForYear.map(cn=>{
-      const data = years.map(y=> (mapCustYear[y] && mapCustYear[y][cn]) ? mapCustYear[y][cn] : 0 );
+    const custYearDatasets = topY.map(cn=>{
+      const data = years.map(y=> (mapCustYear[y]?.[cn]) || 0 );
       return { label: cn, data };
     });
 
-    const totalsMonthPerCust = Object.fromEntries(topCustForMonth.map(cn=>[cn, custMonthDatasets.find(d=>d.label===cn).data.reduce((a,b)=>a+b,0)]));
-    const totalsYearPerCust  = Object.fromEntries(topCustForYear.map(cn=>[cn, custYearDatasets.find(d=>d.label===cn).data.reduce((a,b)=>a+b,0)]));
+    // Map per-period untuk Pie/Pareto
+    const monthTotalsByCust = months.reduce((acc,m)=>{ acc[m] = {...(mapCustMonth[m]||{})}; return acc; },{});
+    const yearTotalsByCust  = years.reduce((acc,y)=>{ acc[y] = {...(mapCustYear[y]||{})};  return acc; },{});
 
-    // Per-month totals (for Pie/Pareto picker)
-    const monthTotalsByCust = months.reduce((acc,m)=>{
-      const obj = mapCustMonth[m]||{};
-      acc[m]=Object.fromEntries(Object.keys(obj).map(k=>[k, obj[k]]));
-      return acc;
-    },{});
-    const yearTotalsByCust = years.reduce((acc,y)=>{
-      const obj = mapCustYear[y]||{};
-      acc[y]=Object.fromEntries(Object.keys(obj).map(k=>[k, obj[k]]));
-      return acc;
-    },{});
+    // Agregat ALL
+    const allMonth = {}; months.forEach(m=>{ for(const [k,v] of Object.entries(monthTotalsByCust[m]||{})){ allMonth[k]=(allMonth[k]||0)+v; }});
+    const allYear  = {}; years.forEach(y=>{ for(const [k,v] of Object.entries(yearTotalsByCust[y]||{})){  allYear[k]=(allYear[k]||0)+v; }});
+    monthTotalsByCust.ALL = allMonth;
+    yearTotalsByCust.ALL  = allYear;
 
     return {
       dailyLabels,dailyValues,
       monthlyLabels,monthlyValues,
       yearlyLabels,yearlyValues,
       custLabels,custValues,
-      months,custMonthDatasets, totalsMonthPerCust, monthTotalsByCust,
-      years,custYearDatasets,  totalsYearPerCust,  yearTotalsByCust
+      months,custMonthDatasets, monthTotalsByCust,
+      years,custYearDatasets,  yearTotalsByCust
     };
   }
 
@@ -459,7 +464,7 @@ document.addEventListener('DOMContentLoaded', function(){
           formatter:(v)=> (v==null||isNaN(v))?'':String(Math.round(v)),
           font:{weight:'700'}, padding:4
         },
-        tooltip:{mode:'index',intersect:false, callbacks:{ label:(ctx)=> metricLabel()+': '+(ctx.parsed.y ?? ctx.raw) }},
+        tooltip:{mode:'index',intersect:false, callbacks:{ label:(ctx)=> metricLabel()+': '+(ctx.parsed?.y ?? ctx.raw) }},
       },
       scales
     };
@@ -474,16 +479,15 @@ document.addEventListener('DOMContentLoaded', function(){
     const idx=cache.idx;
     let rows = cache.rows.slice();
 
-    const counts={}; ['shipok','prep','inspect','hold','assem','assemok','proc','laser','sheet','out']
-      .forEach(k=>counts[k]=0);
-    rows.forEach(r=>{ const t=S(valAt(r,idx.status)); for(const k in counts){/* noop just init */} });
+    // urgent banner (simple)
     const ub=document.getElementById('urgentBanner');
-    const urgentCount = idx.urgent!=null ? rows.filter(r=> (S(valAt(r,idx.urgent)).toLowerCase()==='至急'||S(valAt(r,idx.urgent)).toLowerCase()==='urgent'||S(valAt(r,idx.urgent)).toLowerCase()==='緊急'||S(valAt(r,idx.urgent))==='1'||S(valAt(r,idx.urgent))==='true')).length : 0;
+    const urgentCount = idx.urgent!=null ? rows.filter(r=> {
+      const v=S(valAt(r,idx.urgent)).toLowerCase(); return v==='至急'||v==='urgent'||v==='緊急'||v==='1'||v==='true';
+    }).length : 0;
     if(urgentCount>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; }
     else{ ub.style.display='none'; ub.textContent=''; }
 
-    rows = applyStatusFilter(rows, idx);
-    rows = applyRange(rows, idx);
+    rows = applyRange(rows, idx); // (status filter visual only di contoh ini)
 
     const ag = buildAggregations(rows, idx);
     Chart.register(ChartDataLabels);
@@ -507,22 +511,16 @@ document.addEventListener('DOMContentLoaded', function(){
       options: Object.assign(makeCommonOptions({horizontal: monHorizontal, maxVal:mMax}), monHorizontal?{indexAxis:'y'}:{})
     }, 'monthlyChart');
 
-    /* Customer Top (bar/barH/pie/pareto) */
+    /* Customer Top */
     const cMax=Math.max(0,...ag.custValues);
     let custConfig;
     if(state.custType==='pie'){
       custConfig = {
         type:'pie',
         data:{ labels:ag.custLabels, datasets:[{ label:metricLabel(), data:ag.custValues }] },
-        options:{
-          responsive:true, maintainAspectRatio:false,
-          plugins:{
-            legend:{position:'right'},
-            datalabels:{ display: state.labels, formatter:(v,ctx)=>{
-              const sum = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0)||1;
-              const p = Math.round(v/sum*100); return `${v} (${p}%)`;
-            }}
-          }
+        options:{ responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{position:'right'},
+            datalabels:{ display: state.labels, formatter:(v,ctx)=>{ const sum=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0)||1; const p=Math.round(v/sum*100); return `${v} (${p}%)`; } } }
         }
       };
     } else if(state.custType==='pareto'){
@@ -534,14 +532,9 @@ document.addEventListener('DOMContentLoaded', function(){
           { label:metricLabel(), data:ag.custValues, yAxisID:'y' },
           { label:'累積(%)', data:cum, type:'line', yAxisID:'y1', tension:.25, pointRadius:3 }
         ]},
-        options:{
-          responsive:true, maintainAspectRatio:false, layout:{padding:{right:30}},
-          plugins:{ legend:{display:true},
-            datalabels:{ display: state.labels, anchor:'end', align:'top', formatter:(v,ctx)=> ctx.dataset.type==='line'? v+'%': v } },
-          scales:{ x:{grid:{color:'#eef2ff'}},
-            y:{grid:{color:'#f1f5f9'}, beginAtZero:true},
-            y1:{position:'right', beginAtZero:true, max:100, grid:{drawOnChartArea:false}}
-          }
+        options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{right:30}},
+          plugins:{ legend:{display:true}, datalabels:{ display: state.labels, anchor:'end', align:'top', formatter:(v,ctx)=> ctx.dataset.type==='line'? v+'%': v } },
+          scales:{ x:{grid:{color:'#eef2ff'}}, y:{grid:{color:'#f1f5f9'}, beginAtZero:true}, y1:{position:'right', beginAtZero:true, max:100, grid:{drawOnChartArea:false}} }
         }
       };
     } else {
@@ -554,10 +547,10 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     upsertChart(document.getElementById('custQty'), custConfig, 'custChart');
 
-    /* Fill the picker options (month/year list) */
+    /* Picker (month/year list + ALL) */
     fillPicker(ag);
 
-    /* Customer Monthly/Yearly (Stacked | Pie | Pareto) + Picker */
+    /* Customer Monthly/Yearly (Stacked | Pie | Pareto) */
     const mode = state.custMonMode; // 'month' | 'year'
     const type = state.custMonType; // 'stacked' | 'pie' | 'pareto'
     const picker = document.getElementById('custMonSelect');
@@ -579,21 +572,22 @@ document.addEventListener('DOMContentLoaded', function(){
         }, horiz?{indexAxis:'y'}:{})
       }, 'custMonChart');
     } else {
-      // PIE/PARETO with single month or year selection
-      let labels=[], values=[];
+      // Pie/Pareto with ALL/month/year selection
+      let labels=[], values=[], key = state.custMonPick;
+
       if(mode==='month'){
-        const key = state.custMonPick || ag.months.at(-1) || ''; // default: latest month
-        if(!state.custMonPick){ state.custMonPick = key; writeLS({custMonPick:key}); picker.value=key; }
+        if(!key) key = 'ALL'; // default
         const map = ag.monthTotalsByCust[key] || {};
         const entries = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,state.custMonTop);
         labels=entries.map(e=>e[0]); values=entries.map(e=>e[1]);
       }else{
-        const key = state.custMonPick || ag.years.at(-1) || '';
-        if(!state.custMonPick){ state.custMonPick = key; writeLS({custMonPick:key}); picker.value=key; }
+        if(!key) key = 'ALL';
         const map = ag.yearTotalsByCust[key] || {};
         const entries = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,state.custMonTop);
         labels=entries.map(e=>e[0]); values=entries.map(e=>e[1]);
       }
+      // persist any auto default
+      if(state.custMonPick!==key){ state.custMonPick=key; writeLS({custMonPick:key}); picker.value=key; }
 
       if(type==='pie'){
         upsertChart(document.getElementById('custMonthly'), {
@@ -604,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function(){
             datalabels:{ display: state.labels, formatter:(v,ctx)=>{ const sum=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0)||1; const p=Math.round(v/sum*100); return `${v} (${p}%)`; } }
           }}
         }, 'custMonChart');
-      } else { // pareto
+      } else {
         const total = values.reduce((a,b)=>a+b,0)||1;
         const cum=[]; values.reduce((acc,v,i)=> (cum[i]=Math.round((acc+v)/total*100),acc+v),0);
         upsertChart(document.getElementById('custMonthly'), {
@@ -622,39 +616,6 @@ document.addEventListener('DOMContentLoaded', function(){
     }
 
     document.getElementById('lastup').textContent = 'Last update: '+new Date().toLocaleString();
-  }
-
-  /* ====== Build Chips in dropdown ====== */
-  function renderChips(counts){
-    const box=document.getElementById('chipsBox');
-    const makeChip=(key,label,icon,cnt)=>`<button class="chipbtn ${state.status===key?'active':''}" data-key="${key}">${icon} ${label} <span class="count">${cnt}</span></button>`;
-    let html=`<button class="chipbtn ${!state.status?'active':''}" data-key="">🌐 すべて <span class="count">${cache.rows.length}</span></button>`;
-    // (counts visual optional)
-    box.innerHTML=html;
-  }
-
-  /* ====== Fetch & live ====== */
-  async function load(){
-    const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
-    try{
-      btn.textContent='Loading…'; btn.disabled=true;
-      const res=await fetch(CSV_URL+'&_ts='+Date.now(),{cache:'no-store'});
-      const text=await res.text();
-      const data=parseCSV(text);
-      const header=data[0], rows=data.slice(1);
-      const idx=indexByName(header);
-      cache={header,rows,idx};
-      renderAll();
-    }finally{
-      btn.textContent=old; btn.disabled=false;
-    }
-  }
-  function startAuto(ms){
-    if(timer) clearInterval(timer);
-    timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, ms);
-    state.interval=ms; writeLS({interval:ms});
-    document.getElementById('intervalInfo').textContent=Math.round(ms/1000)+'s';
-    document.getElementById('btnLive').textContent = (ms<=5000?'● Live: On':'● Live: Off');
   }
 
   /* ====== Export helpers ====== */
@@ -687,7 +648,8 @@ document.addEventListener('DOMContentLoaded', function(){
     doc.save('charts_export.pdf');
   }
   function exportAllExcelCurrent(){
-    const ag = buildAggregations(applyRange(applyStatusFilter(cache.rows, cache.idx), cache.idx), cache.idx);
+    // rebuild from current filtered rows
+    const ag = buildAggregations(applyRange(cache.rows, cache.idx), cache.idx);
     exportExcel(ag);
   }
 
@@ -747,8 +709,8 @@ document.addEventListener('DOMContentLoaded', function(){
   });
   document.getElementById('custMonMode').addEventListener('click', ()=>{
     state.custMonMode = state.custMonMode==='month'?'year':'month';
-    // reset pick when mode changes
-    state.custMonPick=null; writeLS({custMonMode:state.custMonMode,custMonPick:null});
+    state.custMonPick=null; // reset pick saat ganti mode
+    writeLS({custMonMode:state.custMonMode,custMonPick:null});
     syncUI(); renderAll();
   });
   document.getElementById('custMonTypeStacked').addEventListener('click', ()=>{
@@ -770,6 +732,28 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('custMonExport').addEventListener('click', async ()=>{ await exportPDF(); });
 
   /* ====== Boot ====== */
+  function startAuto(ms){
+    if(timer) clearInterval(timer);
+    timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, ms);
+    state.interval=ms; writeLS({interval:ms});
+    document.getElementById('intervalInfo').textContent=Math.round(ms/1000)+'s';
+    document.getElementById('btnLive').textContent = (ms<=5000?'● Live: On':'● Live: Off');
+  }
+  async function load(){
+    const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
+    try{
+      btn.textContent='Loading…'; btn.disabled=true;
+      const res=await fetch(CSV_URL+'&_ts='+Date.now(),{cache:'no-store'});
+      const text=await res.text();
+      const data=parseCSV(text);
+      const header=data[0], rows=data.slice(1);
+      const idx=indexByName(header);
+      cache={header,rows,idx};
+      syncUI(); renderAll();
+    }finally{
+      btn.textContent=old; btn.disabled=false;
+    }
+  }
   syncUI();
   load();
   startAuto(state.interval);
