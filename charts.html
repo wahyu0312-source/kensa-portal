@@ -1,74 +1,121 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>品質管理生産技術 – チャート</title>
 <style>
-  :root{--bg:#f6f7fb;--panel:#fff;--ink:#0f172a;--muted:#64748b;--border:#e5e7eb;--ring:#c7d2fe;--accent:#2563eb;--shadow:0 15px 40px rgba(15,23,42,.08)}
-  *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP","Yu Gothic",sans-serif;background:var(--bg);color:var(--ink)}
+  :root{
+    --bg:#f6f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --border:#e5e7eb; --ring:#c7d2fe;
+    --accent:#2563eb; --radius-xl:20px; --shadow:0 15px 40px rgba(15,23,42,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP","Yu Gothic",sans-serif;background:var(--bg);color:var(--ink)}
+  a{text-decoration:none;color:inherit}
+
   .app{display:grid;grid-template-rows:64px 1fr;min-height:100vh}
   header{position:sticky;top:0;z-index:60;background:#ffffffc7;backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
   .header-wrap{height:64px;max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px}
-  .brand{display:flex;align-items:center;gap:10px}.brand img{height:36px}.ttl{font-weight:800}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{height:36px}
+  .ttl{font-weight:800}
   .btn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
   .badge{height:28px;padding:0 10px;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;background:#f1f5f9;border:1px solid var(--border);border-radius:999px;color:#0f172a}
   .burger{display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
   main{max-width:1400px;margin:0 auto;padding:22px 20px 130px}
+
+  /* Sidebar hover */
   .edge-hotspot{position:fixed;left:0;top:64px;width:12px;height:calc(100vh - 64px);z-index:70}
   .hover-side{position:fixed;left:0;top:64px;height:calc(100vh - 64px);width:260px;padding:14px 12px;overflow:auto;background:#fff;border-right:1px solid var(--border);box-shadow:var(--shadow);transform:translateX(-100%);transition:transform .22s ease;z-index:71}
-  .hover-side.open{transform:translateX(0)} .navlist{display:grid;gap:4px} .slink{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px}
+  .hover-side.open{transform:translateX(0)}
+  .navlist{display:grid;gap:4px}
+  .slink{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px}
   .slink:hover{background:#f1f5ff}
-  .drawer{position:fixed;inset:0;z-index:80;display:none}.drawer.open{display:block}
+
+  /* Drawer */
+  .drawer{position:fixed;inset:0;z-index:80;display:none}
+  .drawer.open{display:block}
   .drawer .backdrop{position:absolute;inset:0;background:#0006}
   .drawer .panel{position:absolute;top:0;left:0;height:100%;width:min(86%,320px);background:#fff;border-right:1px solid var(--border);box-shadow:0 30px 60px rgba(15,23,42,.10);padding:14px 12px;overflow:auto;transform:translateX(-100%);transition:transform .25s ease}
-  .drawer.open .panel{transform:translateX(0)} .drawer .close{position:absolute;right:10px;top:10px;border:0;background:#f1f5f9;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .drawer.open .panel{transform:translateX(0)}
+  .drawer .close{position:absolute;right:10px;top:10px;border:0;background:#f1f5f9;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer}
+
+  /* Banner */
   .urgent-banner{margin:12px 0 6px;background:#fee2e2;border:1px solid #fecaca;color:#991b1b;padding:12px 14px;border-radius:12px;text-align:center;font-weight:800;display:none}
-  .error-banner{margin:10px 0;padding:10px 12px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;display:none}
+
+  /* Panel & grid */
   .panel{background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:14px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px} @media (max-width:1000px){.grid{grid-template-columns:1fr}}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:1000px){ .grid{grid-template-columns:1fr} }
+
+  /* Filter bar */
   .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 14px}
   .chipbtn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:#f8fafc;cursor:pointer}
-  .chipbtn.active{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+  .chipbtn.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
   .toggle{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;background:#fff}
   .toggle button{padding:8px 12px;border:0;background:transparent;cursor:pointer}
   .toggle button.active{background:#eef2ff;box-shadow:inset 0 0 0 2px #c7d2fe;font-weight:700}
   .badge.muted{opacity:.75}
-  .cwrap{height:320px;position:relative} .cwrap.tall{height:380px}
-  .loading{position:absolute;inset:0;display:grid;place-items:center;color:#64748b;font-weight:700}
+
+  /* Canvas */
+  .cwrap{height:320px}
+  .cwrap.tall{height:380px}
+
+  /* Dropdown status (header) */
+  .dropdown{position:relative}
+  .drop-btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
+  .drop-menu{position:absolute;top:42px;left:0;min-width:280px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:10px;display:none;z-index:200}
+  .dropdown.open .drop-menu{display:block}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+
+  /* Per-chart toolbar */
   .chartbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:2px 0 10px}
   .chartbar .btn,.fab .btn{height:30px;padding:0 10px;border-radius:9px}
+
+  /* Floating controls */
   .fab{position:fixed;right:16px;bottom:16px;z-index:120;display:grid;gap:8px;justify-items:end}
   .fab .card{background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:8px 10px;display:flex;align-items:center;gap:8px}
   .fab .hint{font-size:12px;color:#475569}
-  @media (max-width:900px){.burger{display:inline-flex}.edge-hotspot,.hover-side{display:none}}
+
+  @media (max-width:900px){
+    .burger{display:inline-flex}
+    .edge-hotspot,.hover-side{display:none}
+  }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+
+<!-- Chart.js + datalabels -->
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<!-- Export libs -->
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 <div class="app">
+  <!-- HEADER -->
   <header>
     <div class="header-wrap">
       <button id="btnBurger" class="burger" aria-label="メニュー">☰</button>
-      <div class="brand"><img src="tsh.png" alt="" onerror="this.style.display='none'"><div class="ttl"><strong>品質管理生産技術</strong></div></div>
-      <nav style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="brand">
+        <img src="tsh.png" alt="TSH" onerror="this.style.display='none'">
+        <div class="ttl"><strong>品質管理生産技術</strong></div>
+      </div>
+      <nav class="top-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <div class="dropdown" id="statusDropdown">
-          <button class="btn drop-btn" type="button">🔎 ステータス フィルター</button>
-          <div class="drop-menu"><div class="chips" id="chipsBox"></div>
-            <div style="margin-top:10px;text-align:right"><span id="clearFilter" style="color:#2563eb;cursor:pointer">すべて表示</span></div>
+          <button class="drop-btn" type="button">🔎 ステータス フィルター</button>
+          <div class="drop-menu">
+            <div class="chips" id="chipsBox"></div>
+            <div style="margin-top:10px;text-align:right"><span class="clearlink" id="clearFilter" style="color:#2563eb;cursor:pointer">すべて表示</span></div>
           </div>
         </div>
       </nav>
     </div>
   </header>
 
+  <!-- MAIN -->
   <main>
     <div id="urgentBanner" class="urgent-banner"></div>
-    <div id="errorBanner" class="error-banner"></div>
 
     <section class="panel">
       <div class="filterbar">
@@ -77,6 +124,7 @@
         <button class="chipbtn" data-range="14d">🗓️ 14日</button>
         <button class="chipbtn" data-range="30d">📅 30日</button>
         <button class="chipbtn" data-range="ytd">🗂️ 年内(YTD)</button>
+
         <span style="width:12px"></span>
         <strong style="color:#475569">メトリクス:</strong>
         <div class="toggle" id="metricToggle" role="tablist" aria-label="metric">
@@ -87,68 +135,86 @@
       </div>
 
       <div class="grid">
+        <!-- Daily -->
         <div class="panel">
-          <div class="chartbar"><strong>出荷（日次・直近）</strong><button id="dailyOrient" class="btn">縦</button><button id="dailyExport" class="btn">Export</button></div>
-          <div class="cwrap"><div class="loading">Loading…</div><canvas id="dailyShip"></canvas></div>
+          <div class="chartbar">
+            <strong>出荷（日次・直近）</strong>
+            <button id="dailyOrient" class="btn" data-orient="v">縦</button>
+            <button id="dailyExport" class="btn">Export</button>
+          </div>
+          <div class="cwrap"><canvas id="dailyShip"></canvas></div>
         </div>
+
+        <!-- Monthly overall -->
         <div class="panel">
-          <div class="chartbar"><strong>出荷（月次・年内）</strong><button id="monthlyOrient" class="btn">縦</button><button id="monthlyExport" class="btn">Export</button></div>
-          <div class="cwrap"><div class="loading">Loading…</div><canvas id="monthlyQty"></canvas></div>
+          <div class="chartbar">
+            <strong>出荷（⽉次・年内）</strong>
+            <button id="monthlyOrient" class="btn" data-orient="v">縦</button>
+            <button id="monthlyExport" class="btn">Export</button>
+          </div>
+          <div class="cwrap"><canvas id="monthlyQty"></canvas></div>
         </div>
+
+        <!-- Customer Top-N -->
         <div class="panel">
           <div class="chartbar">
             <strong id="hCust">顧客別 出荷（Top 10）</strong>
-            <button id="custTypeBar"  class="btn">Bar</button>
-            <button id="custTypeBarH" class="btn">BarH</button>
-            <button id="custTypePie"  class="btn">Pie</button>
-            <button id="custTypePareto" class="btn">Pareto</button>
-            <button id="custTop" class="btn">Top10</button>
+            <button id="custTypeBar"  class="btn" data-type="bar">Bar</button>
+            <button id="custTypeBarH" class="btn" data-type="barH">BarH</button>
+            <button id="custTypePie"  class="btn" data-type="pie">Pie</button>
+            <button id="custTypePareto" class="btn" data-type="pareto">Pareto</button>
+            <button id="custTop" class="btn" data-top="10">Top10</button>
             <button id="custExport" class="btn">Export</button>
           </div>
-          <div class="cwrap tall"><div class="loading">Loading…</div><canvas id="custQty"></canvas></div>
+          <div class="cwrap tall"><canvas id="custQty"></canvas></div>
         </div>
+
+        <!-- Customer Monthly Stacked -->
         <div class="panel">
           <div class="chartbar">
-            <strong>顧客別 月次 出荷（YTD）</strong>
-            <button id="custMonTop" class="btn">Top6</button>
-            <button id="custMonOrient" class="btn">縦</button>
+            <strong>顧客別 ⽉次 出荷（YTD）</strong>
+            <button id="custMonTop" class="btn" data-top="6">Top6</button>
+            <button id="custMonOrient" class="btn" data-orient="v">縦</button>
             <button id="custMonExport" class="btn">Export</button>
           </div>
-          <div class="cwrap tall"><div class="loading">Loading…</div><canvas id="custMonthly"></canvas></div>
+          <div class="cwrap tall"><canvas id="custMonthly"></canvas></div>
         </div>
       </div>
     </section>
   </main>
 
+  <!-- Sidebar hover -->
   <div id="edgeHotspot" class="edge-hotspot" aria-hidden="true"></div>
   <aside id="hoverSide" class="hover-side" aria-label="Pages">
     <h3 style="margin:4px 8px 10px;font-size:12px;letter-spacing:.08em;color:#6b7280;text-transform:uppercase">Pages</h3>
     <div class="navlist">
-      <a class="slink" href="./index.html">🏠 <strong>ホーム</strong></a>
-      <a class="slink" href="./forms.html">📄 <strong>出荷検査成績書</strong></a>
-      <a class="slink" href="./sagyoutejunsho.html">📝 <strong>作業手順書</strong></a>
-      <a class="slink" href="./charts.html">📈 <strong>チャート</strong></a>
-      <a class="slink" href="./quality.html">🔎 <strong>品質情報</strong></a>
-      <a class="slink" href="./claim.html">🧪 <strong>Trial Page</strong></a>
+      <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
+      <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+      <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+      <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+      <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+      <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
     </div>
   </aside>
 
+  <!-- Drawer mobile -->
   <div id="drawer" class="drawer" aria-hidden="true">
     <div class="backdrop" data-close></div>
     <aside class="panel">
       <button class="close" data-close>✕</button>
       <div class="navlist" style="margin-top:30px">
-        <a class="slink" href="./index.html">🏠 <strong>ホーム</strong></a>
-        <a class="slink" href="./forms.html">📄 <strong>出荷検査成績書</strong></a>
-        <a class="slink" href="./sagyoutejunsho.html">📝 <strong>作業手順書</strong></a>
-        <a class="slink" href="./charts.html">📈 <strong>チャート</strong></a>
-        <a class="slink" href="./quality.html">🔎 <strong>品質情報</strong></a>
-        <a class="slink" href="./claim.html">🧪 <strong>Trial Page</strong></a>
+        <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong></a>
+        <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
+        <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+        <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+        <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
+        <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
       </div>
     </aside>
   </div>
 </div>
 
+<!-- Floating controls -->
 <div class="fab" aria-live="polite">
   <div class="card">
     <button id="btnRefresh" class="btn" type="button">⟳ Refresh</button>
@@ -160,49 +226,30 @@
 </div>
 
 <script>
-window.addEventListener('load', () => {
-  /* ===== Persist ===== */
-  const LS='kensaCharts';
-  const get=()=>{ try{return JSON.parse(localStorage.getItem(LS)||'{}')}catch{return{}} };
-  const set=(p)=>localStorage.setItem(LS, JSON.stringify(Object.assign(get(), p)));
+document.addEventListener('DOMContentLoaded', function(){
 
-  /* ===== Sidebar & drawer ===== */
+  /* ====== Persist helpers ====== */
+  const LSKEY='kensaCharts';
+  const readLS=()=>{ try{return JSON.parse(localStorage.getItem(LSKEY)||'{}')}catch{return{}} };
+  const writeLS=(p)=>localStorage.setItem(LSKEY, JSON.stringify(Object.assign(readLS(), p)));
+
+  /* ====== Drawer & hover ====== */
   const drawer=document.getElementById('drawer');
-  document.getElementById('btnBurger')?.addEventListener('click',()=>{drawer.classList.add('open');drawer.setAttribute('aria-hidden','false')});
-  drawer?.addEventListener('click',e=>{if(e.target.hasAttribute('data-close')){drawer.classList.remove('open');drawer.setAttribute('aria-hidden','true')}})
-  const hot=document.getElementById('edgeHotspot'), fly=document.getElementById('hoverSide'); let t=null;
-  const openFly=()=>{clearTimeout(t);fly.classList.add('open')}, closeFly=()=>{clearTimeout(t);t=setTimeout(()=>fly.classList.remove('open'),260)};
-  hot?.addEventListener('mouseenter',openFly); hot?.addEventListener('mouseleave',closeFly);
-  fly?.addEventListener('mouseenter',()=>clearTimeout(t)); fly?.addEventListener('mouseleave',closeFly);
+  const btnBurger=document.getElementById('btnBurger');
+  btnBurger && btnBurger.addEventListener('click', ()=>{drawer.classList.add('open');drawer.setAttribute('aria-hidden','false');});
+  drawer && drawer.addEventListener('click', e=>{ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }});
+  const hot=document.getElementById('edgeHotspot'), fly=document.getElementById('hoverSide'); let hideTimer=null;
+  function openFly(){clearTimeout(hideTimer); fly.classList.add('open')}
+  function scheduleClose(){clearTimeout(hideTimer); hideTimer=setTimeout(()=>fly.classList.remove('open'), 280)}
+  hot && hot.addEventListener('mouseenter', openFly); hot && hot.addEventListener('mouseleave', scheduleClose);
+  fly && fly.addEventListener('mouseenter', ()=>clearTimeout(hideTimer)); fly && fly.addEventListener('mouseleave', scheduleClose);
 
-  /* ===== Data Source (GViz + Publish-to-web fallback) ===== */
-  const SHEET_ID  ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE"; // sama seperti file kamu
-  const TAB_NAME  ="最新情報";
-  const SHEET_GID = "0"; // ganti ke gid tab 最新情報 jika sudah "Publish to web"
-  const GVIZ = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
-  const PUB  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/pub?gid=${SHEET_GID}&single=true&output=csv`;
+  /* ====== Data source (selaras index/file) ====== */
+  const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
+  const TAB_NAME ="最新情報";
+  const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
 
-  const fetchCSV = async (url, ms=8000) => {
-    const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(), ms);
-    try{
-      const res=await fetch(url+'&_ts='+Date.now(),{signal:ctrl.signal,headers:{'Accept':'text/csv'}});
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      return await res.text();
-    }finally{ clearTimeout(to); }
-  };
-
-  const getCSVRobust = async ()=>{
-    try{ return await fetchCSV(GVIZ, 6000); }
-    catch(e1){
-      try{ return await fetchCSV(PUB, 6000); }
-      catch(e2){ throw new Error('Fetch gagal (gviz & publish). Periksa izin sheet dan “Publish to web”.'); }
-    }
-  };
-
-  /* ===== Utils ===== */
-  const $ = (q)=>document.querySelector(q);
-  const showErr=(msg)=>{ const b=$('#errorBanner'); b.textContent=msg; b.style.display='block'; };
-  const hideErr=()=>{ const b=$('#errorBanner'); b.style.display='none'; };
+  /* ====== Utils ====== */
   const S = s => String(s==null?'':s).trim();
   function parseCSV(t){
     const out=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g; let row=[], m; t=t.replace(/\r\n?/g,"\n");
@@ -216,165 +263,440 @@ window.addEventListener('load', () => {
     const f = n => (n in map ? map[n] : null);
     const fRx = rx => { for(let i=0;i<header.length;i++){ if(rx.test(S(header[i]))) return i; } return null; };
     return {
-      date: f('出荷日'), cust: f('顧客名'), qty: f('数量'),
-      status: fRx(/製品状況|製品状態|納品状況/), urgent: fRx(/Status|至急|ステータス/i)
+      date: f('出荷日'), cust: f('顧客名'), draw: fRx(/図番|図面|Drawing/), machine: fRx(/機種/),
+      qty: f('数量'), to: fRx(/送り先|送付先|納品先/), note: fRx(/注番|備考|注文/),
+      status: fRx(/製品状況|製品状態|納品状況/), ts: f('製品状況更新日時'), user: f('更新者'),
+      urgent: fRx(/Status|至急|ステータス/i)
     };
   }
-  const val=(r,i)=> (i==null?'':(r[i]||''));
-  function parseJPDate(str){ const s=S(str); if(!s) return null; const m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})/); if(m) return new Date(m[1],m[2]-1,m[3]); const d=new Date(s); return isNaN(d)?null:d }
-  const z2=n=>String(n).padStart(2,'0'); const dkey=d=>`${d.getFullYear()}-${z2(d.getMonth()+1)}-${z2(d.getDate())}`; const mkey=d=>`${d.getFullYear()}-${z2(d.getMonth()+1)}`;
+  const valAt=(r,i)=> (i==null?'':(r[i]||''));
+  function parseJPDate(str){
+    const s=S(str); if(!s) return null;
+    const m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})(?:\D(\d{1,2})\D(\d{1,2}))?/);
+    if(m) return new Date(m[1],m[2]-1,m[3],m[4]||0,m[5]||0);
+    const d=new Date(s); return isNaN(d)?null:d;
+  }
+  function fmtDate(d){ if(!d) return ''; const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}` }
+  function fmtMonth(d){ const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}` }
 
-  /* ===== Status & state ===== */
-  const STATUS=[{key:'shipok',label:'出荷済',rx:/出荷済/},{key:'prep',label:'出荷準備済',rx:/出荷準備済/},{key:'inspect',label:'検査中',rx:/検査中/},{key:'hold',label:'検査保留',rx:/検査保留/}];
-  const isUrgent=v=>['至急','urgent','緊急','1','true'].includes(String(v).toLowerCase());
-  const st = Object.assign({range:'ytd',metric:'qty',labels:true,interval:60000,status:null,
-    custType:'barH',custTop:10,custMonTop:6,dailyOrient:'v',monthlyOrient:'v',custMonOrient:'v'
-  }, get());
-  let cache={header:[],rows:[],idx:null}, timer=null;
+  /* ====== Status ====== */
+  const STATUS = [
+    {key:'shipok',   label:'出荷済',     icon:'📦', cls:'shipok',  rx:/出荷済/},
+    {key:'prep',     label:'出荷準備済', icon:'🚚', cls:'prep',    rx:/出荷準備済/},
+    {key:'inspect',  label:'検査中',     icon:'🔬', cls:'inspect', rx:/検査中/},
+    {key:'hold',     label:'検査保留',   icon:'⛔', cls:'hold',    rx:/検査保留/},
+    {key:'assem',    label:'組立中',     icon:'🧰', cls:'assem',   rx:/組立中/},
+    {key:'assemok',  label:'組立完了',   icon:'✅', cls:'assemok', rx:/組立完了/},
+    {key:'proc',     label:'加工済',     icon:'🔧', cls:'proc',    rx:/加工済/},
+    {key:'laser',    label:'レーザ加工', icon:'🪚', cls:'laser',   rx:/レーザ/},
+    {key:'sheet',    label:'板金加工',   icon:'🔩', cls:'sheet',   rx:/板金/},
+    {key:'out',      label:'外注',       icon:'🏭', cls:'out',     rx:/外注/},
+  ];
+  function isUrgent(v){const t=S(v).toLowerCase(); return t==='至急'||t==='urgent'||t==='緊急'||t==='1'||t==='true'}
 
-  /* ===== UI sync ===== */
-  const sync=()=>{
-    document.querySelectorAll('.chipbtn').forEach(b=>b.classList.toggle('active', b.dataset.range===st.range));
-    document.querySelectorAll('#metricToggle button').forEach(b=>b.classList.toggle('active', b.dataset.metric===st.metric));
-    $('#metricBadge').textContent='表示: '+(st.metric==='count'?'件数':'数量');
-    $('#btnLabels').textContent=(st.labels?'✓ ':'✗ ')+'Labels';
-    $('#intervalInfo').textContent=Math.round(st.interval/1000)+'s';
-    $('#custTop').textContent='Top'+st.custTop; $('#custMonTop').textContent='Top'+st.custMonTop;
-    $('#dailyOrient').textContent=st.dailyOrient==='v'?'縦':'横';
-    $('#monthlyOrient').textContent=st.monthlyOrient==='v'?'縦':'横';
-    $('#custMonOrient').textContent=st.custMonOrient==='v'?'縦':'横';
+  /* ====== State (persist) ====== */
+  const defaults = { range:'ytd', metric:'qty', labels:true, interval:60000, status:null,
+    custType:'barH', custTop:10, custMonTop:6, dailyOrient:'v', monthlyOrient:'v', custMonOrient:'v'
   };
+  const state = Object.assign({}, defaults, readLS());
+  let cache={header:[],rows:[],idx:null};
+  let timer=null;
 
-  /* ===== Helpers ===== */
-  const metricVal=(r,idx)=> st.metric==='count'?1:(+S(val(r,idx.qty))||0);
-  const metricLabel=()=> st.metric==='count'?'件数':'数量';
-  const byStatus=(rows,idx)=> !st.status?rows:rows.filter(r=> (STATUS.find(s=>s.key===st.status)?.rx||/.^/).test(S(val(r,idx.status))));
-  const byRange=(rows,idx)=>{ const now=new Date(); if(st.range==='14d'){ const t=new Date(now);t.setDate(t.getDate()-13);t.setHours(0,0,0,0); return rows.filter(r=>{const d=parseJPDate(val(r,idx.date)); return d && d>=t})}
-    if(st.range==='30d'){ const t=new Date(now);t.setDate(t.getDate()-29);t.setHours(0,0,0,0); return rows.filter(r=>{const d=parseJPDate(val(r,idx.date)); return d && d>=t})}
-    if(st.range==='ytd'){ const t=new Date(now.getFullYear(),0,1); return rows.filter(r=>{const d=parseJPDate(val(r,idx.date)); return d && d>=t})}
-    return rows; };
+  /* ====== UI helpers ====== */
+  function syncUI(){
+    // Range
+    document.querySelectorAll('.chipbtn').forEach(b=>{
+      const r=b.getAttribute('data-range'); b.classList.toggle('active', r===state.range);
+    });
+    // Metric
+    document.querySelectorAll('#metricToggle button').forEach(b=>{
+      const m=b.getAttribute('data-metric'); b.classList.toggle('active', m===state.metric);
+    });
+    document.getElementById('metricBadge').textContent='表示: '+(state.metric==='count'?'件数':'数量');
+    // Labels & interval
+    document.getElementById('btnLabels').textContent=(state.labels?'✓ ':'✗ ')+'Labels';
+    document.getElementById('intervalInfo').textContent=Math.round(state.interval/1000)+'s';
+    // Per chart buttons
+    document.getElementById('custTop').textContent='Top'+state.custTop;
+    document.getElementById('custMonTop').textContent='Top'+state.custMonTop;
+    document.getElementById('dailyOrient').textContent = state.dailyOrient==='v'?'縦':'横';
+    document.getElementById('monthlyOrient').textContent = state.monthlyOrient==='v'?'縦':'横';
+    document.getElementById('custMonOrient').textContent = state.custMonOrient==='v'?'縦':'横';
+  }
 
-  /* ===== Build series ===== */
-  const build=(rows,idx)=>{
-    const daily={}, monthly={}, cust={}, custMonth={};
-    rows.forEach(r=>{const d=parseJPDate(val(r,idx.date)); if(!d) return; const v=metricVal(r,idx); const D=dkey(d), M=mkey(d), C=S(val(r,idx.cust))||'—';
-      daily[D]=(daily[D]||0)+v; monthly[M]=(monthly[M]||0)+v; cust[C]=(cust[C]||0)+v; (custMonth[M]||(custMonth[M]={}))[C]=(custMonth[M][C]||0)+v;});
-    const dl=Object.keys(daily).sort(), dv=dl.map(k=>daily[k]);
-    const ml=Object.keys(monthly).sort(), mv=ml.map(k=>monthly[k]);
-    const ce=Object.entries(cust).sort((a,b)=>b[1]-a[1]).slice(0,st.custTop), cl=ce.map(x=>x[0]), cv=ce.map(x=>x[1]);
-    const top=Object.entries(cust).sort((a,b)=>b[1]-a[1]).slice(0,st.custMonTop).map(x=>x[0]);
-    const cmDs=top.map(cn=>({label:cn,data:ml.map(m=> (custMonth[m]&&custMonth[m][cn])?custMonth[m][cn]:0)}));
-    return {dl,dv,ml,mv,cl,cv,cmDs};
-  };
+  /* ====== Filtering / transforms ====== */
+  function applyStatusFilter(rows, idx){
+    if(!state.status) return rows;
+    const d = STATUS.find(s=>s.key===state.status);
+    if(!d) return rows;
+    return rows.filter(r=> d.rx.test(S(valAt(r,idx.status))));
+  }
+  function applyRange(rows, idx){
+    const now=new Date();
+    if(state.range==='14d'){ const dt=new Date(now); dt.setDate(dt.getDate()-13); dt.setHours(0,0,0,0); return rows.filter(r=>{ const d=parseJPDate(valAt(r,idx.date)); return d && d>=dt;}); }
+    if(state.range==='30d'){ const dt2=new Date(now); dt2.setDate(dt2.getDate()-29); dt2.setHours(0,0,0,0); return rows.filter(r=>{ const d=parseJPDate(valAt(r,idx.date)); return d && d>=dt2;}); }
+    if(state.range==='ytd'){ const dt3=new Date(now.getFullYear(),0,1); return rows.filter(r=>{ const d=parseJPDate(valAt(r,idx.date)); return d && d>=dt3;}); }
+    return rows;
+  }
+  const metricValue = (r,idx)=> state.metric==='count' ? 1 : (+S(valAt(r,idx.qty))||0);
+  const metricLabel = ()=> state.metric==='count' ? '件数' : '数量';
 
-  /* ===== Chart helpers ===== */
+  /* ====== Chart instances ====== */
   let dailyChart, monthlyChart, custChart, custMonChart;
-  const opts=({h=false,max=null}={})=>({responsive:true,maintainAspectRatio:false,layout:{padding:{right:30,top:10}},
-    plugins:{legend:{display:false},datalabels:{display:st.labels,clip:false,clamp:true,anchor:h?'end':'end',align:h?'end':'top',offset:4,formatter:v=>isNaN(v)?'':String(Math.round(v)),font:{weight:'700'}},tooltip:{mode:'index',intersect:false,callbacks:{label:c=>metricLabel()+': '+c.parsed.y}}},
-    scales: h?{x:{grid:{color:'#eef2ff'},suggestedMax:max},y:{grid:{color:'#f1f5f9'}}}:{x:{grid:{color:'#eef2ff'}},y:{grid:{color:'#f1f5f9'},suggestedMax:max,ticks:{precision:0}}});
-  const upsert=(el,cfg,name)=>{ if(window[name]){window[name].data=cfg.data;window[name].options=cfg.options;window[name].update()} else {window[name]=new Chart(el,cfg)} };
-  const clearLoading=()=>document.querySelectorAll('.cwrap .loading').forEach(e=>e.remove());
 
-  /* ===== Render ===== */
-  const render=()=>{
+  /* ====== Build datasets ====== */
+  function buildAggregations(rows, idx){
+    // daily & monthly
+    const mapDaily={}, mapMonthly={};
+    // customers
+    const mapCust={}, mapCustMonth={}; // mapCustMonth[month][customer] = sum
+
+    rows.forEach(r=>{
+      const d=parseJPDate(valAt(r,idx.date)); if(!d) return;
+      const v = metricValue(r, idx);
+      const kDay = fmtDate(d);
+      const kMon = fmtMonth(d);
+      const cust=S(valAt(r,idx.cust))||'—';
+
+      mapDaily[kDay]=(mapDaily[kDay]||0)+v;
+      mapMonthly[kMon]=(mapMonthly[kMon]||0)+v;
+
+      mapCust[cust]=(mapCust[cust]||0)+v;
+      if(!mapCustMonth[kMon]) mapCustMonth[kMon]={};
+      mapCustMonth[kMon][cust]=(mapCustMonth[kMon][cust]||0)+v;
+    });
+
+    const dailyLabels=Object.keys(mapDaily).sort();
+    const dailyValues=dailyLabels.map(k=>mapDaily[k]);
+
+    const monthlyLabels=Object.keys(mapMonthly).sort();
+    const monthlyValues=monthlyLabels.map(k=>mapMonthly[k]);
+
+    const custEntries=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,state.custTop);
+    const custLabels=custEntries.map(x=>x[0]);
+    const custValues=custEntries.map(x=>x[1]);
+
+    // Monthly stacked by top customers (choose top over YTD)
+    const topCustForStack=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,state.custMonTop).map(x=>x[0]);
+    const months=monthlyLabels;
+    const custMonthDatasets = topCustForStack.map(cn=>{
+      const data = months.map(m=> (mapCustMonth[m] && mapCustMonth[m][cn]) ? mapCustMonth[m][cn] : 0 );
+      return { label: cn, data };
+    });
+
+    return { dailyLabels, dailyValues, monthlyLabels, monthlyValues, custLabels, custValues, months, custMonthDatasets };
+  }
+
+  /* ====== Common options (labels visible + headroom) ====== */
+  function makeCommonOptions({horizontal=false, maxVal=null}={}){
+    const headroom = maxVal? Math.ceil(maxVal*1.15) : undefined;
+    const scales = horizontal
+      ? { x:{ grid:{color:'#eef2ff'}, suggestedMax: headroom }, y:{ grid:{color:'#f1f5f9'} } }
+      : { x:{ grid:{color:'#eef2ff'} }, y:{ grid:{color:'#f1f5f9'}, suggestedMax: headroom, ticks:{precision:0}} };
+    return {
+      responsive:true, maintainAspectRatio:false, layout:{padding:{right:30, top:10}},
+      plugins:{
+        legend:{display:false},
+        datalabels:{
+          display: state.labels, clip:false, clamp:true,
+          anchor: horizontal?'end':'end',
+          align:  horizontal?'end':'top',
+          offset: 4,
+          formatter:(v)=> (v==null||isNaN(v))?'':String(Math.round(v)),
+          font:{weight:'700'}, padding:4
+        },
+        tooltip:{mode:'index',intersect:false, callbacks:{ label:(ctx)=> metricLabel()+': '+ctx.parsed.y }},
+      },
+      scales
+    };
+  }
+
+  /* ====== Render charts ====== */
+  function upsertChart(ctx, cfg, refName){
+    if(window[refName]){ window[refName].data=cfg.data; window[refName].options=cfg.options; window[refName].update(); }
+    else{ window[refName]=new Chart(ctx, cfg); }
+  }
+
+  function renderAll(){
     const idx=cache.idx;
-    let rows=byRange(byStatus(cache.rows,idx),idx);
+    let rows = cache.rows.slice();
 
-    // urgent + status chips
+    // counts for status chips + urgent banner
     const counts={}; STATUS.forEach(s=>counts[s.key]=0);
-    cache.rows.forEach(r=>{const t=S(val(r,idx.status)); for(const s of STATUS){ if(s.rx.test(t)){counts[s.key]++; break;}}});
-    const chips=document.getElementById('chipsBox');
-    chips.innerHTML=`<button class="chipbtn ${!st.status?'active':''}" data-key="">🌐 すべて <span class="count">${cache.rows.length}</span></button>`+
-      STATUS.map(s=>`<button class="chipbtn ${st.status===s.key?'active':''}" data-key="${s.key}">• ${s.label} <span class="count">${counts[s.key]||0}</span></button>`).join('');
-    chips.querySelectorAll('.chipbtn').forEach(b=>b.onclick=()=>{st.status=b.dataset.key||null;set({status:st.status});render();document.getElementById('statusDropdown').classList.remove('open')});
-    const urgent = idx.urgent!=null ? cache.rows.filter(r=>isUrgent(val(r,idx.urgent))).length : 0;
-    const ub=document.getElementById('urgentBanner'); if(urgent>0){ub.style.display='block';ub.textContent=`⚠ 至急案件が ${urgent} 件あります！早急に確認してください。`} else {ub.style.display='none'}
+    rows.forEach(r=>{ const t=S(valAt(r,idx.status)); for(const s of STATUS){ if(s.rx.test(t)){ counts[s.key]++; break; } }});
+    renderChips(counts);
 
-    const ag=build(rows,idx);
+    const urgentCount = idx.urgent!=null ? rows.filter(r=>isUrgent(valAt(r,idx.urgent))).length : 0;
+    const ub=document.getElementById('urgentBanner');
+    if(urgentCount>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; }
+    else{ ub.style.display='none'; ub.textContent=''; }
+
+    // filter
+    rows = applyStatusFilter(rows, idx);
+    rows = applyRange(rows, idx);
+
+    // aggregations
+    const ag = buildAggregations(rows, idx);
+
+    // register plugin
     Chart.register(ChartDataLabels);
 
-    const dMax=Math.max(0,...ag.dv), dH=st.dailyOrient==='h';
-    upsert(document.getElementById('dailyShip'), {type:dH?'bar':'line', data:{labels:ag.dl,datasets:[{label:metricLabel(),data:ag.dv,tension:.25,fill:!dH,pointRadius:3}]}, options:Object.assign(opts({h:dH,max:Math.ceil(dMax*1.15)}), dH?{indexAxis:'y'}:{})}, 'dailyChart');
+    /* Daily chart */
+    const dMax=Math.max(0,...ag.dailyValues);
+    const dailyType = state.dailyOrient==='h'?'bar':'line';
+    const dailyHorizontal = state.dailyOrient==='h';
+    upsertChart(document.getElementById('dailyShip'), {
+      type: dailyType,
+      data:{ labels:ag.dailyLabels, datasets:[{ label:metricLabel(), data:ag.dailyValues, tension:.25, fill:!dailyHorizontal, pointRadius:3 }] },
+      options: makeCommonOptions({horizontal: dailyHorizontal, maxVal:dMax})
+    }, 'dailyChart');
 
-    const mMax=Math.max(0,...ag.mv), mH=st.monthlyOrient==='h';
-    upsert(document.getElementById('monthlyQty'), {type:'bar', data:{labels:ag.ml,datasets:[{label:metricLabel(),data:ag.mv}]}, options:Object.assign(opts({h:mH,max:Math.ceil(mMax*1.15)}), mH?{indexAxis:'y'}:{})}, 'monthlyChart');
+    /* Monthly overall */
+    const mMax=Math.max(0,...ag.monthlyValues);
+    const monHorizontal = state.monthlyOrient==='h';
+    upsertChart(document.getElementById('monthlyQty'), {
+      type: monHorizontal?'bar':'bar',
+      data:{ labels:ag.monthlyLabels, datasets:[{ label:metricLabel(), data:ag.monthlyValues }] },
+      options: Object.assign(makeCommonOptions({horizontal: monHorizontal, maxVal:mMax}), monHorizontal?{indexAxis:'y'}:{})
+    }, 'monthlyChart');
 
-    let custCfg;
-    if(st.custType==='pie'){
-      custCfg={type:'pie',data:{labels:ag.cl,datasets:[{data:ag.cv}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right'},datalabels:{display:st.labels,formatter:(v,ctx)=>{const sum=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0)||1;const p=Math.round(v/sum*100);return `${v} (${p}%)`}}}}};
-    }else if(st.custType==='pareto'){
-      const total=ag.cv.reduce((a,b)=>a+b,0)||1; const cum=[]; ag.cv.reduce((acc,v,i)=>(cum[i]=Math.round((acc+v)/total*100),acc+v),0);
-      custCfg={type:'bar',data:{labels:ag.cl,datasets:[{label:metricLabel(),data:ag.cv,yAxisID:'y'},{label:'累積(%)',data:cum,type:'line',yAxisID:'y1',tension:.25,pointRadius:3}]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true},datalabels:{display:st.labels,formatter:(v,ctx)=>ctx.dataset.type==='line'?v+'%':v}},scales:{x:{grid:{color:'#eef2ff'}},y:{beginAtZero:true,grid:{color:'#f1f5f9'}},y1:{position:'right',beginAtZero:true,max:100,grid:{drawOnChartArea:false}}}}};
-    }else{
-      const h=st.custType==='barH';
-      custCfg={type:'bar',data:{labels:ag.cl,datasets:[{label:metricLabel(),data:ag.cv}]},options:Object.assign(opts({h,max:Math.max(...ag.cv)*1.15||undefined}), h?{indexAxis:'y'}:{})};
+    /* Customer Top-N (type: bar/barH/pie/pareto) */
+    const cMax=Math.max(0,...ag.custValues);
+    let custConfig;
+    if(state.custType==='pie'){
+      custConfig = {
+        type:'pie',
+        data:{ labels:ag.custLabels, datasets:[{ label:metricLabel(), data:ag.custValues }] },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{
+            legend:{position:'right'},
+            datalabels:{ display: state.labels, formatter:(v,ctx)=>{
+              const sum = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0)||1;
+              const p = Math.round(v/sum*100); return `${v} (${p}%)`;
+            }}
+          }
+        }
+      };
+    } else if(state.custType==='pareto'){
+      // bars + cumulative line
+      const total = ag.custValues.reduce((a,b)=>a+b,0)||1;
+      const cum = []; ag.custValues.reduce((acc,v,i)=> (cum[i]=Math.round((acc+v)/total*100), acc+v),0);
+      custConfig = {
+        type:'bar',
+        data:{ labels:ag.custLabels, datasets:[
+          { label:metricLabel(), data:ag.custValues, yAxisID:'y' },
+          { label:'累積(%)', data:cum, type:'line', yAxisID:'y1', tension:.25, pointRadius:3 }
+        ]},
+        options:{
+          responsive:true, maintainAspectRatio:false, layout:{padding:{right:30}},
+          plugins:{
+            legend:{display:true},
+            datalabels:{ display: state.labels, anchor:'end', align:'top', formatter:(v,ctx)=> ctx.dataset.type==='line'? v+'%': v, clip:false }
+          },
+          scales:{ x:{grid:{color:'#eef2ff'}},
+            y:{grid:{color:'#f1f5f9'}, beginAtZero:true},
+            y1:{position:'right', beginAtZero:true, max:100, grid:{drawOnChartArea:false}}
+          }
+        }
+      };
+    } else {
+      const horiz = state.custType==='barH';
+      custConfig = {
+        type:'bar',
+        data:{ labels:ag.custLabels, datasets:[{ label:metricLabel(), data:ag.custValues }] },
+        options: Object.assign(makeCommonOptions({horizontal:horiz, maxVal:cMax}), horiz?{indexAxis:'y'}:{})
+      };
     }
-    upsert(document.getElementById('custQty'), custCfg,'custChart');
+    upsertChart(document.getElementById('custQty'), custConfig, 'custChart');
 
-    const sH=st.custMonOrient==='h';
-    upsert(document.getElementById('custMonthly'), {type:'bar',data:{labels:ag.ml,datasets:ag.cmDs},options:Object.assign({responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'},datalabels:{display:false}},scales:sH?{x:{stacked:true,grid:{color:'#eef2ff'}},y:{stacked:true,grid:{color:'#f1f5f9'}}}:{x:{stacked:true,grid:{color:'#eef2ff'}},y:{stacked:true,grid:{color:'#f1f5f9'},ticks:{precision:0}}}}, sH?{indexAxis:'y'}:{})}, 'custMonChart');
+    /* Customer Monthly stacked (Top N) */
+    const stackedHorizontal = state.custMonOrient==='h';
+    upsertChart(document.getElementById('custMonthly'), {
+      type:'bar',
+      data:{ labels:ag.months, datasets: ag.custMonthDatasets },
+      options:Object.assign({
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'bottom'},
+          datalabels:{ display:false } // stacked usually crowded
+        },
+        scales: stackedHorizontal
+          ? { x:{ stacked:true, grid:{color:'#eef2ff'}}, y:{ stacked:true, grid:{color:'#f1f5f9'} } }
+          : { x:{ stacked:true, grid:{color:'#eef2ff'}}, y:{ stacked:true, grid:{color:'#f1f5f9'}, ticks:{precision:0}} }
+      }, stackedHorizontal?{indexAxis:'y'}:{})
+    }, 'custMonChart');
 
-    document.getElementById('lastup').textContent='Last update: '+new Date().toLocaleString();
-    clearLoading(); hideErr();
-  };
+    document.getElementById('lastup').textContent = 'Last update: '+new Date().toLocaleString();
+  }
 
-  /* ===== Load & live ===== */
+  /* ====== Build Chips in dropdown ====== */
+  function renderChips(counts){
+    const box=document.getElementById('chipsBox');
+    const makeChip=(key,label,icon,cnt)=>`<button class="chipbtn ${state.status===key?'active':''}" data-key="${key}">${icon} ${label} <span class="count">${cnt}</span></button>`;
+    let html=`<button class="chipbtn ${!state.status?'active':''}" data-key="">🌐 すべて <span class="count">${cache.rows.length}</span></button>`;
+    STATUS.forEach(s=> html+=makeChip(s.key,s.label,s.icon, counts[s.key]||0));
+    box.innerHTML=html;
+    box.querySelectorAll('.chipbtn').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        state.status = b.getAttribute('data-key') || null;
+        writeLS({status:state.status});
+        renderAll();
+        dropdown.classList.remove('open');
+      });
+    });
+  }
+
+  /* ====== Fetch & live ====== */
   async function load(){
-    const btn=document.getElementById('btnRefresh'); const old=btn.textContent; btn.textContent='Loading…'; btn.disabled=true;
+    const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
     try{
-      const text = await getCSVRobust();
-      const data = parseCSV(text);
-      if(!data.length) throw new Error('CSV kosong. Cek tab dan izin.');
-      const header=data[0], rows=data.slice(1); const idx=indexByName(header);
-      if(idx.date==null || idx.qty==null) throw new Error('Kolom wajib tidak ditemukan (出荷日 / 数量).');
-      cache={header,rows,idx}; render();
-    }catch(e){ console.error(e); showErr('Gagal memuat data: '+e.message); }
-    finally{ btn.textContent=old; btn.disabled=false; }
+      btn.textContent='Loading…'; btn.disabled=true;
+      const res=await fetch(CSV_URL+'&_ts='+Date.now(),{cache:'no-store'});
+      const text=await res.text();
+      const data=parseCSV(text);
+      const header=data[0], rows=data.slice(1);
+      const idx=indexByName(header);
+      cache={header,rows,idx};
+      renderAll();
+    }finally{
+      btn.textContent=old; btn.disabled=false;
+    }
   }
-  const startAuto=(ms)=>{ if(timer) clearInterval(timer); timer=setInterval(()=>{ if(document.visibilityState==='visible') load() }, ms); st.interval=ms; set({interval:ms}); document.getElementById('intervalInfo').textContent=Math.round(ms/1000)+'s'; document.getElementById('btnLive').textContent=(ms<=5000?'● Live: On':'● Live: Off') };
+  function startAuto(ms){
+    if(timer) clearInterval(timer);
+    timer=setInterval(()=>{ if(document.visibilityState==='visible') load(); }, ms);
+    state.interval=ms; writeLS({interval:ms});
+    document.getElementById('intervalInfo').textContent=Math.round(ms/1000)+'s';
+    document.getElementById('btnLive').textContent = (ms<=5000?'● Live: On':'● Live: Off');
+  }
 
-  /* ===== Export ===== */
-  const metricLabel=()=> st.metric==='count'?'件数':'数量'; // re-declare for PDF helper scope
+  /* ====== Export helpers ====== */
+  function exportExcel(ag){
+    const wb = XLSX.utils.book_new();
+    // Daily
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['日付', metricLabel()], ...ag.dailyLabels.map((d,i)=>[d, ag.dailyValues[i]])]), 'Daily');
+    // Monthly
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['月', metricLabel()], ...ag.monthlyLabels.map((m,i)=>[m, ag.monthlyValues[i]])]), 'Monthly');
+    // Customer Top
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['顧客', metricLabel()], ...ag.custLabels.map((c,i)=>[c, ag.custValues[i]])]), 'CustomersTop');
+    // Customer Monthly stacked
+    const header=['月', ...ag.custMonthDatasets.map(d=>d.label)];
+    const rows=ag.months.map((m,i)=> [m, ...ag.custMonthDatasets.map(ds=> ds.data[i]) ]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), 'CustMonthly');
+    XLSX.writeFile(wb, 'charts_export.xlsx');
+  }
+
   async function exportPDF(){
-    const { jsPDF } = window.jspdf; const doc=new jsPDF('l','pt','a4'); const charts=[dailyChart,monthlyChart,custChart,custMonChart].filter(Boolean);
-    let y=40; for(const ch of charts){ const img=ch.toBase64Image(); doc.addImage(img,'PNG',30,y,760,300); y+=324; if(y>520){doc.addPage(); y=40;} } doc.save('charts_export.pdf');
-  }
-  function exportExcelCurrent(){
-    const rows=byRange(byStatus(cache.rows,cache.idx),cache.idx); const ag=build(rows,cache.idx);
-    const wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['日付',metricLabel()], ...ag.dl.map((d,i)=>[d,ag.dv[i]])]),'Daily');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['月',metricLabel()], ...ag.ml.map((m,i)=>[m,ag.mv[i]])]),'Monthly');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['顧客',metricLabel()], ...ag.cl.map((c,i)=>[c,ag.cv[i]])]),'CustomersTop');
-    const header=['月',...ag.cmDs.map(d=>d.label)], rows2=ag.ml.map((m,i)=>[m,...ag.cmDs.map(ds=>ds.data[i])]);
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([header,...rows2]),'CustMonthly'); XLSX.writeFile(wb,'charts_export.xlsx');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l','pt','a4');
+    const charts = [dailyChart, monthlyChart, custChart, custMonChart].filter(Boolean);
+    let y=40;
+    for(const ch of charts){
+      const img = ch.toBase64Image();
+      const w=760, h=300;
+      doc.addImage(img, 'PNG', 30, y, w, h);
+      y += h+24;
+      if(y>520){ doc.addPage(); y=40; }
+    }
+    // Ringkas tabel Top Customers
+    const ag = buildAggregations(applyRange(applyStatusFilter(cache.rows, cache.idx), cache.idx), cache.idx);
+    doc.addPage();
+    doc.text('Top Customers', 40, 40);
+    const data = ag.custLabels.map((c,i)=>[c, ag.custValues[i]]);
+    doc.autoTable({ startY:60, head:[['顧客', metricLabel()]], body:data });
+    doc.save('charts_export.pdf');
   }
 
-  /* ===== Wire UI ===== */
-  document.querySelectorAll('.chipbtn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.chipbtn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); st.range=b.dataset.range; set({range:st.range}); render();});
-  document.querySelectorAll('#metricToggle button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#metricToggle button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); st.metric=b.dataset.metric; set({metric:st.metric}); document.getElementById('metricBadge').textContent='表示: '+(st.metric==='count'?'件数':'数量'); render();});
-  document.getElementById('btnLabels').onclick=()=>{st.labels=!st.labels; set({labels:st.labels}); document.getElementById('btnLabels').textContent=(st.labels?'✓ ':'✗ ')+'Labels'; render();};
-  document.getElementById('btnRefresh').onclick=load;
-  document.getElementById('btnLive').onclick=()=>{startAuto(st.interval<=5000?60000:5000); load();};
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible') load()});
-  const dd=document.getElementById('statusDropdown'); dd.querySelector('.drop-btn').onclick=()=>dd.classList.toggle('open'); document.getElementById('clearFilter').onclick=()=>{st.status=null; set({status:null}); render(); dd.classList.remove('open')};
-  document.addEventListener('click',e=>{if(!dd.contains(e.target)) dd.classList.remove('open')});
-  document.getElementById('custTypeBar').onclick=()=>{st.custType='bar'; set({custType:'bar'}); render()};
-  document.getElementById('custTypeBarH').onclick=()=>{st.custType='barH'; set({custType:'barH'}); render()};
-  document.getElementById('custTypePie').onclick=()=>{st.custType='pie'; set({custType:'pie'}); render()};
-  document.getElementById('custTypePareto').onclick=()=>{st.custType='pareto'; set({custType:'pareto'}); render()};
-  document.getElementById('custTop').onclick=()=>{st.custTop=st.custTop===10?20:10; set({custTop:st.custTop}); document.getElementById('custTop').textContent='Top'+st.custTop; render()};
-  document.getElementById('custMonTop').onclick=()=>{st.custMonTop=st.custMonTop===6?10:6; set({custMonTop:st.custMonTop}); document.getElementById('custMonTop').textContent='Top'+st.custMonTop; render()};
-  document.getElementById('dailyOrient').onclick=()=>{st.dailyOrient=st.dailyOrient==='v'?'h':'v'; set({dailyOrient:st.dailyOrient}); document.getElementById('dailyOrient').textContent=st.dailyOrient==='v'?'縦':'横'; render()};
-  document.getElementById('monthlyOrient').onclick=()=>{st.monthlyOrient=st.monthlyOrient==='v'?'h':'v'; set({monthlyOrient:st.monthlyOrient}); document.getElementById('monthlyOrient').textContent=st.monthlyOrient==='v'?'縦':'横'; render()};
-  document.getElementById('custMonOrient').onclick=()=>{st.custMonOrient=st.custMonOrient==='v'?'h':'v'; set({custMonOrient:st.custMonOrient}); document.getElementById('custMonOrient').textContent=st.custMonOrient==='v'?'縦':'横'; render()};
-  document.getElementById('dailyExport').onclick=exportExcelCurrent;
-  document.getElementById('monthlyExport').onclick=exportExcelCurrent;
-  document.getElementById('custExport').onclick=exportPDF;
-  document.getElementById('custMonExport').onclick=exportPDF;
+  function exportAllExcelCurrent(){
+    const ag = buildAggregations(applyRange(applyStatusFilter(cache.rows, cache.idx), cache.idx), cache.idx);
+    exportExcel(ag);
+  }
 
-  /* Boot */
-  sync(); load(); startAuto(st.interval);
+  /* ====== Wire controls ====== */
+  // Range chips
+  document.querySelectorAll('.chipbtn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('.chipbtn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      state.range = b.getAttribute('data-range');
+      writeLS({range:state.range});
+      renderAll();
+    });
+  });
+  // Metric toggle
+  document.querySelectorAll('#metricToggle button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('#metricToggle button').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      state.metric = b.getAttribute('data-metric');
+      writeLS({metric:state.metric});
+      document.getElementById('metricBadge').textContent='表示: '+(state.metric==='count'?'件数':'数量');
+      renderAll();
+    });
+  });
+  // Labels toggle
+  document.getElementById('btnLabels').addEventListener('click', ()=>{
+    state.labels = !state.labels; writeLS({labels:state.labels});
+    document.getElementById('btnLabels').textContent=(state.labels?'✓ ':'✗ ')+'Labels';
+    renderAll();
+  });
+  // Refresh / Live
+  document.getElementById('btnRefresh').addEventListener('click', load);
+  document.getElementById('btnLive').addEventListener('click', ()=>{ startAuto(state.interval<=5000?60000:5000); load(); });
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
+
+  // Status dropdown
+  const dropdown=document.getElementById('statusDropdown');
+  dropdown.querySelector('.drop-btn').addEventListener('click', ()=> dropdown.classList.toggle('open'));
+  document.getElementById('clearFilter').addEventListener('click', ()=>{ state.status=null; writeLS({status:null}); renderAll(); dropdown.classList.remove('open'); });
+  document.addEventListener('click', (e)=>{ if(!dropdown.contains(e.target)) dropdown.classList.remove('open'); });
+
+  // Customer Top controls
+  document.getElementById('custTypeBar').addEventListener('click', ()=>{ state.custType='bar'; writeLS({custType:'bar'}); renderAll(); });
+  document.getElementById('custTypeBarH').addEventListener('click', ()=>{ state.custType='barH'; writeLS({custType:'barH'}); renderAll(); });
+  document.getElementById('custTypePie').addEventListener('click', ()=>{ state.custType='pie'; writeLS({custType:'pie'}); renderAll(); });
+  document.getElementById('custTypePareto').addEventListener('click', ()=>{ state.custType='pareto'; writeLS({custType:'pareto'}); renderAll(); });
+  document.getElementById('custTop').addEventListener('click', ()=>{
+    state.custTop = (state.custTop===10)?20:10; writeLS({custTop:state.custTop});
+    document.getElementById('custTop').textContent='Top'+state.custTop;
+    renderAll();
+  });
+
+  // Customer Monthly controls
+  document.getElementById('custMonTop').addEventListener('click', ()=>{
+    state.custMonTop = (state.custMonTop===6)?10:6; writeLS({custMonTop:state.custMonTop});
+    document.getElementById('custMonTop').textContent='Top'+state.custMonTop;
+    renderAll();
+  });
+
+  // Orientation toggles
+  document.getElementById('dailyOrient').addEventListener('click', ()=>{
+    state.dailyOrient = state.dailyOrient==='v'?'h':'v'; writeLS({dailyOrient:state.dailyOrient});
+    document.getElementById('dailyOrient').textContent= state.dailyOrient==='v'?'縦':'横';
+    renderAll();
+  });
+  document.getElementById('monthlyOrient').addEventListener('click', ()=>{
+    state.monthlyOrient = state.monthlyOrient==='v'?'h':'v'; writeLS({monthlyOrient:state.monthlyOrient});
+    document.getElementById('monthlyOrient').textContent= state.monthlyOrient==='v'?'縦':'横';
+    renderAll();
+  });
+  document.getElementById('custMonOrient').addEventListener('click', ()=>{
+    state.custMonOrient = state.custMonOrient==='v'?'h':'v'; writeLS({custMonOrient:state.custMonOrient});
+    document.getElementById('custMonOrient').textContent= state.custMonOrient==='v'?'縦':'横';
+    renderAll();
+  });
+
+  // Exports
+  document.getElementById('dailyExport').addEventListener('click', exportAllExcelCurrent);
+  document.getElementById('monthlyExport').addEventListener('click', exportAllExcelCurrent);
+  document.getElementById('custExport').addEventListener('click', async ()=>{ await exportPDF(); });
+  document.getElementById('custMonExport').addEventListener('click', async ()=>{ await exportPDF(); });
+
+  /* ====== Boot ====== */
+  syncUI();
+  load();
+  startAuto(state.interval);
 });
 </script>
 </body>
