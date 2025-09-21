@@ -169,10 +169,14 @@
           <div class="cwrap tall"><canvas id="custQty"></canvas></div>
         </div>
 
-        <!-- Customer Monthly Stacked -->
+        <!-- Customer Monthly / Yearly (Stacked | Pie | Pareto) -->
         <div class="panel">
           <div class="chartbar">
-            <strong>顧客別 ⽉次 出荷（YTD）</strong>
+            <strong id="custMonTitle">顧客別 ⽉次 出荷（YTD）</strong>
+            <button id="custMonMode" class="btn" data-mode="month">月</button>
+            <button id="custMonTypeStacked" class="btn" data-type="stacked">Stacked</button>
+            <button id="custMonTypePie" class="btn" data-type="pie">Pie</button>
+            <button id="custMonTypePareto" class="btn" data-type="pareto">Pareto</button>
             <button id="custMonTop" class="btn" data-top="6">Top6</button>
             <button id="custMonOrient" class="btn" data-orient="v">縦</button>
             <button id="custMonExport" class="btn">Export</button>
@@ -278,6 +282,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function fmtDate(d){ if(!d) return ''; const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}` }
   function fmtMonth(d){ const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}` }
+  function fmtYear(d){ return String(d.getFullYear()); }
 
   /* ====== Status ====== */
   const STATUS = [
@@ -295,8 +300,11 @@ document.addEventListener('DOMContentLoaded', function(){
   function isUrgent(v){const t=S(v).toLowerCase(); return t==='至急'||t==='urgent'||t==='緊急'||t==='1'||t==='true'}
 
   /* ====== State (persist) ====== */
-  const defaults = { range:'ytd', metric:'qty', labels:true, interval:60000, status:null,
-    custType:'barH', custTop:10, custMonTop:6, dailyOrient:'v', monthlyOrient:'v', custMonOrient:'v'
+  const defaults = {
+    range:'ytd', metric:'qty', labels:true, interval:60000, status:null,
+    custType:'barH', custTop:10,
+    custMonTop:6, custMonOrient:'v', custMonMode:'month', custMonType:'stacked',
+    dailyOrient:'v', monthlyOrient:'v'
   };
   const state = Object.assign({}, defaults, readLS());
   let cache={header:[],rows:[],idx:null};
@@ -304,24 +312,27 @@ document.addEventListener('DOMContentLoaded', function(){
 
   /* ====== UI helpers ====== */
   function syncUI(){
-    // Range
     document.querySelectorAll('.chipbtn').forEach(b=>{
       const r=b.getAttribute('data-range'); b.classList.toggle('active', r===state.range);
     });
-    // Metric
     document.querySelectorAll('#metricToggle button').forEach(b=>{
       const m=b.getAttribute('data-metric'); b.classList.toggle('active', m===state.metric);
     });
     document.getElementById('metricBadge').textContent='表示: '+(state.metric==='count'?'件数':'数量');
-    // Labels & interval
+
     document.getElementById('btnLabels').textContent=(state.labels?'✓ ':'✗ ')+'Labels';
     document.getElementById('intervalInfo').textContent=Math.round(state.interval/1000)+'s';
-    // Per chart buttons
+
     document.getElementById('custTop').textContent='Top'+state.custTop;
+
     document.getElementById('custMonTop').textContent='Top'+state.custMonTop;
+    document.getElementById('custMonOrient').textContent = state.custMonOrient==='v'?'縦':'横';
+    document.getElementById('custMonMode').textContent = state.custMonMode==='month'?'月':'年';
+    document.getElementById('custMonTitle').textContent =
+      state.custMonMode==='month' ? '顧客別 ⽉次 出荷（YTD）' : '顧客別 年次 出荷（累計）';
+
     document.getElementById('dailyOrient').textContent = state.dailyOrient==='v'?'縦':'横';
     document.getElementById('monthlyOrient').textContent = state.monthlyOrient==='v'?'縦':'横';
-    document.getElementById('custMonOrient').textContent = state.custMonOrient==='v'?'縦':'横';
   }
 
   /* ====== Filtering / transforms ====== */
@@ -346,24 +357,25 @@ document.addEventListener('DOMContentLoaded', function(){
 
   /* ====== Build datasets ====== */
   function buildAggregations(rows, idx){
-    // daily & monthly
-    const mapDaily={}, mapMonthly={};
-    // customers
-    const mapCust={}, mapCustMonth={}; // mapCustMonth[month][customer] = sum
+    const mapDaily={}, mapMonthly={}, mapYearly={};
+    const mapCust={}, mapCustMonth={}, mapCustYear={};
 
     rows.forEach(r=>{
       const d=parseJPDate(valAt(r,idx.date)); if(!d) return;
       const v = metricValue(r, idx);
       const kDay = fmtDate(d);
       const kMon = fmtMonth(d);
+      const kYear= fmtYear(d);
       const cust=S(valAt(r,idx.cust))||'—';
 
       mapDaily[kDay]=(mapDaily[kDay]||0)+v;
       mapMonthly[kMon]=(mapMonthly[kMon]||0)+v;
+      mapYearly[kYear]=(mapYearly[kYear]||0)+v;
 
       mapCust[cust]=(mapCust[cust]||0)+v;
-      if(!mapCustMonth[kMon]) mapCustMonth[kMon]={};
-      mapCustMonth[kMon][cust]=(mapCustMonth[kMon][cust]||0)+v;
+
+      (mapCustMonth[kMon]||(mapCustMonth[kMon]={}))[cust]=(mapCustMonth[kMon][cust]||0)+v;
+      (mapCustYear[kYear]||(mapCustYear[kYear]={}))[cust]=(mapCustYear[kYear][cust]||0)+v;
     });
 
     const dailyLabels=Object.keys(mapDaily).sort();
@@ -372,22 +384,43 @@ document.addEventListener('DOMContentLoaded', function(){
     const monthlyLabels=Object.keys(mapMonthly).sort();
     const monthlyValues=monthlyLabels.map(k=>mapMonthly[k]);
 
+    const yearlyLabels=Object.keys(mapYearly).sort();
+    const yearlyValues=yearlyLabels.map(k=>mapYearly[k]);
+
     const custEntries=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,state.custTop);
     const custLabels=custEntries.map(x=>x[0]);
     const custValues=custEntries.map(x=>x[1]);
 
-    // Monthly stacked by top customers (choose top over YTD)
-    const topCustForStack=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,state.custMonTop).map(x=>x[0]);
+    // Monthly stacked (top over YTD)
+    const topCustForMonth=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,state.custMonTop).map(x=>x[0]);
     const months=monthlyLabels;
-    const custMonthDatasets = topCustForStack.map(cn=>{
+    const custMonthDatasets = topCustForMonth.map(cn=>{
       const data = months.map(m=> (mapCustMonth[m] && mapCustMonth[m][cn]) ? mapCustMonth[m][cn] : 0 );
       return { label: cn, data };
     });
+    // Yearly stacked (top over all years)
+    const topCustForYear=Object.entries(mapCust).sort((a,b)=>b[1]-a[1]).slice(0,state.custMonTop).map(x=>x[0]);
+    const years=yearlyLabels;
+    const custYearDatasets = topCustForYear.map(cn=>{
+      const data = years.map(y=> (mapCustYear[y] && mapCustYear[y][cn]) ? mapCustYear[y][cn] : 0 );
+      return { label: cn, data };
+    });
 
-    return { dailyLabels, dailyValues, monthlyLabels, monthlyValues, custLabels, custValues, months, custMonthDatasets };
+    // Totals per customer (for Pie/Pareto)
+    const totalsMonthPerCust = Object.fromEntries(topCustForMonth.map(cn=>[cn, custMonthDatasets.find(d=>d.label===cn).data.reduce((a,b)=>a+b,0)]));
+    const totalsYearPerCust  = Object.fromEntries(topCustForYear.map(cn=>[cn, custYearDatasets.find(d=>d.label===cn).data.reduce((a,b)=>a+b,0)]));
+
+    return {
+      dailyLabels,dailyValues,
+      monthlyLabels,monthlyValues,
+      yearlyLabels,yearlyValues,
+      custLabels,custValues,
+      months,custMonthDatasets, totalsMonthPerCust,
+      years,custYearDatasets,  totalsYearPerCust
+    };
   }
 
-  /* ====== Common options (labels visible + headroom) ====== */
+  /* ====== Common options ====== */
   function makeCommonOptions({horizontal=false, maxVal=null}={}){
     const headroom = maxVal? Math.ceil(maxVal*1.15) : undefined;
     const scales = horizontal
@@ -405,23 +438,22 @@ document.addEventListener('DOMContentLoaded', function(){
           formatter:(v)=> (v==null||isNaN(v))?'':String(Math.round(v)),
           font:{weight:'700'}, padding:4
         },
-        tooltip:{mode:'index',intersect:false, callbacks:{ label:(ctx)=> metricLabel()+': '+ctx.parsed.y }},
+        tooltip:{mode:'index',intersect:false, callbacks:{ label:(ctx)=> metricLabel()+': '+(ctx.parsed.y ?? ctx.raw) }},
       },
       scales
     };
   }
-
-  /* ====== Render charts ====== */
   function upsertChart(ctx, cfg, refName){
     if(window[refName]){ window[refName].data=cfg.data; window[refName].options=cfg.options; window[refName].update(); }
     else{ window[refName]=new Chart(ctx, cfg); }
   }
 
+  /* ====== Render ====== */
   function renderAll(){
     const idx=cache.idx;
     let rows = cache.rows.slice();
 
-    // counts for status chips + urgent banner
+    // chips + urgent
     const counts={}; STATUS.forEach(s=>counts[s.key]=0);
     rows.forEach(r=>{ const t=S(valAt(r,idx.status)); for(const s of STATUS){ if(s.rx.test(t)){ counts[s.key]++; break; } }});
     renderChips(counts);
@@ -438,10 +470,9 @@ document.addEventListener('DOMContentLoaded', function(){
     // aggregations
     const ag = buildAggregations(rows, idx);
 
-    // register plugin
     Chart.register(ChartDataLabels);
 
-    /* Daily chart */
+    /* Daily */
     const dMax=Math.max(0,...ag.dailyValues);
     const dailyType = state.dailyOrient==='h'?'bar':'line';
     const dailyHorizontal = state.dailyOrient==='h';
@@ -451,16 +482,16 @@ document.addEventListener('DOMContentLoaded', function(){
       options: makeCommonOptions({horizontal: dailyHorizontal, maxVal:dMax})
     }, 'dailyChart');
 
-    /* Monthly overall */
+    /* Monthly totals */
     const mMax=Math.max(0,...ag.monthlyValues);
     const monHorizontal = state.monthlyOrient==='h';
     upsertChart(document.getElementById('monthlyQty'), {
-      type: monHorizontal?'bar':'bar',
+      type:'bar',
       data:{ labels:ag.monthlyLabels, datasets:[{ label:metricLabel(), data:ag.monthlyValues }] },
       options: Object.assign(makeCommonOptions({horizontal: monHorizontal, maxVal:mMax}), monHorizontal?{indexAxis:'y'}:{})
     }, 'monthlyChart');
 
-    /* Customer Top-N (type: bar/barH/pie/pareto) */
+    /* Customer Top-N (bar/barH/pie/pareto) */
     const cMax=Math.max(0,...ag.custValues);
     let custConfig;
     if(state.custType==='pie'){
@@ -479,7 +510,6 @@ document.addEventListener('DOMContentLoaded', function(){
         }
       };
     } else if(state.custType==='pareto'){
-      // bars + cumulative line
       const total = ag.custValues.reduce((a,b)=>a+b,0)||1;
       const cum = []; ag.custValues.reduce((acc,v,i)=> (cum[i]=Math.round((acc+v)/total*100), acc+v),0);
       custConfig = {
@@ -510,22 +540,63 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     upsertChart(document.getElementById('custQty'), custConfig, 'custChart');
 
-    /* Customer Monthly stacked (Top N) */
-    const stackedHorizontal = state.custMonOrient==='h';
-    upsertChart(document.getElementById('custMonthly'), {
-      type:'bar',
-      data:{ labels:ag.months, datasets: ag.custMonthDatasets },
-      options:Object.assign({
-        responsive:true, maintainAspectRatio:false,
-        plugins:{
-          legend:{position:'bottom'},
-          datalabels:{ display:false } // stacked usually crowded
-        },
-        scales: stackedHorizontal
-          ? { x:{ stacked:true, grid:{color:'#eef2ff'}}, y:{ stacked:true, grid:{color:'#f1f5f9'} } }
-          : { x:{ stacked:true, grid:{color:'#eef2ff'}}, y:{ stacked:true, grid:{color:'#f1f5f9'}, ticks:{precision:0}} }
-      }, stackedHorizontal?{indexAxis:'y'}:{})
-    }, 'custMonChart');
+    /* Customer Monthly/Yearly (Stacked | Pie | Pareto) */
+    const mode = state.custMonMode; // 'month' | 'year'
+    const type = state.custMonType; // 'stacked' | 'pie' | 'pareto'
+
+    if(type==='stacked'){
+      const labels = mode==='month' ? ag.months : ag.years;
+      const datasets = (mode==='month' ? ag.custMonthDatasets : ag.custYearDatasets);
+      const horiz = state.custMonOrient==='h';
+      upsertChart(document.getElementById('custMonthly'), {
+        type:'bar',
+        data:{ labels, datasets },
+        options:Object.assign({
+          responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{position:'bottom'}, datalabels:{ display:false } },
+          scales: horiz
+            ? { x:{ stacked:true, grid:{color:'#eef2ff'}}, y:{ stacked:true, grid:{color:'#f1f5f9'} } }
+            : { x:{ stacked:true, grid:{color:'#eef2ff'}}, y:{ stacked:true, grid:{color:'#f1f5f9'}, ticks:{precision:0}} }
+        }, horiz?{indexAxis:'y'}:{})
+      }, 'custMonChart');
+    } else if(type==='pie'){
+      const totals = mode==='month' ? ag.totalsMonthPerCust : ag.totalsYearPerCust;
+      const labels = Object.keys(totals);
+      const data = labels.map(k=>totals[k]);
+      upsertChart(document.getElementById('custMonthly'), {
+        type:'pie',
+        data:{ labels, datasets:[{ label:metricLabel(), data }] },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{
+          legend:{position:'right'},
+          datalabels:{ display: state.labels, formatter:(v,ctx)=>{
+            const sum=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0)||1;
+            const p=Math.round(v/sum*100); return `${v} (${p}%)`;
+          }}
+        }}
+      }, 'custMonChart');
+    } else { // pareto
+      const totals = mode==='month' ? ag.totalsMonthPerCust : ag.totalsYearPerCust;
+      const entries = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+      const labels = entries.map(e=>e[0]);
+      const values = entries.map(e=>e[1]);
+      const total = values.reduce((a,b)=>a+b,0)||1;
+      const cum=[]; values.reduce((acc,v,i)=> (cum[i]=Math.round((acc+v)/total*100),acc+v),0);
+      upsertChart(document.getElementById('custMonthly'), {
+        type:'bar',
+        data:{ labels, datasets:[
+          { label:metricLabel(), data:values, yAxisID:'y' },
+          { label:'累積(%)', data:cum, type:'line', yAxisID:'y1', tension:.25, pointRadius:3 }
+        ]},
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{display:true}, datalabels:{ display: state.labels, anchor:'end', align:'top', formatter:(v,ctx)=>ctx.dataset.type==='line'?v+'%':v } },
+          scales:{ x:{grid:{color:'#eef2ff'}},
+            y:{grid:{color:'#f1f5f9'}, beginAtZero:true},
+            y1:{position:'right', beginAtZero:true, max:100, grid:{drawOnChartArea:false}}
+          }
+        }
+      }, 'custMonChart');
+    }
 
     document.getElementById('lastup').textContent = 'Last update: '+new Date().toLocaleString();
   }
@@ -574,16 +645,19 @@ document.addEventListener('DOMContentLoaded', function(){
   /* ====== Export helpers ====== */
   function exportExcel(ag){
     const wb = XLSX.utils.book_new();
-    // Daily
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['日付', metricLabel()], ...ag.dailyLabels.map((d,i)=>[d, ag.dailyValues[i]])]), 'Daily');
-    // Monthly
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['月', metricLabel()], ...ag.monthlyLabels.map((m,i)=>[m, ag.monthlyValues[i]])]), 'Monthly');
-    // Customer Top
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['年', metricLabel()], ...ag.yearlyLabels.map((y,i)=>[y, ag.yearlyValues[i]])]), 'Yearly');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['顧客', metricLabel()], ...ag.custLabels.map((c,i)=>[c, ag.custValues[i]])]), 'CustomersTop');
-    // Customer Monthly stacked
-    const header=['月', ...ag.custMonthDatasets.map(d=>d.label)];
-    const rows=ag.months.map((m,i)=> [m, ...ag.custMonthDatasets.map(ds=> ds.data[i]) ]);
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), 'CustMonthly');
+    // Monthly stacked
+    const headerM=['月', ...ag.custMonthDatasets.map(d=>d.label)];
+    const rowsM=ag.months.map((m,i)=> [m, ...ag.custMonthDatasets.map(ds=> ds.data[i]) ]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([headerM, ...rowsM]), 'CustMonthly');
+    // Yearly stacked
+    const headerY=['年', ...ag.custYearDatasets.map(d=>d.label)];
+    const rowsY=ag.years.map((y,i)=> [y, ...ag.custYearDatasets.map(ds=> ds.data[i]) ]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([headerY, ...rowsY]), 'CustYearly');
+
     XLSX.writeFile(wb, 'charts_export.xlsx');
   }
 
@@ -599,15 +673,8 @@ document.addEventListener('DOMContentLoaded', function(){
       y += h+24;
       if(y>520){ doc.addPage(); y=40; }
     }
-    // Ringkas tabel Top Customers
-    const ag = buildAggregations(applyRange(applyStatusFilter(cache.rows, cache.idx), cache.idx), cache.idx);
-    doc.addPage();
-    doc.text('Top Customers', 40, 40);
-    const data = ag.custLabels.map((c,i)=>[c, ag.custValues[i]]);
-    doc.autoTable({ startY:60, head:[['顧客', metricLabel()]], body:data });
     doc.save('charts_export.pdf');
   }
-
   function exportAllExcelCurrent(){
     const ag = buildAggregations(applyRange(applyStatusFilter(cache.rows, cache.idx), cache.idx), cache.idx);
     exportExcel(ag);
@@ -663,28 +730,31 @@ document.addEventListener('DOMContentLoaded', function(){
     renderAll();
   });
 
-  // Customer Monthly controls
+  // Cust Monthly/Yearly controls
   document.getElementById('custMonTop').addEventListener('click', ()=>{
     state.custMonTop = (state.custMonTop===6)?10:6; writeLS({custMonTop:state.custMonTop});
     document.getElementById('custMonTop').textContent='Top'+state.custMonTop;
-    renderAll();
-  });
-
-  // Orientation toggles
-  document.getElementById('dailyOrient').addEventListener('click', ()=>{
-    state.dailyOrient = state.dailyOrient==='v'?'h':'v'; writeLS({dailyOrient:state.dailyOrient});
-    document.getElementById('dailyOrient').textContent= state.dailyOrient==='v'?'縦':'横';
-    renderAll();
-  });
-  document.getElementById('monthlyOrient').addEventListener('click', ()=>{
-    state.monthlyOrient = state.monthlyOrient==='v'?'h':'v'; writeLS({monthlyOrient:state.monthlyOrient});
-    document.getElementById('monthlyOrient').textContent= state.monthlyOrient==='v'?'縦':'横';
     renderAll();
   });
   document.getElementById('custMonOrient').addEventListener('click', ()=>{
     state.custMonOrient = state.custMonOrient==='v'?'h':'v'; writeLS({custMonOrient:state.custMonOrient});
     document.getElementById('custMonOrient').textContent= state.custMonOrient==='v'?'縦':'横';
     renderAll();
+  });
+  document.getElementById('custMonMode').addEventListener('click', ()=>{
+    state.custMonMode = state.custMonMode==='month'?'year':'month';
+    writeLS({custMonMode:state.custMonMode});
+    syncUI();
+    renderAll();
+  });
+  document.getElementById('custMonTypeStacked').addEventListener('click', ()=>{
+    state.custMonType='stacked'; writeLS({custMonType:'stacked'}); renderAll();
+  });
+  document.getElementById('custMonTypePie').addEventListener('click', ()=>{
+    state.custMonType='pie'; writeLS({custMonType:'pie'}); renderAll();
+  });
+  document.getElementById('custMonTypePareto').addEventListener('click', ()=>{
+    state.custMonType='pareto'; writeLS({custMonType:'pareto'}); renderAll();
   });
 
   // Exports
