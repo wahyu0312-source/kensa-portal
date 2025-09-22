@@ -60,16 +60,16 @@
 
   .sbox{display:flex;flex-direction:column;gap:10px;background:#f8fafc;border:1px solid var(--border);border-radius:16px;padding:12px}
   .slabel{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;font-weight:700;color:#fff}
-  .slabel.shipok{background:#0891b2}    /* 出荷済 */
-  .slabel.prep{background:#0284c7}      /* 出荷準備済 */
-  .slabel.inspect{background:#4f46e5}   /* 検査中 */
-  .slabel.hold{background:#dc2626}      /* 検査保留 */
-  .slabel.assem{background:#f59e0b}     /* 組立中 */
-  .slabel.assemok{background:#10b981}   /* 組立完了 */
-  .slabel.proc{background:#22c55e}      /* 加工済 */
-  .slabel.laser{background:#ef4444}     /* レーザ加工 */
-  .slabel.sheet{background:#eab308}     /* 板金加工 */
-  .slabel.out{background:#6366f1}       /* 外注 */
+  .slabel.shipok{background:#0891b2}
+  .slabel.prep{background:#0284c7}
+  .slabel.inspect{background:#4f46e5}
+  .slabel.hold{background:#dc2626}
+  .slabel.assem{background:#f59e0b}
+  .slabel.assemok{background:#10b981}
+  .slabel.proc{background:#22c55e}
+  .slabel.laser{background:#ef4444}
+  .slabel.sheet{background:#eab308}
+  .slabel.out{background:#6366f1}
   .urgent{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:#fee2e2;color:#b91c1c;font-weight:700}
   .meta{display:grid;gap:6px}
   .meta small{color:#64748b}
@@ -78,11 +78,10 @@
   .codegroup{display:flex;flex-wrap:wrap;gap:10px}
   .code{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;background:#edf2ff;border:1px solid #c7d2fe}
 
-  /* Filter dropdown */
-  .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 14px}
+  /* Dropdowns */
   .dropdown{position:relative}
   .drop-btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
-  .drop-menu{position:absolute;top:42px;left:0;min-width:280px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:10px;display:none;z-index:20}
+  .drop-menu{position:absolute;top:42px;left:0;min-width:300px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:10px;display:none;z-index:20}
   .dropdown.open .drop-menu{display:block}
   .chips{display:flex;flex-wrap:wrap;gap:8px}
   .chipbtn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:#f8fafc;cursor:pointer}
@@ -111,7 +110,26 @@
         <img src="tsh.png" alt="TSH" onerror="this.style.display='none'">
         <div class="ttl"><strong>品質管理生産技術</strong></div>
       </div>
+
       <nav class="top-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <!-- NEW: Date Filter -->
+        <div class="dropdown" id="dateDropdown">
+          <button class="drop-btn" type="button">📅 日付フィルター</button>
+          <div class="drop-menu">
+            <div style="display:grid;gap:8px">
+              <button class="chipbtn" data-date-mode="all">🌐 すべて</button>
+              <button class="chipbtn" data-date-mode="today">☀ 本日</button>
+              <button class="chipbtn" id="latestBtn" data-date-mode="latest">🕒 最新日</button>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input id="datePick" type="date" style="height:36px;padding:0 10px;border:1px solid var(--border);border-radius:8px">
+                <button class="btn" id="applyPick" type="button">適用</button>
+              </div>
+              <div style="text-align:right"><span class="clearlink" id="clearDate">クリア</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Existing: Status Filter -->
         <div class="dropdown" id="statusDropdown">
           <button class="drop-btn" type="button">🔎 ステータス フィルター</button>
           <div class="drop-menu">
@@ -119,6 +137,7 @@
             <div style="margin-top:10px;text-align:right"><span class="clearlink" id="clearFilter">すべて表示</span></div>
           </div>
         </div>
+
         <button id="btnRefresh" class="btn" type="button">⟳ Refresh</button>
         <button id="btnLive" class="btn" type="button" aria-pressed="false">● Live</button>
         <span id="intervalInfo" class="badge">60s</span>
@@ -246,6 +265,44 @@ function statusInfo(raw){
 }
 function isUrgent(v){const t=S(v).toLowerCase(); return t==='至急'||t==='urgent'||t==='緊急'||t==='1'||t==='true'}
 
+/* ===== STATE: filters ===== */
+let cache={header:[],rows:[],idx:null};
+let activeStatusKey=null;        // null => all
+let dateFilter={mode:'all', date:null}; // 'all' | 'today' | 'latest' | 'pick'
+
+/* ===== Utils ===== */
+function applyStatusFilter(rows, idx){
+  if(!activeStatusKey) return rows;
+  const d=STATUS.find(s=>s.key===activeStatusKey);
+  if(!d) return rows;
+  return rows.filter(r=> d.rx.test(S(valAt(r,idx.status))));
+}
+function getShipDate(r, idx){ return parseJPDate(valAt(r,idx.date)); }
+function latestShipDate(rows, idx){
+  let best=null;
+  for(const r of rows){
+    const d=getShipDate(r,idx);
+    if(d && (!best || d>best)) best=d;
+  }
+  return best;
+}
+function applyDateFilter(rows, idx){
+  if(idx.date==null) return rows;
+  const today=new Date();
+  if(dateFilter.mode==='today'){
+    return rows.filter(r=>{ const d=getShipDate(r,idx); return d && sameYMD(d,today); });
+  }
+  if(dateFilter.mode==='latest'){
+    const ld = latestShipDate(rows, idx);
+    if(!ld) return rows;
+    return rows.filter(r=>{ const d=getShipDate(r,idx); return d && sameYMD(d, ld); });
+  }
+  if(dateFilter.mode==='pick' && dateFilter.date){
+    return rows.filter(r=>{ const d=getShipDate(r,idx); return d && fmtDate(d)===dateFilter.date; });
+  }
+  return rows; // 'all'
+}
+
 /* ===== Rendering ===== */
 function makeRow(r, idx){
   const st = statusInfo(valAt(r,idx.status));
@@ -270,27 +327,12 @@ function makeRow(r, idx){
   </div>`;
 }
 
-/* cache & filtering */
-let cache={header:[],rows:[],idx:null};
-let activeStatusKey=null; // null => all
-
-function applyFilter(rows, idx){
-  if(!activeStatusKey) return rows;
-  const d=STATUS.find(s=>s.key===activeStatusKey);
-  if(!d) return rows;
-  return rows.filter(r=> d.rx.test(S(valAt(r,idx.status))));
-}
-
 function render(){
   const {rows,idx}=cache;
 
-  // build counts for chips
-  const counts = {};
-  for(const s of STATUS) counts[s.key]=0;
-  rows.forEach(r=>{
-    const t=S(valAt(r,idx.status));
-    for(const s of STATUS){ if(s.rx.test(t)){ counts[s.key]++; break; } }
-  });
+  // counts for status chips
+  const counts = {}; for(const s of STATUS) counts[s.key]=0;
+  rows.forEach(r=>{ const t=S(valAt(r,idx.status)); for(const s of STATUS){ if(s.rx.test(t)){ counts[s.key]++; break; } }});
   renderChips(counts);
 
   // urgent banner
@@ -299,32 +341,37 @@ function render(){
   if(urgentCount>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; }
   else{ ub.style.display='none'; ub.textContent=''; }
 
-  // Split today vs others (after filter)
+  // Apply filters then sort newest first by 出荷日 desc, then 更新日時 desc
+  let filtered = applyStatusFilter(rows, idx);
+  filtered = applyDateFilter(filtered, idx);
+  filtered.sort((a,b)=>{
+    const da=getShipDate(a,idx), db=getShipDate(b,idx);
+    if(da && db && da.getTime()!==db.getTime()) return db-da;
+    const ta=parseJPDate(valAt(a,idx.ts)), tb=parseJPDate(valAt(b,idx.ts));
+    if(ta && tb) return tb-ta;
+    return 0;
+  });
+
+  // Split to today and others based on actual date (not dateFilter), supaya blok "本日" tetap bermakna
   const today=new Date();
+  const rowsToday = idx.date!=null ? filtered.filter(r=>{ const d=getShipDate(r,idx); return d && sameYMD(d,today); }) : [];
+  const rowsNotToday = idx.date!=null ? filtered.filter(r=>{ const d=getShipDate(r,idx); return !(d && sameYMD(d,today)); }) : filtered.slice();
 
-  // Filtered rows first (respect status filter)
-  const rowsFiltered = applyFilter(rows, idx);
-
-  // Today
-  const rowsToday = idx.date!=null ? rowsFiltered.filter(r=>{
-    const d=parseJPDate(valAt(r,idx.date)); return d && sameYMD(d,today);
-  }) : [];
+  // render
   const secToday=document.getElementById('todaySec');
-  if(rowsToday.length){
-    secToday.style.display='';
-    document.getElementById('todayBody').innerHTML = rowsToday.map(r=>makeRow(r,idx)).join('');
-  }else{
-    secToday.style.display='none';
-    document.getElementById('todayBody').innerHTML='';
-  }
+  if(rowsToday.length){ secToday.style.display=''; document.getElementById('todayBody').innerHTML = rowsToday.map(r=>makeRow(r,idx)).join(''); }
+  else{ secToday.style.display='none'; document.getElementById('todayBody').innerHTML=''; }
   document.getElementById('todayCount').textContent = `${rowsToday.length}件`;
 
-  // Not today
-  const rowsNotToday = idx.date!=null ? rowsFiltered.filter(r=>{
-    const d=parseJPDate(valAt(r,idx.date)); return !(d && sameYMD(d,today));
-  }) : rowsFiltered.slice();
   document.getElementById('allBody').innerHTML = rowsNotToday.map(r=>makeRow(r,idx)).join('');
   document.getElementById('allCount').textContent = `${rowsNotToday.length}件`;
+
+  // update "最新日" label with date
+  const ld = latestShipDate(rows, idx);
+  const latestBtn = document.getElementById('latestBtn');
+  if(ld){ latestBtn.textContent = `🕒 最新日 (${fmtDate(ld)})`; }
+  // highlight active date mode
+  highlightDateButtons();
 }
 
 function renderChips(counts){
@@ -336,13 +383,12 @@ function renderChips(counts){
   box.querySelectorAll('.chipbtn').forEach(b=>{
     b.addEventListener('click', ()=>{
       const k=b.getAttribute('data-key'); activeStatusKey = k || null;
-      render();
-      dropdown.classList.remove('open');
+      render(); closeAllDropdowns();
     });
   });
 }
 
-/* fetch & live */
+/* ===== Fetch & live ===== */
 async function load(){
   const btn=document.getElementById('btnRefresh'); const old=btn.textContent;
   try{
@@ -365,11 +411,45 @@ document.getElementById('btnRefresh').addEventListener('click', load);
 document.getElementById('btnLive').addEventListener('click', ()=>{ startAuto(intervalMs<=5000?60000:5000); load(); });
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') load(); });
 
-/* dropdown open/close */
-const dropdown=document.getElementById('statusDropdown');
-dropdown.querySelector('.drop-btn').addEventListener('click', ()=> dropdown.classList.toggle('open'));
-document.getElementById('clearFilter').addEventListener('click', ()=>{ activeStatusKey=null; render(); dropdown.classList.remove('open');});
-document.addEventListener('click', (e)=>{ if(!dropdown.contains(e.target)) dropdown.classList.remove('open'); });
+/* ===== Dropdown behaviors ===== */
+const dropdownStatus=document.getElementById('statusDropdown');
+dropdownStatus.querySelector('.drop-btn').addEventListener('click', ()=> dropdownStatus.classList.toggle('open'));
+
+const dropdownDate=document.getElementById('dateDropdown');
+dropdownDate.querySelector('.drop-btn').addEventListener('click', ()=> dropdownDate.classList.toggle('open'));
+
+document.getElementById('clearFilter').addEventListener('click', ()=>{ activeStatusKey=null; render(); closeAllDropdowns();});
+document.getElementById('clearDate').addEventListener('click', ()=>{ dateFilter={mode:'all',date:null}; document.getElementById('datePick').value=''; render(); closeAllDropdowns(); });
+
+document.getElementById('applyPick').addEventListener('click', ()=>{
+  const v=document.getElementById('datePick').value;
+  if(v){ dateFilter={mode:'pick', date:v}; render(); closeAllDropdowns(); }
+});
+
+dropdownDate.querySelectorAll('[data-date-mode]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const mode=btn.getAttribute('data-date-mode');
+    if(mode==='all') dateFilter={mode:'all',date:null};
+    if(mode==='today') dateFilter={mode:'today',date:null};
+    if(mode==='latest') dateFilter={mode:'latest',date:null};
+    render(); closeAllDropdowns();
+  });
+});
+
+function closeAllDropdowns(){
+  dropdownStatus.classList.remove('open');
+  dropdownDate.classList.remove('open');
+}
+document.addEventListener('click', (e)=>{ 
+  if(!dropdownStatus.contains(e.target)) dropdownStatus.classList.remove('open'); 
+  if(!dropdownDate.contains(e.target)) dropdownDate.classList.remove('open'); 
+});
+
+function highlightDateButtons(){
+  dropdownDate.querySelectorAll('[data-date-mode]').forEach(b=>b.classList.remove('active'));
+  const b = dropdownDate.querySelector(`[data-date-mode="${dateFilter.mode==='pick'?'custom':dateFilter.mode}"]`);
+  if(b) b.classList.add('active');
+}
 
 /* boot */
 load(); startAuto(60000);
