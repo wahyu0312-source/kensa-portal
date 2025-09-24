@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>品質管理生産技術</title>
 <style>
   :root{
@@ -66,6 +66,7 @@
   .slabel.hold{background:#dc2626}
   .slabel.assem{background:#f59e0b}
   .slabel.assemok{background:#10b981}
+  .slabel.kensaok{background:#16a34a} /* ★ 検査済 */
   .slabel.proc{background:#22c55e}
   .slabel.laser{background:#ef4444}
   .slabel.sheet{background:#eab308}
@@ -129,7 +130,7 @@
           </div>
         </div>
 
-        <!-- Existing: Status Filter -->
+        <!-- Status Filter -->
         <div class="dropdown" id="statusDropdown">
           <button class="drop-btn" type="button">🔎 ステータス フィルター</button>
           <div class="drop-menu">
@@ -173,7 +174,7 @@
       <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
       <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
       <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
-      <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
+      <a class="slink" href="./charts.html"><span class="ico">📈</strong>チャート</a>
       <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
       <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
     </div>
@@ -201,6 +202,7 @@
 const drawer = document.getElementById('drawer');
 document.getElementById('btnBurger')?.addEventListener('click', ()=>{ drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false');});
 drawer?.addEventListener('click', e=>{ if(e.target.hasAttribute('data-close')){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true');}});
+
 const hot=document.getElementById('edgeHotspot'); const fly=document.getElementById('hoverSide');
 let hideTimer=null; const HIDE_DELAY=280;
 function openFly(){clearTimeout(hideTimer); fly.classList.add('open')}
@@ -248,9 +250,10 @@ const STATUS = [
   {key:'shipok',   label:'出荷済',     icon:'📦', cls:'shipok',  rx:/出荷済/},
   {key:'prep',     label:'出荷準備済', icon:'🚚', cls:'prep',    rx:/出荷準備済/},
   {key:'inspect',  label:'検査中',     icon:'🔬', cls:'inspect', rx:/検査中/},
-  {key:'hold',     label:'検査保留',   icon:'⛔', cls:'hold',    rx:/検査保留/},
+  {key:'kensaok',  label:'検査済',     icon:'✅', cls:'kensaok', rx:/検査済/},   /* ★ NEW */
+  {key:'hold',     label:'検査保留',   icon:'⛔', cls:'hold',    rx:/検査保留|保留/},
   {key:'assem',    label:'組立中',     icon:'🧰', cls:'assem',   rx:/組立中/},
-  {key:'assemok',  label:'組立完了',   icon:'✅', cls:'assemok', rx:/組立完了/},
+  {key:'assemok',  label:'組立完了',   icon:'✅', cls:'assemok', rx:/組立(完了|済)/}, /* ★ accept 組立済 */
   {key:'proc',     label:'加工済',     icon:'🔧', cls:'proc',    rx:/加工済/},
   {key:'laser',    label:'レーザ加工', icon:'🪚', cls:'laser',   rx:/レーザ/},
   {key:'sheet',    label:'板金加工',   icon:'🔩', cls:'sheet',   rx:/板金/},
@@ -341,7 +344,7 @@ function render(){
   if(urgentCount>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; }
   else{ ub.style.display='none'; ub.textContent=''; }
 
-  // Apply filters then sort newest first by 出荷日 desc, then 更新日時 desc
+  // Apply filters then sort newest first
   let filtered = applyStatusFilter(rows, idx);
   filtered = applyDateFilter(filtered, idx);
   filtered.sort((a,b)=>{
@@ -352,7 +355,7 @@ function render(){
     return 0;
   });
 
-  // Split to today and others based on actual date (not dateFilter), supaya blok "本日" tetap bermakna
+  // Split to today and others
   const today=new Date();
   const rowsToday = idx.date!=null ? filtered.filter(r=>{ const d=getShipDate(r,idx); return d && sameYMD(d,today); }) : [];
   const rowsNotToday = idx.date!=null ? filtered.filter(r=>{ const d=getShipDate(r,idx); return !(d && sameYMD(d,today)); }) : filtered.slice();
