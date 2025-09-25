@@ -419,7 +419,6 @@ document.addEventListener('DOMContentLoaded', function(){
       const kDay = fmtDate(d);
       const kMon = fmtMonth(d);
       const kYear= fmtYear(d);
-      // --- MENGGUNAKAN FUNGSI NORMALISASI ---
       const cust = normalizeCustomerName(valAt(r,idx.cust)) || '—';
 
       mapDaily[kDay]=(mapDaily[kDay]||0)+v;
@@ -468,14 +467,25 @@ document.addEventListener('DOMContentLoaded', function(){
     const allYear  = {}; years.forEach(y=>{ for(const [k,v] of Object.entries(yearTotalsByCust[y]||{})){  allYear[k]=(allYear[k]||0)+v; }});
     monthTotalsByCust.ALL = allMonth;
     yearTotalsByCust.ALL  = allYear;
+    
+    // --- MEMBUAT DATA 12 BULAN UNTUK GRAFIK YTD ---
+    const currentYear = new Date().getFullYear();
+    const ytdMonthlyLabels = [];
+    const ytdMonthlyValues = [];
+    for (let i = 0; i < 12; i++) {
+      ytdMonthlyLabels.push(`${i + 1}月`);
+      const monthKey = `${currentYear}-${String(i + 1).padStart(2, '0')}`;
+      ytdMonthlyValues.push(mapMonthly[monthKey] || 0);
+    }
 
     return {
-      dailyLabels,dailyValues,
-      monthlyLabels,monthlyValues,
-      yearlyLabels,yearlyValues,
-      custLabels,custValues,
-      months,custMonthDatasets, monthTotalsByCust,
-      years,custYearDatasets,  yearTotalsByCust
+      dailyLabels, dailyValues,
+      monthlyLabels, monthlyValues,
+      yearlyLabels, yearlyValues,
+      custLabels, custValues,
+      months, custMonthDatasets, monthTotalsByCust,
+      years, custYearDatasets,  yearTotalsByCust,
+      ytdMonthlyLabels, ytdMonthlyValues // <-- Menambahkan data baru ke return
     };
   }
 
@@ -535,12 +545,16 @@ document.addEventListener('DOMContentLoaded', function(){
     }, 'dailyChart');
 
     /* Monthly totals */
-    const mMax=Math.max(0,...ag.monthlyValues);
-    const monHorizontal = state.monthlyOrient==='h';
+    // --- MENGGUNAKAN DATA 12 BULAN YANG BARU ---
+    const mMax = Math.max(0, ...ag.ytdMonthlyValues);
+    const monHorizontal = state.monthlyOrient === 'h';
     upsertChart(document.getElementById('monthlyQty'), {
-      type:'bar',
-      data:{ labels:ag.monthlyLabels, datasets:[{ label:metricLabel(), data:ag.monthlyValues }] },
-      options: Object.assign(makeCommonOptions({horizontal: monHorizontal, maxVal:mMax}), monHorizontal?{indexAxis:'y'}:{})
+      type: 'bar',
+      data: { 
+        labels: ag.ytdMonthlyLabels,
+        datasets: [{ label: metricLabel(), data: ag.ytdMonthlyValues }]
+      },
+      options: Object.assign(makeCommonOptions({ horizontal: monHorizontal, maxVal: mMax }), monHorizontal ? { indexAxis: 'y' } : {})
     }, 'monthlyChart');
 
     /* Customer Top */
@@ -652,7 +666,7 @@ document.addEventListener('DOMContentLoaded', function(){
   function exportExcel(ag){
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['日付', metricLabel()], ...ag.dailyLabels.map((d,i)=>[d, ag.dailyValues[i]])]), 'Daily');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['月', metricLabel()], ...ag.monthlyLabels.map((m,i)=>[m, ag.monthlyValues[i]])]), 'Monthly');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['月', metricLabel()], ...ag.ytdMonthlyLabels.map((m,i)=>[m, ag.ytdMonthlyValues[i]])]), 'MonthlyYTD');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['年', metricLabel()], ...ag.yearlyLabels.map((y,i)=>[y, ag.yearlyValues[i]])]), 'Yearly');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['顧客', metricLabel()], ...ag.custLabels.map((c,i)=>[c, ag.custValues[i]])]), 'CustomersTop');
     const headerM=['月', ...ag.custMonthDatasets.map(d=>d.label)];
@@ -706,6 +720,7 @@ document.addEventListener('DOMContentLoaded', function(){
       renderAll();
     });
   });
+  
   document.getElementById('btnLabels').addEventListener('click', ()=>{
     state.labels = !state.labels; writeLS({labels:state.labels});
     document.getElementById('btnLabels').textContent=(state.labels?'✓ ':'✗ ')+'Labels';
