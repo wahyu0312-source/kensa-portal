@@ -174,6 +174,8 @@
       <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
       <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
       <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+      <!-- ★ LINK UPDATED TO DIRECT APPS SCRIPT URL -->
+      <a class="slink" href="https://script.google.com/macros/s/AKfycbx1d5ugMfPp0lrG1AVw6VYV8CiZECKt3tBNFlm6a9y7xSej7PVDsKGjehoNJsUBrBhaRA/exec" target="_blank" rel="noopener noreferrer"><span class="ico">✍️</span><strong>入力フォーム</strong></a>
       <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
       <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
       <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
@@ -189,6 +191,8 @@
         <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
         <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
         <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
+        <!-- ★ LINK UPDATED TO DIRECT APPS SCRIPT URL -->
+        <a class="slink" href="https://script.google.com/macros/s/AKfycbx1d5ugMfPp0lrG1AVw6VYV8CiZECKt3tBNFlm6a9y7xSej7PVDsKGjehoNJsUBrBhaRA/exec" target="_blank" rel="noopener noreferrer"><span class="ico">✍️</span><strong>入力フォーム</strong></a>
         <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
         <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
         <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
@@ -215,18 +219,18 @@ const SHEET_ID ="1lYl7oYk6atnm3KqC6VwufARX3ooRyJ2VmC_xYFb4-OE";
 const TAB_NAME ="最新情報";
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB_NAME)}`;
 
-const S = s => String(s ?? '').trim();
+const safeTrim = s => String(s ?? '').trim();
 function parseCSV(t){
   const out=[], re=/\s*("(?:[^"]|"")*"|[^,]*)\s*(,|\n|$)/g; let row=[], m; t=t.replace(/\r\n?/g,"\n");
   for(let i=0;i<t.length;){ re.lastIndex=i; m=re.exec(t); if(!m) break;
     let cell=m[1]; if(cell.startsWith('"')) cell=cell.slice(1,-1).replace(/""/g,'"');
     row.push(cell); i=re.lastIndex; if(m[2]==="\n"||m[2]===""){ out.push(row); row=[]; }
-  } return out.filter(r=>r.length && r.some(c=>S(c)!==""));
+  } return out.filter(r=>r.length && r.some(c=>safeTrim(c)!==""));
 }
 function indexByName(header){
-  const map={}; header.forEach((h,i)=>map[S(h)]=i);
+  const map={}; header.forEach((h,i)=>map[safeTrim(h)]=i);
   const f = n => (n in map ? map[n] : null);
-  const fRx = rx => { for(let i=0;i<header.length;i++){ if(rx.test(S(header[i]))) return i; } return null; };
+  const fRx = rx => { for(let i=0;i<header.length;i++){ if(rx.test(safeTrim(header[i]))) return i; } return null; };
   return {
     date: f('出荷日'), cust: f('顧客名'), draw: fRx(/図番|図面|Drawing/), machine: fRx(/機種/),
     qty: f('数量'), to: fRx(/送り先|送付先|納品先/), note: fRx(/注番|備考|注文/),
@@ -236,7 +240,7 @@ function indexByName(header){
 }
 const valAt=(r,i)=> (i==null?'':(r[i]??''));
 function parseJPDate(str){
-  const s=S(str); if(!s) return null;
+  const s=safeTrim(str); if(!s) return null;
   const m=s.match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})(?:\D(\d{1,2})\D(\d{1,2}))?/);
   if(m) return new Date(m[1],m[2]-1,m[3],m[4]||0,m[5]||0);
   const d=new Date(s); return isNaN(d)?null:d;
@@ -250,7 +254,7 @@ const STATUS = [
   {key:'shipok',   label:'出荷済',     icon:'📦', cls:'shipok',  rx:/出荷済/},
   {key:'prep',     label:'出荷準備済', icon:'🚚', cls:'prep',    rx:/出荷準備済/},
   {key:'inspect',  label:'検査中',     icon:'🔬', cls:'inspect', rx:/検査中/},
-  {key:'kensaok',  label:'検査済',     icon:'✅', cls:'kensaok', rx:/検査済/},   /* ★ NEW */
+  {key:'kensaok',  label:'検査済',     icon:'✅', cls:'kensaok', rx:/検査済/},  /* ★ NEW */
   {key:'hold',     label:'検査保留',   icon:'⛔', cls:'hold',    rx:/検査保留|保留/},
   {key:'assem',    label:'組立中',     icon:'🧰', cls:'assem',   rx:/組立中/},
   {key:'assemok',  label:'組立完了',   icon:'✅', cls:'assemok', rx:/組立(完了|済)/}, /* ★ accept 組立済 */
@@ -262,15 +266,15 @@ const STATUS = [
 
 /* map status string -> dict */
 function statusInfo(raw){
-  const t=S(raw);
+  const t=safeTrim(raw);
   for(const s of STATUS){ if(s.rx.test(t)) return {label:s.label, cls:s.cls}; }
   return {label: t || '—', cls:'inspect'};
 }
-function isUrgent(v){const t=S(v).toLowerCase(); return t==='至急'||t==='urgent'||t==='緊急'||t==='1'||t==='true'}
+function isUrgent(v){const t=safeTrim(v).toLowerCase(); return t==='至急'||t==='urgent'||t==='緊急'||t==='1'||t==='true'}
 
 /* ===== STATE: filters ===== */
 let cache={header:[],rows:[],idx:null};
-let activeStatusKey=null;        // null => all
+let activeStatusKey=null;       // null => all
 let dateFilter={mode:'all', date:null}; // 'all' | 'today' | 'latest' | 'pick'
 
 /* ===== Utils ===== */
@@ -278,7 +282,7 @@ function applyStatusFilter(rows, idx){
   if(!activeStatusKey) return rows;
   const d=STATUS.find(s=>s.key===activeStatusKey);
   if(!d) return rows;
-  return rows.filter(r=> d.rx.test(S(valAt(r,idx.status))));
+  return rows.filter(r=> d.rx.test(safeTrim(valAt(r,idx.status))));
 }
 function getShipDate(r, idx){ return parseJPDate(valAt(r,idx.date)); }
 function latestShipDate(rows, idx){
@@ -310,7 +314,7 @@ function applyDateFilter(rows, idx){
 function makeRow(r, idx){
   const st = statusInfo(valAt(r,idx.status));
   const ts = parseJPDate(valAt(r,idx.ts));
-  const user = S(valAt(r,idx.user));
+  const user = safeTrim(valAt(r,idx.user));
   const urgentChip = idx.urgent!=null && isUrgent(valAt(r,idx.urgent)) ? `<span class="urgent">⚠ 至急</span>` : '';
   const sbox = `<div class="sbox">
       <div class="slabel ${st.cls}">${st.label}</div>
@@ -318,7 +322,7 @@ function makeRow(r, idx){
       <div class="meta"><div><small>更新日：</small><strong>${ts?fmtTS(ts):'—'}</strong></div><div><small>更新者：</small><strong>${user||'—'}</strong></div></div>
     </div>`;
   const d=parseJPDate(valAt(r,idx.date)); const dateChip=`<span class="chip">📅 ${d?fmtDate(d):'—'}</span>`;
-  const cust=S(valAt(r,idx.cust)), draw=S(valAt(r,idx.draw)), machine=S(valAt(r,idx.machine)), qty=S(valAt(r,idx.qty)), to=S(valAt(r,idx.to)), note=S(valAt(r,idx.note));
+  const cust=safeTrim(valAt(r,idx.cust)), draw=safeTrim(valAt(r,idx.draw)), machine=safeTrim(valAt(r,idx.machine)), qty=safeTrim(valAt(r,idx.qty)), to=safeTrim(valAt(r,idx.to)), note=safeTrim(valAt(r,idx.note));
   const codes=[]; if(note) note.split(/\s+/).filter(Boolean).forEach(c=>codes.push(`<span class="code">${c}</span>`));
   return `<div class="row">
     <div>${sbox}</div>
@@ -335,7 +339,7 @@ function render(){
 
   // counts for status chips
   const counts = {}; for(const s of STATUS) counts[s.key]=0;
-  rows.forEach(r=>{ const t=S(valAt(r,idx.status)); for(const s of STATUS){ if(s.rx.test(t)){ counts[s.key]++; break; } }});
+  rows.forEach(r=>{ const t=safeTrim(valAt(r,idx.status)); for(const s of STATUS){ if(s.rx.test(t)){ counts[s.key]++; break; } }});
   renderChips(counts);
 
   // urgent banner
@@ -459,5 +463,4 @@ load(); startAuto(60000);
 </script>
 </body>
 </html>
-
 
