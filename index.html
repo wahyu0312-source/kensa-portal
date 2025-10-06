@@ -66,7 +66,7 @@
   .slabel.hold{background:#dc2626}
   .slabel.assem{background:#f59e0b}
   .slabel.assemok{background:#10b981}
-  .slabel.kensaok{background:#16a34a} /* ★ 検査済 */
+  .slabel.kensaok{background:#16a34a}
   .slabel.proc{background:#22c55e}
   .slabel.laser{background:#ef4444}
   .slabel.sheet{background:#eab308}
@@ -113,7 +113,6 @@
       </div>
 
       <nav class="top-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <!-- NEW: Date Filter -->
         <div class="dropdown" id="dateDropdown">
           <button class="drop-btn" type="button">📅 日付フィルター</button>
           <div class="drop-menu">
@@ -130,7 +129,6 @@
           </div>
         </div>
 
-        <!-- Status Filter -->
         <div class="dropdown" id="statusDropdown">
           <button class="drop-btn" type="button">🔎 ステータス フィルター</button>
           <div class="drop-menu">
@@ -151,14 +149,12 @@
   <main>
     <div id="urgentBanner" class="urgent-banner" style="display:none"></div>
 
-    <!-- TODAY ONLY -->
     <section class="panel" id="todaySec" style="display:none">
       <h2>本日出荷 <span id="todayCount" class="badge">0件</span></h2>
       <div class="thead"><div>状況</div><div>出荷日</div><div>顧客名</div><div>図番／機種</div><div>数量</div><div>送り先／注番</div></div>
       <div id="todayBody"></div>
     </section>
 
-    <!-- ALL EXCEPT TODAY -->
     <section class="panel">
       <h2>全件一覧（本日以外） <span id="allCount" class="badge">0件</span></h2>
       <div class="thead"><div>状況</div><div>出荷日</div><div>顧客名</div><div>図番／機種</div><div>数量</div><div>送り先／注番</div></div>
@@ -174,8 +170,16 @@
       <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
       <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
       <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
-      <!-- ★ LINK UPDATED TO DIRECT APPS SCRIPT URL -->
-      <a class="slink" href="https://script.google.com/macros/s/AKfycbx1d5ugMfPp0lrG1AVw6VYV8CiZECKt3tBNFlm6a9y7xSej7PVDsKGjehoNJsUBrBhaRA/exec" target="_blank" rel="noopener noreferrer"><span class="ico">✍️</span><strong>進捗状況更新フォーム</strong></a>
+      <!-- … item lain … -->
+<a class="slink" href="https://script.google.com/macros/s/AKfycby8r4RhaLzwpsbl8W57-iH3GA_GF_zHmP72maD6wz8N98aOjryECfmmkOKFzZCOK_rP7Q/exec" target="_blank" rel="noopener noreferrer">
+  <span class="ico">✍️</span><strong>出荷検査確認書 – 入力フォーム</strong>
+</a>
+
+<!-- Kembalikan tautan lama juga -->
+<a class="slink" href="https://script.google.com/macros/s/AKfycbx1d5ugMfPp0lrG1AVw6VYV8CiZECKt3tBNFlm6a9y7xSej7PVDsKGjehoNJsUBrBhaRA/exec" target="_blank" rel="noopener noreferrer">
+  <span class="ico">✍️</span><strong>進捗状況入力フォーム</strong>
+</a>
+
       <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
       <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
       <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
@@ -191,9 +195,16 @@
         <a class="slink" href="./index.html"><span class="ico">🏠</span><strong>ホーム</strong><small style="color:#9ca3af;margin-left:6px">Dashboard</small></a>
         <a class="slink" href="./forms.html"><span class="ico">📄</span><strong>出荷検査成績書</strong></a>
         <a class="slink" href="./sagyoutejunsho.html"><span class="ico">📝</span><strong>作業手順書</strong></a>
-        <!-- ★ LINK UPDATED TO DIRECT APPS SCRIPT URL -->
-        <a class="slink" href="https://script.google.com/macros/s/AKfycbx1d5ugMfPp0lrG1AVw6VYV8CiZECKt3tBNFlm6a9y7xSej7PVDsKGjehoNJsUBrBhaRA/exec" target="_blank" rel="noopener noreferrer"><span class="ico">✍️</span><strong>進捗状況入力フォーム</strong></a>
-         <a class="slink" href="https://script.google.com/macros/s/AKfycby8r4RhaLzwpsbl8W57-iH3GA_GF_zHmP72maD6wz8N98aOjryECfmmkOKFzZCOK_rP7Q/exec" target="_blank" rel="noopener noreferrer"><span class="ico">✍️</span><strong>出荷確認書入力フォーム</strong></a>
+        <!-- … item lain … -->
+<a class="slink" href="https://script.google.com/macros/s/AKfycby8r4RhaLzwpsbl8W57-iH3GA_GF_zHmP72maD6wz8N98aOjryECfmmkOKFzZCOK_rP7Q/exec" target="_blank" rel="noopener noreferrer">
+  <span class="ico">✍️</span><strong>出荷検査確認書 – 入力フォーム</strong>
+</a>
+
+<!-- Kembalikan tautan lama juga -->
+<a class="slink" href="https://script.google.com/macros/s/AKfycbx1d5ugMfPp0lrG1AVw6VYV8CiZECKt3tBNFlm6a9y7xSej7PVDsKGjehoNJsUBrBhaRA/exec" target="_blank" rel="noopener noreferrer">
+  <span class="ico">✍️</span><strong>進捗状況入力フォーム</strong>
+</a>
+
         <a class="slink" href="./charts.html"><span class="ico">📈</span><strong>チャート</strong></a>
         <a class="slink" href="./quality.html"><span class="ico">🔎</span><strong>品質情報</strong></a>
         <a class="slink" href="./claim.html"><span class="ico">🧪</span><strong>Trial Page</strong></a>
@@ -255,10 +266,10 @@ const STATUS = [
   {key:'shipok',   label:'出荷済',     icon:'📦', cls:'shipok',  rx:/出荷済/},
   {key:'prep',     label:'出荷準備済', icon:'🚚', cls:'prep',    rx:/出荷準備済/},
   {key:'inspect',  label:'検査中',     icon:'🔬', cls:'inspect', rx:/検査中/},
-  {key:'kensaok',  label:'検査済',     icon:'✅', cls:'kensaok', rx:/検査済/},  /* ★ NEW */
+  {key:'kensaok',  label:'検査済',     icon:'✅', cls:'kensaok', rx:/検査済/},
   {key:'hold',     label:'検査保留',   icon:'⛔', cls:'hold',    rx:/検査保留|保留/},
   {key:'assem',    label:'組立中',     icon:'🧰', cls:'assem',   rx:/組立中/},
-  {key:'assemok',  label:'組立完了',   icon:'✅', cls:'assemok', rx:/組立(完了|済)/}, /* ★ accept 組立済 */
+  {key:'assemok',  label:'組立完了',   icon:'✅', cls:'assemok', rx:/組立(完了|済)/},
   {key:'proc',     label:'加工済',     icon:'🔧', cls:'proc',    rx:/加工済/},
   {key:'laser',    label:'レーザ加工', icon:'🪚', cls:'laser',   rx:/レーザ/},
   {key:'sheet',    label:'板金加工',   icon:'🔩', cls:'sheet',   rx:/板金/},
@@ -275,8 +286,8 @@ function isUrgent(v){const t=safeTrim(v).toLowerCase(); return t==='至急'||t==
 
 /* ===== STATE: filters ===== */
 let cache={header:[],rows:[],idx:null};
-let activeStatusKey=null;       // null => all
-let dateFilter={mode:'all', date:null}; // 'all' | 'today' | 'latest' | 'pick'
+let activeStatusKey=null;
+let dateFilter={mode:'all', date:null};
 
 /* ===== Utils ===== */
 function applyStatusFilter(rows, idx){
@@ -308,7 +319,7 @@ function applyDateFilter(rows, idx){
   if(dateFilter.mode==='pick' && dateFilter.date){
     return rows.filter(r=>{ const d=getShipDate(r,idx); return d && fmtDate(d)===dateFilter.date; });
   }
-  return rows; // 'all'
+  return rows;
 }
 
 /* ===== Rendering ===== */
@@ -338,18 +349,15 @@ function makeRow(r, idx){
 function render(){
   const {rows,idx}=cache;
 
-  // counts for status chips
   const counts = {}; for(const s of STATUS) counts[s.key]=0;
   rows.forEach(r=>{ const t=safeTrim(valAt(r,idx.status)); for(const s of STATUS){ if(s.rx.test(t)){ counts[s.key]++; break; } }});
   renderChips(counts);
 
-  // urgent banner
   const urgentCount=idx.urgent!=null ? rows.filter(r=>isUrgent(valAt(r,idx.urgent))).length : 0;
   const ub=document.getElementById('urgentBanner');
   if(urgentCount>0){ ub.style.display='block'; ub.textContent=`⚠ 至急案件が ${urgentCount} 件あります！早急に確認してください。`; }
   else{ ub.style.display='none'; ub.textContent=''; }
 
-  // Apply filters then sort newest first
   let filtered = applyStatusFilter(rows, idx);
   filtered = applyDateFilter(filtered, idx);
   filtered.sort((a,b)=>{
@@ -360,12 +368,10 @@ function render(){
     return 0;
   });
 
-  // Split to today and others
   const today=new Date();
   const rowsToday = idx.date!=null ? filtered.filter(r=>{ const d=getShipDate(r,idx); return d && sameYMD(d,today); }) : [];
   const rowsNotToday = idx.date!=null ? filtered.filter(r=>{ const d=getShipDate(r,idx); return !(d && sameYMD(d,today)); }) : filtered.slice();
 
-  // render
   const secToday=document.getElementById('todaySec');
   if(rowsToday.length){ secToday.style.display=''; document.getElementById('todayBody').innerHTML = rowsToday.map(r=>makeRow(r,idx)).join(''); }
   else{ secToday.style.display='none'; document.getElementById('todayBody').innerHTML=''; }
@@ -374,11 +380,9 @@ function render(){
   document.getElementById('allBody').innerHTML = rowsNotToday.map(r=>makeRow(r,idx)).join('');
   document.getElementById('allCount').textContent = `${rowsNotToday.length}件`;
 
-  // update "最新日" label with date
   const ld = latestShipDate(rows, idx);
   const latestBtn = document.getElementById('latestBtn');
   if(ld){ latestBtn.textContent = `🕒 最新日 (${fmtDate(ld)})`; }
-  // highlight active date mode
   highlightDateButtons();
 }
 
@@ -464,6 +468,3 @@ load(); startAuto(60000);
 </script>
 </body>
 </html>
-
-
-
